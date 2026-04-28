@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <rect width="1200" height="630" fill="#F9FAFB"/>
+  <rect x="72" y="72" width="1056" height="486" rx="32" fill="#FFFFFF"/>
+  <circle cx="930" cy="180" r="92" fill="#EEF2FF"/>
+  <circle cx="1024" cy="118" r="52" fill="#4F46E5" fill-opacity=".12"/>
+  <text x="120" y="248" fill="#4F46E5" font-family="Georgia, serif" font-size="28">Fashion Shop</text>
+  <text x="120" y="338" fill="#111827" font-family="Georgia, serif" font-size="80">Modern editorial</text>
+  <text x="120" y="424" fill="#111827" font-family="Georgia, serif" font-size="80">commerce for customers.</text>
+  <text x="120" y="494" fill="#6B7280" font-family="Arial, sans-serif" font-size="28">
+    Home, discovery, product detail, and a typed route shell built for the next phases.
+  </text>
+</svg>
