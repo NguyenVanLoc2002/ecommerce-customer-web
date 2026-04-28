@@ -23,7 +23,7 @@ export const Toast = ({ onDismiss, toast }: ToastProps) => {
   const Icon = iconMap[toast.tone];
 
   return (
-    <div className={`w-full rounded-card border px-4 py-4 shadow-card ${toneMap[toast.tone]}`}>
+    <div aria-live="assertive" className={`w-full rounded-card border px-4 py-4 shadow-card ${toneMap[toast.tone]}`} role="alert">
       <div className="flex items-start gap-3">
         <Icon className="mt-0.5 h-5 w-5 text-brand-primary" />
         <div className="min-w-0 flex-1">
@@ -42,4 +42,3 @@ export const Toast = ({ onDismiss, toast }: ToastProps) => {
     </div>
   );
 };
-

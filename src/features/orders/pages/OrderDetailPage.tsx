@@ -38,6 +38,8 @@ export const OrderDetailPage = () => {
     order?.status === ORDER_STATUSES.SHIPPED ||
     order?.status === ORDER_STATUSES.DELIVERED ||
     order?.status === ORDER_STATUSES.COMPLETED;
+  const reviewActionVisible =
+    order?.status === ORDER_STATUSES.DELIVERED || order?.status === ORDER_STATUSES.COMPLETED;
 
   return (
     <>
@@ -83,6 +85,11 @@ export const OrderDetailPage = () => {
                     Track shipment
                   </Link>
                 ) : null}
+                {reviewActionVisible ? (
+                  <Link className={buttonStyles({ variant: 'ghost' })} to={routePaths.orderReview(order.id)}>
+                    Write review
+                  </Link>
+                ) : null}
                 {paymentActionVisible ? (
                   <Link className={buttonStyles({ variant: 'ghost' })} to={routePaths.paymentResult(order.id)}>
                     Pay now
@@ -112,6 +119,7 @@ export const OrderDetailPage = () => {
                           alt={item.primaryImage.alt}
                           className="aspect-[4/5] w-full bg-surface-soft object-cover"
                           height={item.primaryImage.height}
+                          loading="lazy"
                           src={item.primaryImage.src}
                           width={item.primaryImage.width}
                         />
@@ -158,6 +166,19 @@ export const OrderDetailPage = () => {
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-2">
+                  {reviewActionVisible ? (
+                    <section className="border border-border bg-surface px-5 py-5 md:px-6">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Review</p>
+                      <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Share your notes</h2>
+                      <p className="mt-4 text-sm leading-7 text-text-secondary">
+                        Revisit the fit, finish, and material quality of this delivered order directly from the archive.
+                      </p>
+                      <Link className={`${actionLinkClassName} mt-5 inline-flex`} to={routePaths.orderReview(order.id)}>
+                        Write review
+                      </Link>
+                    </section>
+                  ) : null}
+
                   {paymentActionVisible ? (
                     <section className="border border-border bg-surface px-5 py-5 md:px-6">
                       <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Payment</p>

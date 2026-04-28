@@ -44,18 +44,21 @@ export const CheckoutReviewPage = () => {
 
   if (cart?.items.length === 0) {
     return (
-      <Container className="py-10">
-        <EmptyState
-          action={
-            <Link className={buttonStyles({})} to={routes.cart}>
-              Return to bag
-            </Link>
-          }
-          className="border-border bg-surface px-6 py-16"
-          description="Order review requires a valid cart snapshot."
-          title="Nothing to review."
-        />
-      </Container>
+      <>
+        <PageSEO description="Review address, payment, voucher preview, and order total before placing the order." noIndex path={routes.checkoutReview} title="Checkout Review" />
+        <Container className="py-10">
+          <EmptyState
+            action={
+              <Link className={buttonStyles({})} to={routes.cart}>
+                Return to bag
+              </Link>
+            }
+            className="border-border bg-surface px-6 py-16"
+            description="Order review requires a valid cart snapshot."
+            title="Nothing to review."
+          />
+        </Container>
+      </>
     );
   }
 
@@ -142,6 +145,7 @@ export const CheckoutReviewPage = () => {
                           alt={item.primaryImage.alt}
                           className="aspect-[4/5] w-full bg-surface-soft object-cover"
                           height={item.primaryImage.height}
+                          loading="lazy"
                           src={item.primaryImage.src}
                           width={item.primaryImage.width}
                         />

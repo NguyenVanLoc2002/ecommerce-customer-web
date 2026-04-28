@@ -1,19 +1,8 @@
 import type { ProductImage } from '@/shared/types/catalog.types';
-import type { AddressType, OrderStatus, PaymentMethod } from '@/shared/types/enums';
+import type { Address } from '@/shared/types/address.types';
+import type { OrderStatus, PaymentMethod } from '@/shared/types/enums';
 
-export interface CustomerAddress {
-  id: string;
-  receiverName: string;
-  phoneNumber: string;
-  streetAddress: string;
-  ward: string;
-  district: string;
-  city: string;
-  postalCode: string;
-  addressType: AddressType;
-  label: string;
-  isDefault: boolean;
-}
+export type CustomerAddress = Address;
 
 export interface CartItem {
   id: string;

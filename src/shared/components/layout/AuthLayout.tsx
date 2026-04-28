@@ -9,6 +9,7 @@ export const AuthLayout = () => (
       <img
         alt=""
         className="h-full w-full object-cover"
+        loading="lazy"
         src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80"
       />
     </div>
@@ -16,6 +17,7 @@ export const AuthLayout = () => (
       <img
         alt=""
         className="h-full w-full object-cover"
+        loading="lazy"
         src="https://images.unsplash.com/photo-1506629905607-d9c297d14d6a?auto=format&fit=crop&w=600&q=80"
       />
     </div>

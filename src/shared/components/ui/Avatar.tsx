@@ -1,12 +1,13 @@
 type AvatarProps = {
   name: string;
   src?: string;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'xl';
 };
 
 const sizeClasses = {
   sm: 'h-10 w-10 text-sm',
   md: 'h-12 w-12 text-base',
+  xl: 'h-24 w-24 text-2xl',
 } as const;
 
 export const Avatar = ({ name, size = 'md', src }: AvatarProps) => {
@@ -17,7 +18,7 @@ export const Avatar = ({ name, size = 'md', src }: AvatarProps) => {
     .join('');
 
   if (src) {
-    return <img alt={name} className={`${sizeClasses[size]} rounded-full object-cover`} height={48} src={src} width={48} />;
+    return <img alt={name} className={`${sizeClasses[size]} rounded-full object-cover`} height={size === 'xl' ? 96 : 48} loading="lazy" src={src} width={size === 'xl' ? 96 : 48} />;
   }
 
   return (
@@ -29,4 +30,3 @@ export const Avatar = ({ name, size = 'md', src }: AvatarProps) => {
     </span>
   );
 };
-

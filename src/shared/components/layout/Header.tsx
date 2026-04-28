@@ -1,7 +1,8 @@
-import { Menu, ShoppingBag, User2 } from 'lucide-react';
+import { Bell, Menu, ShoppingBag, User2 } from 'lucide-react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 
 import { routes } from '@/constants/routes';
+import { useUnreadNotificationCount } from '@/shared/hooks/useNotifications';
 import { Drawer } from '@/shared/components/overlays/Drawer';
 import { useAuthStore } from '@/shared/stores/authStore';
 import { useUiStore } from '@/shared/stores/uiStore';
@@ -32,6 +33,8 @@ export const Header = () => {
   const isMobileNavOpen = useUiStore((state) => state.isMobileNavOpen);
   const openMobileNav = useUiStore((state) => state.openMobileNav);
   const user = useAuthStore((state) => state.user);
+  const unreadNotificationCountQuery = useUnreadNotificationCount();
+  const unreadNotificationCount = unreadNotificationCountQuery.data ?? 0;
   const productSurface = pathname.startsWith(routes.products);
   const navLinks = pathname === routes.home ? homeLinks : collectionLinks;
   const logo = pathname === routes.home ? 'AURA EDITORIAL' : 'AURA';
@@ -66,6 +69,20 @@ export const Header = () => {
           ))}
         </nav>
         <div className="flex items-center gap-5 md:gap-6">
+          {user ? (
+            <Link
+              aria-label="Open notifications"
+              className="relative text-text-primary transition-colors hover:text-brand-primary"
+              to={routes.notifications}
+            >
+              <Bell className="h-5 w-5" strokeWidth={1.7} />
+              {unreadNotificationCount > 0 ? (
+                <span className="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-text-primary px-1 text-[10px] font-bold text-white">
+                  {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+                </span>
+              ) : null}
+            </Link>
+          ) : null}
           <Link
             aria-label="Open cart"
             className="text-text-primary transition-colors hover:text-brand-primary"
@@ -96,6 +113,17 @@ export const Header = () => {
                 </NavLink>
               </li>
             ))}
+            {user ? (
+              <li>
+                <NavLink
+                  className="block border-b border-border pb-3 font-display text-base uppercase tracking-[0.18em] text-text-primary transition-colors hover:text-brand-primary"
+                  onClick={closeMobileNav}
+                  to={routes.notifications}
+                >
+                  Notifications
+                </NavLink>
+              </li>
+            ) : null}
             <li>
               <NavLink
                 className="block border-b border-border pb-3 font-display text-base uppercase tracking-[0.18em] text-text-primary transition-colors hover:text-brand-primary"

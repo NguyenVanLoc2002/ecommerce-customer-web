@@ -7,6 +7,7 @@ import { OrderStatusBadge } from '@/shared/components/commerce/OrderStatusBadge'
 import { OrderSummaryPanel } from '@/shared/components/commerce/OrderSummaryPanel';
 import { EmptyState } from '@/shared/components/feedback/EmptyState';
 import { Container } from '@/shared/components/layout/Container';
+import { JsonLd } from '@/shared/components/seo/JsonLd';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
@@ -22,24 +23,51 @@ export const CheckoutConfirmationPage = () => {
 
   if (!confirmationOrder) {
     return (
-      <Container className="py-10">
-        <EmptyState
-          action={
-            <Link className={buttonStyles({})} to={routes.orders}>
-              View orders
-            </Link>
-          }
-          className="border-border bg-surface px-6 py-16"
-          description="Place an order from the checkout review step to see confirmation here."
-          title="No confirmed order yet."
-        />
-      </Container>
+      <>
+        <PageSEO description="Order placed successfully. Review the confirmation details and continue to order history." noIndex path={routes.checkoutConfirmation} title="Order Confirmation" />
+        <Container className="py-10">
+          <EmptyState
+            action={
+              <Link className={buttonStyles({})} to={routes.orders}>
+                View orders
+              </Link>
+            }
+            className="border-border bg-surface px-6 py-16"
+            description="Place an order from the checkout review step to see confirmation here."
+            title="No confirmed order yet."
+          />
+        </Container>
+      </>
     );
   }
 
   return (
     <>
       <PageSEO description="Order placed successfully. Review the confirmation details and continue to order history." noIndex path={routes.checkoutConfirmation} title="Order Confirmation" />
+      <JsonLd
+        data={{
+          '@context': 'https://schema.org',
+          '@type': 'Order',
+          orderNumber: confirmationOrder.code,
+          orderStatus: confirmationOrder.status,
+          priceCurrency: 'USD',
+          price: confirmationOrder.grandTotal,
+          acceptedOffer: confirmationOrder.items.map((item) => ({
+            '@type': 'Offer',
+            itemOffered: {
+              '@type': 'Product',
+              name: item.productName,
+              image: item.primaryImage.src,
+            },
+            price: item.unitPrice,
+            priceCurrency: 'USD',
+            eligibleQuantity: {
+              '@type': 'QuantitativeValue',
+              value: item.quantity,
+            },
+          })),
+        }}
+      />
       <Container className="space-y-8 py-8 md:space-y-10 md:py-10">
         <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_380px]">
           <section className="space-y-6">
@@ -105,6 +133,7 @@ export const CheckoutConfirmationPage = () => {
                     className="aspect-[4/5] w-full bg-surface-soft object-cover"
                     height={item.primaryImage.height}
                     key={item.id}
+                    loading="lazy"
                     src={item.primaryImage.src}
                     width={item.primaryImage.width}
                   />

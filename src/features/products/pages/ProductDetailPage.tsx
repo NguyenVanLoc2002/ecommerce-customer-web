@@ -69,47 +69,56 @@ export const ProductDetailPage = () => {
 
   if (productQuery.isLoading) {
     return (
-      <PageWrapper>
-        <Container>
-          <SkeletonDetail />
-        </Container>
-      </PageWrapper>
+      <>
+        <PageSEO description="Browse the full product detail with media, pricing, and editorial notes." path={routePaths.productDetail(slug || 'product')} title="Product Detail" />
+        <PageWrapper>
+          <Container>
+            <SkeletonDetail />
+          </Container>
+        </PageWrapper>
+      </>
     );
   }
 
   if (productQuery.isError) {
     return (
-      <PageWrapper>
-        <Container>
-          <ErrorCard
-            action={<Button onClick={() => void productQuery.refetch()}>Retry</Button>}
-            description="The product detail did not load from the current catalog source."
-            title="This product is temporarily unavailable"
-          />
-        </Container>
-      </PageWrapper>
+      <>
+        <PageSEO description="Browse the full product detail with media, pricing, and editorial notes." noIndex path={routePaths.productDetail(slug || 'product')} title="Product Detail" />
+        <PageWrapper>
+          <Container>
+            <ErrorCard
+              action={<Button onClick={() => void productQuery.refetch()}>Retry</Button>}
+              description="The product detail did not load from the current catalog source."
+              title="This product is temporarily unavailable"
+            />
+          </Container>
+        </PageWrapper>
+      </>
     );
   }
 
   if (!product || !currentVariant) {
     return (
-      <PageWrapper>
-        <Container>
-          <EmptyState
-            action={
-              <button
-                className="border-b border-text-primary pb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary"
-                onClick={() => window.history.back()}
-                type="button"
-              >
-                Go Back
-              </button>
-            }
-            description="This item is missing from the current catalog seed."
-            title="Product not found"
-          />
-        </Container>
-      </PageWrapper>
+      <>
+        <PageSEO description="Browse the full product detail with media, pricing, and editorial notes." noIndex path={routePaths.productDetail(slug || 'product')} title="Product not found" />
+        <PageWrapper>
+          <Container>
+            <EmptyState
+              action={
+                <button
+                  className="border-b border-text-primary pb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary"
+                  onClick={() => window.history.back()}
+                  type="button"
+                >
+                  Go Back
+                </button>
+              }
+              description="This item is missing from the current catalog seed."
+              title="Product not found"
+            />
+          </Container>
+        </PageWrapper>
+      </>
     );
   }
 
@@ -206,6 +215,7 @@ export const ProductDetailPage = () => {
                     alt={product.media[1]?.alt ?? product.primaryImage.alt}
                     className="aspect-square h-full w-full object-cover"
                     height={product.media[1]?.height ?? product.primaryImage.height}
+                    loading="lazy"
                     src={product.media[1]?.src ?? product.primaryImage.src}
                     width={product.media[1]?.width ?? product.primaryImage.width}
                   />
@@ -216,6 +226,7 @@ export const ProductDetailPage = () => {
                       alt={product.media[2].alt}
                       className="h-full w-full object-cover"
                       height={product.media[2].height}
+                      loading="lazy"
                       src={product.media[2].src}
                       width={product.media[2].width}
                     />
@@ -226,7 +237,7 @@ export const ProductDetailPage = () => {
           </section>
 
           {relatedQuery.data && relatedQuery.data.length > 0 ? <RelatedProducts products={relatedQuery.data} /> : null}
-          <ReviewSection reviews={product.reviews} />
+          <ReviewSection productId={product.id} />
         </Container>
         <StickyCartBar compareAtPrice={currentVariant.compareAtPrice} onAddToCart={addToCart} price={currentVariant.price} />
       </PageWrapper>

@@ -22,6 +22,7 @@ export const CartItemCard = ({ item, onQuantityChange, onRemove, updating = fals
           alt={item.primaryImage.alt}
           className="aspect-[4/5] h-full w-full object-cover"
           height={item.primaryImage.height}
+          loading="lazy"
           src={item.primaryImage.src}
           width={item.primaryImage.width}
         />

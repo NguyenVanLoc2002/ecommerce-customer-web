@@ -2,6 +2,7 @@ import { config } from '@/constants/config';
 import { createServiceError } from '@/shared/lib/serviceError';
 import { mockCatalog } from '@/shared/lib/mockCatalog';
 import { useAuthStore } from '@/shared/stores/authStore';
+import type { Address, CreateAddressRequest, UpdateAddressRequest } from '@/shared/types/address.types';
 import type { CartItem, CommerceCart, CommerceOrder, CustomerAddress, PlaceOrderInput, VoucherPreview } from '@/shared/types/commerce.types';
 import type { Payment, PaymentTransaction } from '@/shared/types/payment.types';
 import { PAYMENT_STATUSES } from '@/shared/types/payment.types';
@@ -71,6 +72,30 @@ const getCurrentUserId = () => {
   return userId;
 };
 
+const buildFullAddress = (address: Pick<Address, 'streetAddress' | 'ward' | 'district' | 'city' | 'postalCode'>) =>
+  [address.streetAddress, `${address.ward}, ${address.district}`, `${address.city} ${address.postalCode}`]
+    .filter(Boolean)
+    .join(', ');
+
+const normalizeAddress = (address: CustomerAddress): CustomerAddress => ({
+  ...address,
+  fullAddress: address.fullAddress ?? buildFullAddress(address),
+});
+
+const sortAddresses = (addresses: CustomerAddress[]) =>
+  [...addresses]
+    .map(normalizeAddress)
+    .sort((left, right) => {
+      if (left.isDefault !== right.isDefault) {
+        return Number(right.isDefault) - Number(left.isDefault);
+      }
+
+      const leftTime = left.createdAt ? new Date(left.createdAt).getTime() : 0;
+      const rightTime = right.createdAt ? new Date(right.createdAt).getTime() : 0;
+
+      return rightTime - leftTime;
+    });
+
 const seedAddresses = (userId: string): CustomerAddress[] => {
   if (userId !== 'customer-001') {
     return [
@@ -86,6 +111,8 @@ const seedAddresses = (userId: string): CustomerAddress[] => {
         addressType: ADDRESS_TYPES.HOME,
         label: 'Primary',
         isDefault: true,
+        fullAddress: '128 Mercer Street, Ward 1, District 1, Ho Chi Minh City 700000',
+        createdAt: '2026-04-25T08:10:00Z',
       },
     ];
   }
@@ -103,6 +130,8 @@ const seedAddresses = (userId: string): CustomerAddress[] => {
       addressType: ADDRESS_TYPES.HOME,
       label: 'Residence',
       isDefault: true,
+      fullAddress: '28 Mercer Street, Ward 1, District 1, Ho Chi Minh City 700000',
+      createdAt: '2026-03-14T10:00:00Z',
     },
     {
       id: 'addr-studio',
@@ -116,6 +145,8 @@ const seedAddresses = (userId: string): CustomerAddress[] => {
       addressType: ADDRESS_TYPES.OFFICE,
       label: 'Studio',
       isDefault: false,
+      fullAddress: '91 Nguyen Hue Boulevard, Ward 2, District 1, Ho Chi Minh City 700000',
+      createdAt: '2026-04-02T13:30:00Z',
     },
   ];
 };
@@ -674,7 +705,103 @@ export const mockCommerce = {
   async getAddresses() {
     const storage = readStorage();
     const userId = getCurrentUserId();
-    return ensureUserState(userId, storage).addresses;
+    return sortAddresses(ensureUserState(userId, storage).addresses);
+  },
+  async getAddressById(addressId: string) {
+    const storage = readStorage();
+    const userId = getCurrentUserId();
+    const address = ensureUserState(userId, storage).addresses.find((item) => item.id === addressId);
+
+    if (!address) {
+      throw createServiceError('ADDRESS_NOT_FOUND', 'This address could not be found.');
+    }
+
+    return normalizeAddress(address);
+  },
+  async createAddress(payload: CreateAddressRequest) {
+    const storage = readStorage();
+    const userId = getCurrentUserId();
+    const userState = ensureUserState(userId, storage);
+    const shouldBecomeDefault = payload.isDefault ?? userState.addresses.length === 0;
+    const nextAddress: CustomerAddress = normalizeAddress({
+      id: `addr-${crypto.randomUUID()}`,
+      receiverName: payload.receiverName,
+      phoneNumber: payload.phoneNumber,
+      streetAddress: payload.streetAddress,
+      ward: payload.ward,
+      district: payload.district,
+      city: payload.city,
+      postalCode: payload.postalCode,
+      addressType: payload.addressType,
+      isDefault: shouldBecomeDefault,
+      label: payload.label,
+      createdAt: new Date().toISOString(),
+    });
+
+    userState.addresses = userState.addresses.map((address) => ({
+      ...address,
+      isDefault: shouldBecomeDefault ? false : address.isDefault,
+    }));
+    userState.addresses.unshift(nextAddress);
+    writeStorage(storage);
+
+    return nextAddress;
+  },
+  async updateAddress(addressId: string, payload: UpdateAddressRequest) {
+    const storage = readStorage();
+    const userId = getCurrentUserId();
+    const userState = ensureUserState(userId, storage);
+    const addressIndex = userState.addresses.findIndex((item) => item.id === addressId);
+
+    if (addressIndex === -1) {
+      throw createServiceError('ADDRESS_NOT_FOUND', 'This address could not be found.');
+    }
+
+    const currentAddress = userState.addresses[addressIndex];
+    const nextAddress = normalizeAddress({
+      ...currentAddress,
+      ...payload,
+      isDefault: payload.isDefault ?? currentAddress.isDefault,
+    });
+
+    userState.addresses = userState.addresses.map((address) => ({
+      ...address,
+      isDefault: nextAddress.isDefault ? address.id === nextAddress.id : address.isDefault,
+    }));
+    userState.addresses[addressIndex] = nextAddress;
+
+    const hasDefaultAddress = userState.addresses.some((address) => address.isDefault);
+    if (!hasDefaultAddress) {
+      userState.addresses[0] = {
+        ...userState.addresses[0],
+        isDefault: true,
+      };
+    }
+
+    writeStorage(storage);
+
+    return nextAddress;
+  },
+  async deleteAddress(addressId: string) {
+    const storage = readStorage();
+    const userId = getCurrentUserId();
+    const userState = ensureUserState(userId, storage);
+    const target = userState.addresses.find((address) => address.id === addressId);
+
+    if (!target) {
+      throw createServiceError('ADDRESS_NOT_FOUND', 'This address could not be found.');
+    }
+
+    userState.addresses = userState.addresses.filter((address) => address.id !== addressId);
+
+    if (target.isDefault && userState.addresses[0]) {
+      userState.addresses[0] = {
+        ...userState.addresses[0],
+        isDefault: true,
+      };
+    }
+
+    writeStorage(storage);
   },
   async validateVoucher(code: string) {
     const storage = readStorage();

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
-import { routes } from '@/constants/routes';
+import { routePaths, routes } from '@/constants/routes';
 import { useBrands, useCategories, useProductList } from '@/features/products/hooks/useProductDiscovery';
 import { ActiveFilterChips } from '@/shared/components/catalog/ActiveFilterChips';
 import { FilterPanel } from '@/shared/components/catalog/FilterPanel';
@@ -14,12 +14,14 @@ import { SkeletonCard } from '@/shared/components/feedback/SkeletonCard';
 import { FilterDrawer } from '@/shared/components/overlays/FilterDrawer';
 import { Container } from '@/shared/components/layout/Container';
 import { PageWrapper } from '@/shared/components/layout/PageWrapper';
+import { JsonLd } from '@/shared/components/seo/JsonLd';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
 import type { ProductFilters } from '@/shared/types/catalog.types';
 import { SORT_OPTIONS } from '@/shared/types/enums';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { Button } from '@/shared/components/ui/Button';
+import { createCanonicalUrl } from '@/shared/utils/seo';
 
 const normalizeFilters = (searchParams: URLSearchParams): ProductFilters => ({
   keyword: searchParams.get('q') ?? '',
@@ -107,6 +109,21 @@ export const ProductListPage = () => {
         path={routes.products}
         title="Products"
       />
+      {productsQuery.data?.items.length ? (
+        <JsonLd
+          data={{
+            '@context': 'https://schema.org',
+            '@type': 'ItemList',
+            itemListElement: productsQuery.data.items.map((product, index) => ({
+              '@type': 'ListItem',
+              position: index + 1,
+              url: createCanonicalUrl(routePaths.productDetail(product.slug)),
+              name: product.name,
+              image: product.primaryImage.src,
+            })),
+          }}
+        />
+      ) : null}
       <PageWrapper className="pb-24">
         <Container className="space-y-16">
           <header className="space-y-5">
@@ -148,7 +165,7 @@ export const ProductListPage = () => {
               </div>
 
               {productsQuery.isLoading ? (
-                <div className="grid grid-cols-2 gap-x-6 gap-y-12 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8 xl:gap-y-16">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-12 md:grid-cols-3 lg:grid-cols-4 xl:gap-x-8 xl:gap-y-16">
                   {Array.from({ length: 8 }).map((_, index) => (
                     <SkeletonCard key={index} />
                   ))}

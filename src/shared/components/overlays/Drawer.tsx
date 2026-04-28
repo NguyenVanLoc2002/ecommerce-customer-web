@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 
 type DrawerProps = {
@@ -14,6 +14,7 @@ type DrawerProps = {
 
 export const Drawer = ({ children, onClose, open, side = 'right', title }: DrawerProps) => {
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     if (!open) {
@@ -27,6 +28,33 @@ export const Drawer = ({ children, onClose, open, side = 'right', title }: Drawe
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab' || !panelRef.current) {
+        return;
+      }
+
+      const focusableElements = panelRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        panelRef.current.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
       }
     };
 
@@ -50,20 +78,22 @@ export const Drawer = ({ children, onClose, open, side = 'right', title }: Drawe
         <motion.div
           animate={{ opacity: 1 }}
           className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm"
-          exit={{ opacity: 0 }}
-          initial={{ opacity: 0 }}
+          exit={reducedMotion ? { opacity: 1 } : { opacity: 0 }}
+          initial={reducedMotion ? { opacity: 1 } : { opacity: 0 }}
           onClick={onClose}
+          transition={reducedMotion ? { duration: 0 } : { duration: 0.18 }}
         >
           <motion.div
             animate={{ x: 0 }}
             className={`absolute ${side === 'right' ? 'right-0' : 'left-0'} top-0 h-full w-full max-w-md overflow-y-auto bg-canvas px-6 py-8 shadow-modal`}
-            exit={{ x: startX }}
-            initial={{ x: startX }}
+            exit={reducedMotion ? { x: 0 } : { x: startX }}
+            initial={reducedMotion ? { x: 0 } : { x: startX }}
             onClick={(event) => event.stopPropagation()}
             ref={panelRef}
+            aria-modal="true"
             role="dialog"
             tabIndex={-1}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            transition={reducedMotion ? { duration: 0 } : { duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="flex items-center justify-between border-b border-border pb-5">
               <h2 className="font-display text-[1.75rem] leading-none">{title}</h2>

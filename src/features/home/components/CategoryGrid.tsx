@@ -45,6 +45,7 @@ export const CategoryGrid = ({ categories }: CategoryGridProps) => {
                     alt={category.imageAlt}
                     className="aspect-[4/5] h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-[1.05]"
                     height={1125}
+                    loading="lazy"
                     src={category.imageUrl}
                     width={900}
                   />

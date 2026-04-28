@@ -36,6 +36,7 @@ export const PromoBanner = ({ products }: PromoBannerProps) => {
                   alt={primary.primaryImage.alt}
                   className="h-full w-full object-cover"
                   height={primary.primaryImage.height}
+                  loading="lazy"
                   src={primary.primaryImage.src}
                   width={primary.primaryImage.width}
                 />
@@ -47,6 +48,7 @@ export const PromoBanner = ({ products }: PromoBannerProps) => {
                   alt={secondary.primaryImage.alt}
                   className="h-full w-full object-cover"
                   height={secondary.primaryImage.height}
+                  loading="lazy"
                   src={secondary.primaryImage.src}
                   width={secondary.primaryImage.width}
                 />

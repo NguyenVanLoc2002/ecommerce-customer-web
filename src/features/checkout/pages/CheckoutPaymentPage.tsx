@@ -48,18 +48,21 @@ export const CheckoutPaymentPage = () => {
 
   if (cart?.items.length === 0) {
     return (
-      <Container className="py-10">
-        <EmptyState
-          action={
-            <Link className={buttonStyles({})} to={routes.cart}>
-              Return to bag
-            </Link>
-          }
-          className="border-border bg-surface px-6 py-16"
-          description="Checkout payment depends on a valid cart and selected shipping address."
-          title="Checkout cannot continue."
-        />
-      </Container>
+      <>
+        <PageSEO description="Select the payment method and add delivery notes for this order." noIndex path={routes.checkoutPayment} title="Checkout Payment" />
+        <Container className="py-10">
+          <EmptyState
+            action={
+              <Link className={buttonStyles({})} to={routes.cart}>
+                Return to bag
+              </Link>
+            }
+            className="border-border bg-surface px-6 py-16"
+            description="Checkout payment depends on a valid cart and selected shipping address."
+            title="Checkout cannot continue."
+          />
+        </Container>
+      </>
     );
   }
 
