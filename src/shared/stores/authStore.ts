@@ -12,6 +12,7 @@ type AuthState = {
   clearSession: () => void;
   startBootstrap: () => void;
   finishBootstrap: () => void;
+  updateUser: (user: Partial<AuthUser>) => void;
 };
 
 const getStorage = () => (typeof window === 'undefined' ? null : window.localStorage);
@@ -44,5 +45,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   startBootstrap: () => set({ bootstrapStatus: 'loading' }),
   finishBootstrap: () => set({ bootstrapStatus: 'ready' }),
+  updateUser: (user) =>
+    set((state) => ({
+      user: state.user
+        ? {
+            ...state.user,
+            ...user,
+          }
+        : null,
+    })),
 }));
-

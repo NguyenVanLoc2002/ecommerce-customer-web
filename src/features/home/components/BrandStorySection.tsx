@@ -14,6 +14,7 @@ export const BrandStorySection = () => {
             alt="Craft-focused fashion editorial still life"
             className="h-full w-full object-cover"
             height={1125}
+            loading="lazy"
             src="https://images.unsplash.com/photo-1506629905607-d9c297d14d6a?auto=format&fit=crop&w=1200&q=80"
             width={900}
           />
@@ -29,4 +30,3 @@ export const BrandStorySection = () => {
     </section>
   );
 };
-

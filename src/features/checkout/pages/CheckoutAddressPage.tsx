@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { routes } from '@/constants/routes';
+import { routePaths, routes } from '@/constants/routes';
 import { useCart } from '@/features/cart/hooks/useCart';
 import { useCheckoutAddresses } from '@/features/checkout/hooks/useCheckout';
 import { useCheckoutStore } from '@/features/checkout/stores/checkoutStore';
@@ -18,17 +18,24 @@ import { formatAddress } from '@/shared/utils/formatAddress';
 
 export const CheckoutAddressPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const cartQuery = useCart();
   const addressesQuery = useCheckoutAddresses();
   const selectedAddressId = useCheckoutStore((state) => state.shippingAddressId);
   const setShippingAddressId = useCheckoutStore((state) => state.setShippingAddressId);
+  const selectedAddressQuery = searchParams.get('selectedAddressId');
 
   useEffect(() => {
+    if (selectedAddressQuery && addressesQuery.data?.some((address) => address.id === selectedAddressQuery)) {
+      setShippingAddressId(selectedAddressQuery);
+      return;
+    }
+
     if (!selectedAddressId && addressesQuery.data?.length) {
       const defaultAddress = addressesQuery.data.find((address) => address.isDefault) ?? addressesQuery.data[0];
       setShippingAddressId(defaultAddress.id);
     }
-  }, [addressesQuery.data, selectedAddressId, setShippingAddressId]);
+  }, [addressesQuery.data, selectedAddressId, selectedAddressQuery, setShippingAddressId]);
 
   const cart = cartQuery.data;
 
@@ -115,7 +122,7 @@ export const CheckoutAddressPage = () => {
               })}
               <Link
                 className="flex min-h-[132px] items-center justify-center border border-dashed border-border px-5 py-8 text-center text-[11px] font-bold uppercase tracking-[0.22em] text-text-primary transition-colors hover:border-text-primary"
-                to={routes.profileAddressNew}
+                to={routePaths.profileAddressNew('checkout')}
               >
                 Add new address
               </Link>

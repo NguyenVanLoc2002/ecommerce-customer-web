@@ -3,9 +3,13 @@ import { apiClient } from '@/shared/lib/axios';
 import { createServiceError } from '@/shared/lib/serviceError';
 import type { AuthResponse, AuthUser, LoginInput, RegisterInput } from '@/shared/types/auth.types';
 import { USER_ROLES } from '@/shared/types/enums';
+import type { Gender } from '@/shared/types/profile.types';
 
 type StoredUser = AuthUser & {
   password: string;
+  gender?: Gender;
+  birthDate?: string;
+  createdAt?: string;
 };
 
 type StoredSession = {
@@ -29,6 +33,9 @@ const readUsers = (): StoredUser[] => {
       password: 'Customer123!',
       loyaltyPoints: 480,
       role: USER_ROLES.CUSTOMER,
+      gender: 'FEMALE',
+      birthDate: '1994-03-16',
+      createdAt: '2026-01-09T09:30:00Z',
       avatarUrl:
         'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=240&q=80',
     };
@@ -127,6 +134,7 @@ const registerMock = async (payload: RegisterInput): Promise<AuthResponse> => {
     password: payload.password,
     loyaltyPoints: 120,
     role: USER_ROLES.CUSTOMER,
+    createdAt: new Date().toISOString(),
   };
 
   writeUsers([...users, nextUser]);

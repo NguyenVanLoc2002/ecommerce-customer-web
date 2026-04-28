@@ -2,6 +2,10 @@ export const queryKeys = {
   auth: {
     me: ['auth', 'me'] as const,
   },
+  addresses: {
+    list: ['addresses', 'list'] as const,
+    detail: (addressId: string) => ['addresses', 'detail', addressId] as const,
+  },
   home: {
     featured: ['home', 'featured'] as const,
     arrivals: ['home', 'arrivals'] as const,
@@ -25,10 +29,18 @@ export const queryKeys = {
     list: ['orders', 'list'] as const,
     detail: (orderId: string) => ['orders', 'detail', orderId] as const,
   },
+  reviews: {
+    mine: ['reviews', 'mine'] as const,
+    product: (productId: string) => ['reviews', 'product', productId] as const,
+  },
   payments: {
     byOrder: (orderId: string) => ['payments', 'order', orderId] as const,
   },
   shipments: {
     byOrder: (orderId: string) => ['shipments', 'order', orderId] as const,
+  },
+  notifications: {
+    list: ['notifications', 'list'] as const,
+    unreadCount: ['notifications', 'unread-count'] as const,
   },
 } as const;

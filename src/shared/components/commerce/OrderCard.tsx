@@ -36,6 +36,7 @@ export const OrderCard = ({ order }: OrderCardProps) => (
               className="aspect-[4/5] w-full bg-surface-soft object-cover"
               height={item.primaryImage.height}
               key={item.id}
+              loading="lazy"
               src={item.primaryImage.src}
               width={item.primaryImage.width}
             />

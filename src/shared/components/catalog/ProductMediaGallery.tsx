@@ -30,6 +30,7 @@ export const ProductMediaGallery = ({ media, productName }: ProductMediaGalleryP
               alt={image.alt}
               className="aspect-[4/5] h-full w-full object-cover transition-transform duration-700 hover:scale-[1.04]"
               height={image.height}
+              loading="lazy"
               src={image.src}
               width={image.width}
             />
@@ -42,6 +43,7 @@ export const ProductMediaGallery = ({ media, productName }: ProductMediaGalleryP
             alt={selectedImage.alt}
             className="aspect-[4/5] h-full w-full object-cover transition-transform duration-700 hover:scale-[1.03]"
             height={selectedImage.height}
+            loading="eager"
             src={selectedImage.src}
             width={selectedImage.width}
           />

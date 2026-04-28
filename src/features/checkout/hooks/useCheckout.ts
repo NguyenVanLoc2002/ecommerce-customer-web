@@ -1,13 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { queryKeys } from '@/constants/queryKeys';
 import { checkoutService } from '@/features/checkout/services/checkoutService';
+import { useAddresses } from '@/shared/hooks/useAddresses';
 
-export const useCheckoutAddresses = () =>
-  useQuery({
-    queryKey: ['checkout', 'addresses'],
-    queryFn: checkoutService.getAddresses,
-  });
+export const useCheckoutAddresses = useAddresses;
 
 export const useValidateVoucher = () =>
   useMutation({
@@ -25,4 +22,3 @@ export const usePlaceOrder = () => {
     },
   });
 };
-

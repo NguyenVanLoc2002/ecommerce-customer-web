@@ -36,18 +36,21 @@ export const CheckoutVoucherPage = () => {
 
   if (cart?.items.length === 0) {
     return (
-      <Container className="py-10">
-        <EmptyState
-          action={
-            <Link className={buttonStyles({})} to={routes.cart}>
-              Return to bag
-            </Link>
-          }
-          className="border-border bg-surface px-6 py-16"
-          description="Voucher preview requires a live cart snapshot."
-          title="Checkout cannot continue."
-        />
-      </Container>
+      <>
+        <PageSEO description="Preview voucher eligibility before reviewing the order." noIndex path={routes.checkoutVoucher} title="Checkout Voucher" />
+        <Container className="py-10">
+          <EmptyState
+            action={
+              <Link className={buttonStyles({})} to={routes.cart}>
+                Return to bag
+              </Link>
+            }
+            className="border-border bg-surface px-6 py-16"
+            description="Voucher preview requires a live cart snapshot."
+            title="Checkout cannot continue."
+          />
+        </Container>
+      </>
     );
   }
 

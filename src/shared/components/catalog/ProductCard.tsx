@@ -24,6 +24,7 @@ export const ProductCard = ({ product, showBadge = true }: ProductCardProps) => 
             alt={product.primaryImage.alt}
             className="aspect-[3/4] h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
             height={product.primaryImage.height}
+            loading="lazy"
             src={product.primaryImage.src}
             width={product.primaryImage.width}
           />

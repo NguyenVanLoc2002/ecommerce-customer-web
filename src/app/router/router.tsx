@@ -21,8 +21,14 @@ const CheckoutReviewPage = lazy(() => import('@/features/checkout/pages/Checkout
 const CheckoutConfirmationPage = lazy(() => import('@/features/checkout/pages/CheckoutConfirmationPage'));
 const OrdersPage = lazy(() => import('@/features/orders/pages/OrdersPage'));
 const OrderDetailPage = lazy(() => import('@/features/orders/pages/OrderDetailPage'));
+const OrderReviewPage = lazy(() => import('@/features/orders/pages/OrderReviewPage'));
 const PaymentResultPage = lazy(() => import('@/features/payment/pages/PaymentResultPage'));
 const ShipmentTrackingPage = lazy(() => import('@/features/shipment/pages/ShipmentTrackingPage'));
+const MyReviewsPage = lazy(() => import('@/features/reviews/pages/MyReviewsPage'));
+const NotificationsPage = lazy(() => import('@/features/notifications/pages/NotificationsPage'));
+const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
+const AddressBookPage = lazy(() => import('@/features/profile/pages/AddressBookPage'));
+const AddressFormPage = lazy(() => import('@/features/profile/pages/AddressFormPage'));
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage'));
 const NotFoundPage = lazy(() => import('@/app/router/NotFoundPage'));
@@ -97,11 +103,7 @@ export const router = createBrowserRouter([
           },
           {
             path: routes.orderReview,
-            element: protectedPlaceholder({
-              title: 'Write Review',
-              path: routes.orderReview,
-              description: 'Structured review submission arrives in Phase 10.',
-            }),
+            element: renderLazyPage(OrderReviewPage),
           },
           {
             path: routes.paymentResult,
@@ -109,51 +111,27 @@ export const router = createBrowserRouter([
           },
           {
             path: routes.profile,
-            element: protectedPlaceholder({
-              title: 'Profile',
-              path: routes.profile,
-              description: 'Profile editing and account details arrive in Phase 12.',
-            }),
+            element: renderLazyPage(ProfilePage),
           },
           {
             path: routes.profileAddresses,
-            element: protectedPlaceholder({
-              title: 'Address Book',
-              path: routes.profileAddresses,
-              description: 'Address management is planned for Phase 12.',
-            }),
+            element: renderLazyPage(AddressBookPage),
           },
           {
             path: routes.profileAddressNew,
-            element: protectedPlaceholder({
-              title: 'Add Address',
-              path: routes.profileAddressNew,
-              description: 'Address form reuse is planned for Phase 12.',
-            }),
+            element: renderLazyPage(AddressFormPage),
           },
           {
             path: routes.profileAddressEdit,
-            element: protectedPlaceholder({
-              title: 'Edit Address',
-              path: routes.profileAddressEdit,
-              description: 'Address editing is planned for Phase 12.',
-            }),
+            element: renderLazyPage(AddressFormPage),
           },
           {
             path: routes.profileReviews,
-            element: protectedPlaceholder({
-              title: 'My Reviews',
-              path: routes.profileReviews,
-              description: 'Review history is planned for Phase 10.',
-            }),
+            element: renderLazyPage(MyReviewsPage),
           },
           {
             path: routes.notifications,
-            element: protectedPlaceholder({
-              title: 'Notifications',
-              path: routes.notifications,
-              description: 'Notification center work is scheduled for Phase 11.',
-            }),
+            element: renderLazyPage(NotificationsPage),
           },
         ],
       },

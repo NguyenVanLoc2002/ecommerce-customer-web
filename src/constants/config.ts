@@ -13,5 +13,6 @@ export const config = {
   authUsersKey: 'fashion-shop.mock-users',
   authSessionKey: 'fashion-shop.mock-session',
   mockCommerceKey: 'fashion-shop.mock-commerce',
+  mockEngagementKey: 'fashion-shop.mock-engagement',
   checkoutDraftKey: 'fashion-shop.checkout-draft',
 } as const;

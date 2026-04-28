@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import type { InputHTMLAttributes } from 'react';
 
 import { cn } from '@/shared/utils/cn';
@@ -9,7 +10,10 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   variant?: 'default' | 'auth' | 'transaction';
 };
 
-export const Input = ({ className, error, hint, id, label, variant = 'default', ...props }: InputProps) => {
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
+  { className, error, hint, id, label, variant = 'default', ...props },
+  ref,
+) {
   const authVariant = variant === 'auth';
   const transactionVariant = variant === 'transaction';
 
@@ -38,10 +42,11 @@ export const Input = ({ className, error, hint, id, label, variant = 'default', 
           className,
         )}
         id={id}
+        ref={ref}
         {...props}
       />
       {error ? <span className="text-sm text-danger">{error}</span> : null}
       {!error && hint ? <span className="text-sm text-text-secondary">{hint}</span> : null}
     </label>
   );
-};
+});
