@@ -1,0 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --color-brand-primary: 0 0 0;
+  --color-brand-hover: 28 27 28;
+  --color-brand-active: 55 54 58;
+  --color-brand-subtle: 241 237 237;
+  --color-canvas: 253 248 248;
+  --color-surface: 255 255 255;
+  --color-surface-muted: 247 243 242;
+  --color-surface-soft: 241 237 237;
+  --color-border: 200 197 203;
+  --color-outline: 120 118 123;
+  --color-text-primary: 28 27 28;
+  --color-text-secondary: 71 70 75;
+  --color-sale-accent: 225 29 72;
+  --color-promo-dark: 15 15 16;
+  --color-success: 22 163 74;
+  --color-warning: 217 119 6;
+  --color-danger: 220 38 38;
+  --color-info: 37 99 235;
+  --radius-chip: 2px;
+  --radius-input: 2px;
+  --radius-button: 2px;
+  --radius-card: 4px;
+  --radius-feature: 8px;
+  --shadow-subtle: 0 10px 30px -12px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 18px 40px -24px rgba(0, 0, 0, 0.16);
+  --shadow-card-hover: 0 24px 54px -28px rgba(0, 0, 0, 0.2);
+  --shadow-modal: 0 24px 64px -28px rgba(0, 0, 0, 0.2);
+  --shadow-sticky: 0 14px 30px -24px rgba(0, 0, 0, 0.4);
+  --space-page: clamp(16px, 5vw, 48px);
+  --space-section: 80px;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-canvas font-sans text-text-primary antialiased;
+    margin: 0;
+  }
+
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+
+  a {
+    @apply text-inherit no-underline;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--color-brand-primary));
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: rgb(var(--color-brand-primary));
+    color: rgb(var(--color-surface));
+  }
+}
+
+@layer utilities {
+  .surface-gradient {
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 1));
+  }
+
+  .glass-header {
+    background-color: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(12px);
+  }
+
+  .editorial-shadow {
+    box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.15);
+  }
+
+  .auth-shell-bg {
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 28%),
+      linear-gradient(180deg, rgb(var(--color-canvas)) 0%, rgb(var(--color-surface)) 100%);
+  }
+
+  .auth-hero-wordmark {
+    color: rgba(0, 0, 0, 0.03);
+    letter-spacing: 0.2em;
+  }
+
+  .product-quick-add {
+    background-color: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(10px);
+  }
+
+  .shimmer {
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 200% 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
