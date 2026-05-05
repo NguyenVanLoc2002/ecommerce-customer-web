@@ -31,7 +31,7 @@ const RatingBar = ({ count, rating, totalReviews }: { count: number; rating: num
 export const ReviewSection = ({ productId }: ReviewSectionProps) => {
   const reviewQuery = useProductReviews(productId);
   const [visibleCount, setVisibleCount] = useState(REVIEW_PAGE_SIZE);
-  const reviews = useMemo(() => reviewQuery.data ?? [], [reviewQuery.data]);
+  const reviews = useMemo(() => reviewQuery.data?.items ?? [], [reviewQuery.data]);
 
   useEffect(() => {
     setVisibleCount(REVIEW_PAGE_SIZE);

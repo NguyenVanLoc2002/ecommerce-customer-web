@@ -33,3 +33,7 @@ export type Shipment = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type ShipmentEventResponse = ShipmentEvent;
+
+export type ShipmentResponse = Shipment;

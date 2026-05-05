@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
+import { useAddCartItem } from '@/features/cart/hooks/useCart';
 import { useProductDetail, useRelatedProducts } from '@/features/products/hooks/useProductDiscovery';
 import { ProductMediaGallery } from '@/shared/components/catalog/ProductMediaGallery';
 import { PurchaseBlock } from '@/shared/components/catalog/PurchaseBlock';
@@ -21,7 +22,10 @@ import { createCanonicalUrl } from '@/shared/utils/seo';
 
 export const ProductDetailPage = () => {
   const { slug = '' } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const addToast = useUiStore((state) => state.addToast);
+  const addCartItem = useAddCartItem();
   const productQuery = useProductDetail(slug);
   const relatedQuery = useRelatedProducts(slug);
   const product = productQuery.data;
@@ -35,6 +39,12 @@ export const ProductDetailPage = () => {
     }
 
     const firstVariant = product.variants[0];
+    if (!firstVariant) {
+      setSelectedColor('');
+      setSelectedSize('');
+      return;
+    }
+
     setSelectedColor(firstVariant.color);
     setSelectedSize(firstVariant.size);
   }, [product]);
@@ -59,6 +69,12 @@ export const ProductDetailPage = () => {
   const currentVariant =
     product?.variants.find((variant) => variant.color === selectedColor && variant.size === selectedSize) ??
     product?.variants[0];
+  const addToCartDisabled = addCartItem.isPending || !currentVariant;
+  const addToCartLabel = currentVariant
+    ? addCartItem.isPending
+      ? 'Adding...'
+      : 'Add to Bag'
+    : 'Temporarily unavailable';
   const colorSwatches = useMemo(
     () =>
       Object.fromEntries(
@@ -97,7 +113,7 @@ export const ProductDetailPage = () => {
     );
   }
 
-  if (!product || !currentVariant) {
+  if (!product) {
     return (
       <>
         <PageSEO description="Browse the full product detail with media, pricing, and editorial notes." noIndex path={routePaths.productDetail(slug || 'product')} title="Product not found" />
@@ -113,7 +129,7 @@ export const ProductDetailPage = () => {
                   Go Back
                 </button>
               }
-              description="This item is missing from the current catalog seed."
+              description="This item is not available in the current catalog."
               title="Product not found"
             />
           </Container>
@@ -123,11 +139,41 @@ export const ProductDetailPage = () => {
   }
 
   const addToCart = () => {
-    addToast({
-      tone: 'success',
-      title: 'Add-to-cart simulated',
-      description: `${product.name} / ${selectedColor} / ${selectedSize} / Qty ${quantity}. Cart arrives in Phase 5.`,
-    });
+    if (!currentVariant) {
+      return;
+    }
+
+    addCartItem.mutate(
+      {
+        variantId: currentVariant.id,
+        quantity,
+      },
+      {
+        onSuccess: () => {
+          addToast({
+            tone: 'success',
+                title: 'Added to bag',
+            description: `${product.name} / ${selectedColor} / ${selectedSize} / Qty ${quantity} is now in your cart.`,
+          });
+        },
+        onError: (error) => {
+          const message = error instanceof Error ? error.message : 'Please try again.';
+          const errorCode =
+            error instanceof Error && 'code' in error ? String((error as { code?: string }).code) : '';
+
+          if (errorCode === 'UNAUTHORIZED') {
+            navigate(routePaths.loginRedirect(location.pathname + location.search));
+            return;
+          }
+
+          addToast({
+            tone: 'danger',
+            title: 'Unable to add to bag',
+            description: message,
+          });
+        },
+      },
+    );
   };
 
   return (
@@ -150,8 +196,8 @@ export const ProductDetailPage = () => {
             offers: {
               '@type': 'Offer',
               priceCurrency: 'USD',
-              price: currentVariant.price,
-              availability: currentVariant.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+              price: currentVariant?.price ?? product.price,
+              availability: currentVariant && currentVariant.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
             },
           },
           {
@@ -178,10 +224,12 @@ export const ProductDetailPage = () => {
             </div>
             <div className="lg:col-span-4">
               <PurchaseBlock
+                addToCartDisabled={addToCartDisabled}
+                addToCartLabel={addToCartLabel}
                 colorSwatches={colorSwatches}
                 colors={colors}
-                compareAtPrice={currentVariant.compareAtPrice}
-                currentPrice={currentVariant.price}
+                compareAtPrice={currentVariant?.compareAtPrice ?? product.compareAtPrice}
+                currentPrice={currentVariant?.price ?? product.price}
                 onAddToCart={addToCart}
                 onQuantityChange={setQuantity}
                 onSelectColor={setSelectedColor}
@@ -239,7 +287,13 @@ export const ProductDetailPage = () => {
           {relatedQuery.data && relatedQuery.data.length > 0 ? <RelatedProducts products={relatedQuery.data} /> : null}
           <ReviewSection productId={product.id} />
         </Container>
-        <StickyCartBar compareAtPrice={currentVariant.compareAtPrice} onAddToCart={addToCart} price={currentVariant.price} />
+        <StickyCartBar
+          compareAtPrice={currentVariant?.compareAtPrice ?? product.compareAtPrice}
+          disabled={addToCartDisabled}
+          label={addToCartLabel}
+          onAddToCart={addToCart}
+          price={currentVariant?.price ?? product.price}
+        />
       </PageWrapper>
     </>
   );

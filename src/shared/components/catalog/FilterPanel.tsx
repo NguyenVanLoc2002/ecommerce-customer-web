@@ -18,7 +18,7 @@ export const FilterPanel = ({ brands, categories, filters, onChange, onReset }: 
         Search
       </label>
       <input
-        className="h-12 w-full border-0 border-b border-border bg-transparent px-0 text-sm uppercase tracking-[0.12em] text-text-primary placeholder:text-border focus:border-brand-primary focus:outline-none focus:ring-0"
+        className="h-12 w-full border-0 border-b border-border bg-transparent px-0 text-sm tracking-[0.12em] text-text-primary placeholder:text-border focus:border-brand-primary focus:outline-none focus:ring-0"
         id="product-search"
         onChange={(event) => onChange('keyword', event.target.value)}
         placeholder="Search the collection"

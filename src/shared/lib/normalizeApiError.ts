@@ -1,18 +1,10 @@
 import axios from 'axios';
 
 import { createServiceError } from '@/shared/lib/serviceError';
-
-type ApiErrorPayload = {
-  code?: string;
-  message?: string;
-  errors?: Array<{
-    field?: string;
-    message?: string;
-  }>;
-};
+import type { ApiErrorResponse } from '@/shared/types/api.types';
 
 export const normalizeApiError = (error: unknown) => {
-  if (!axios.isAxiosError<ApiErrorPayload>(error)) {
+  if (!axios.isAxiosError<ApiErrorResponse>(error)) {
     return error;
   }
 

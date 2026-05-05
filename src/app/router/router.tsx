@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import type { ComponentProps, ComponentType, LazyExoticComponent } from 'react';
+import type { ComponentType, LazyExoticComponent } from 'react';
 import { Suspense, lazy } from 'react';
 import { Navigate, Outlet, createBrowserRouter } from 'react-router-dom';
 
@@ -22,6 +22,7 @@ const CheckoutConfirmationPage = lazy(() => import('@/features/checkout/pages/Ch
 const OrdersPage = lazy(() => import('@/features/orders/pages/OrdersPage'));
 const OrderDetailPage = lazy(() => import('@/features/orders/pages/OrderDetailPage'));
 const OrderReviewPage = lazy(() => import('@/features/orders/pages/OrderReviewPage'));
+const InvoicePage = lazy(() => import('@/features/invoice/pages/InvoicePage'));
 const PaymentResultPage = lazy(() => import('@/features/payment/pages/PaymentResultPage'));
 const ShipmentTrackingPage = lazy(() => import('@/features/shipment/pages/ShipmentTrackingPage'));
 const MyReviewsPage = lazy(() => import('@/features/reviews/pages/MyReviewsPage'));
@@ -32,7 +33,6 @@ const AddressFormPage = lazy(() => import('@/features/profile/pages/AddressFormP
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage'));
 const NotFoundPage = lazy(() => import('@/app/router/NotFoundPage'));
-const PlaceholderRoutePage = lazy(() => import('@/app/router/PlaceholderRoutePage'));
 
 const renderLazyPage = (Component: LazyExoticComponent<ComponentType<Record<string, never>>>) => (
   <Suspense fallback={<LoadingOverlay label="Loading route..." />}>
@@ -44,18 +44,6 @@ const ProtectedOutlet = () => (
   <ProtectedRoute>
     <Outlet />
   </ProtectedRoute>
-);
-
-type PlaceholderProps = {
-  title: string;
-  description: string;
-  path: string;
-};
-
-const protectedPlaceholder = (props: PlaceholderProps) => (
-  <Suspense fallback={<LoadingOverlay label="Loading route..." />}>
-    <PlaceholderRoutePage {...(props as ComponentProps<typeof PlaceholderRoutePage>)} />
-  </Suspense>
 );
 
 export const router = createBrowserRouter([
@@ -95,11 +83,7 @@ export const router = createBrowserRouter([
           },
           {
             path: routes.orderInvoice,
-            element: protectedPlaceholder({
-              title: 'Invoice',
-              path: routes.orderInvoice,
-              description: 'Printable invoice surfaces are planned for a later phase.',
-            }),
+            element: renderLazyPage(InvoicePage),
           },
           {
             path: routes.orderReview,

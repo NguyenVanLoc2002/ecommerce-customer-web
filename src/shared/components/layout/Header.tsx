@@ -9,16 +9,16 @@ import { useUiStore } from '@/shared/stores/uiStore';
 import { cn } from '@/shared/utils/cn';
 
 const homeLinks = [
-  { label: 'Collections', to: routes.products },
-  { label: 'Artisan', to: routes.products },
-  { label: 'Journal', to: routes.products },
+  { label: 'Womenswear', to: `${routes.products}?category=womenswear` },
+  { label: 'Menswear', to: `${routes.products}?category=menswear` },
+  { label: 'Accessories', to: `${routes.products}?category=accessories` },
 ];
 
 const collectionLinks = [
-  { label: 'Collections', to: routes.products },
-  { label: 'Tailoring', to: routes.products },
-  { label: 'Lookbook', to: routes.products },
-  { label: 'Objects', to: routes.products },
+  { label: 'Womenswear', to: `${routes.products}?category=womenswear` },
+  { label: 'Menswear', to: `${routes.products}?category=menswear` },
+  { label: 'Accessories', to: `${routes.products}?category=accessories` },
+  { label: 'Bag', to: routes.cart },
 ];
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -40,7 +40,7 @@ export const Header = () => {
   const logo = pathname === routes.home ? 'AURA EDITORIAL' : 'AURA';
 
   return (
-    <header className="glass-header fixed inset-x-0 top-0 z-50 border-b border-border/70">
+    <header className="glass-header fixed inset-x-0 top-0 z-50 border-b border-border/70 print:hidden">
       <div className="mx-auto flex h-20 max-w-layout items-center justify-between gap-4 px-page">
         <div className="flex items-center gap-4 md:gap-8">
           <button

@@ -5,8 +5,15 @@ import { notificationService } from '@/shared/services/notificationService';
 import { useAuthStore } from '@/shared/stores/authStore';
 import type { Notification } from '@/shared/types/notification.types';
 
-const countUnread = (notifications: Notification[]) =>
-  notifications.filter((notification) => !notification.read).length;
+type NotificationListCache = {
+  items: Notification[];
+  page: number;
+  size: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+};
 
 export const useNotifications = () => {
   const user = useAuthStore((state) => state.user);
@@ -25,6 +32,7 @@ export const useUnreadNotificationCount = () => {
     queryKey: queryKeys.notifications.unreadCount,
     queryFn: notificationService.getUnreadCount,
     enabled: Boolean(user),
+    select: (response) => response.count,
   });
 };
 
@@ -37,21 +45,24 @@ export const useMarkNotificationRead = () => {
       await queryClient.cancelQueries({ queryKey: queryKeys.notifications.list });
       await queryClient.cancelQueries({ queryKey: queryKeys.notifications.unreadCount });
 
-      const previousNotifications = queryClient.getQueryData<Notification[]>(queryKeys.notifications.list);
+      const previousNotifications = queryClient.getQueryData<NotificationListCache>(queryKeys.notifications.list);
       const previousUnreadCount = queryClient.getQueryData<number>(queryKeys.notifications.unreadCount);
-      const target = previousNotifications?.find((notification) => notification.id === notificationId);
+      const target = previousNotifications?.items.find((notification) => notification.id === notificationId);
 
       if (previousNotifications && target && !target.read) {
-        const nextNotifications = previousNotifications.map((notification) =>
+        const nextNotifications = previousNotifications.items.map((notification) =>
           notification.id === notificationId
             ? { ...notification, read: true, status: 'READ' as const, readAt: new Date().toISOString() }
             : notification,
         );
 
-        queryClient.setQueryData(queryKeys.notifications.list, nextNotifications);
+        queryClient.setQueryData(queryKeys.notifications.list, {
+          ...previousNotifications,
+          items: nextNotifications,
+        });
         queryClient.setQueryData(
           queryKeys.notifications.unreadCount,
-          Math.max((previousUnreadCount ?? countUnread(previousNotifications)) - 1, 0),
+          Math.max((previousUnreadCount ?? previousNotifications.items.filter((notification) => !notification.read).length) - 1, 0),
         );
       }
 
@@ -85,19 +96,22 @@ export const useMarkAllNotificationsRead = () => {
       await queryClient.cancelQueries({ queryKey: queryKeys.notifications.list });
       await queryClient.cancelQueries({ queryKey: queryKeys.notifications.unreadCount });
 
-      const previousNotifications = queryClient.getQueryData<Notification[]>(queryKeys.notifications.list);
+      const previousNotifications = queryClient.getQueryData<NotificationListCache>(queryKeys.notifications.list);
       const previousUnreadCount = queryClient.getQueryData<number>(queryKeys.notifications.unreadCount);
 
       if (previousNotifications) {
         const readAt = new Date().toISOString();
         queryClient.setQueryData(
           queryKeys.notifications.list,
-          previousNotifications.map((notification) => ({
-            ...notification,
-            read: true,
-            status: 'READ' as const,
-            readAt: notification.readAt ?? readAt,
-          })),
+          {
+            ...previousNotifications,
+            items: previousNotifications.items.map((notification) => ({
+              ...notification,
+              read: true,
+              status: 'READ' as const,
+              readAt: notification.readAt ?? readAt,
+            })),
+          },
         );
       }
 

@@ -14,7 +14,7 @@ import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { useUiStore } from '@/shared/stores/uiStore';
 import { PAYMENT_STATUSES } from '@/shared/types/payment.types';
 import { formatDate } from '@/shared/utils/formatDate';
-import { formatVnd } from '@/shared/utils/formatVnd';
+import { formatMoney } from '@/shared/utils/formatMoney';
 
 const codeButtonClassName =
   'inline-flex items-center border border-border px-4 py-2 font-mono text-sm text-text-primary transition-colors hover:border-text-primary';
@@ -42,12 +42,20 @@ export const PaymentResultPage = () => {
   );
 
   const copyCode = async (value: string, label: string) => {
-    await navigator.clipboard.writeText(value);
-    addToast({
-      tone: 'success',
-      title: 'Copied',
-      description: `${label} copied to clipboard.`,
-    });
+    try {
+      await navigator.clipboard.writeText(value);
+      addToast({
+        tone: 'success',
+        title: 'Copied',
+        description: `${label} copied to clipboard.`,
+      });
+    } catch {
+      addToast({
+        tone: 'danger',
+        title: 'Copy failed',
+        description: 'Clipboard access is unavailable in this browser context.',
+      });
+    }
   };
 
   const initiate = () =>
@@ -189,7 +197,7 @@ export const PaymentResultPage = () => {
                         <p className="mt-3 text-sm leading-7 text-text-secondary">{transaction.note ?? 'No transaction note provided.'}</p>
                       </div>
                       <div className="text-left md:text-right">
-                        <p className="text-sm text-text-primary">{formatVnd(transaction.amount)}</p>
+                        <p className="text-sm text-text-primary">{formatMoney(transaction.amount)}</p>
                         <p className="mt-2 text-sm text-text-secondary">{formatDate(transaction.createdAt, { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                     </article>
@@ -201,7 +209,7 @@ export const PaymentResultPage = () => {
             <aside className="space-y-4">
               <section className="border border-border bg-surface px-5 py-5 md:px-6">
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Amount</p>
-                <p className="mt-3 font-display text-[2.8rem] leading-none text-text-primary">{formatVnd(payment.amount)}</p>
+                <p className="mt-3 font-display text-[2.8rem] leading-none text-text-primary">{formatMoney(payment.amount)}</p>
                 <p className="mt-4 text-sm leading-7 text-text-secondary">
                   Created {formatDate(payment.createdAt)}{payment.paidAt ? `, paid ${formatDate(payment.paidAt)}` : '.'}
                 </p>

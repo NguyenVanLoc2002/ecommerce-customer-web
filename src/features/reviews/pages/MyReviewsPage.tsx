@@ -14,7 +14,7 @@ import { formatDate } from '@/shared/utils/formatDate';
 
 export const MyReviewsPage = () => {
   const myReviewsQuery = useMyReviews();
-  const reviews = myReviewsQuery.data ?? [];
+  const reviews = myReviewsQuery.data?.items ?? [];
 
   return (
     <>
@@ -70,7 +70,7 @@ export const MyReviewsPage = () => {
             <div className="space-y-6">
               {reviews.map((review) => (
                 <article className="grid gap-6 border border-border bg-surface px-5 py-5 md:grid-cols-[112px_minmax(0,1fr)_auto] md:px-6" key={review.id}>
-                  <Link className="overflow-hidden bg-surface-soft" to={routePaths.productDetail(review.productSlug)}>
+                  <Link className="overflow-hidden bg-surface-soft" to={review.productSlug ? routePaths.productDetail(review.productSlug) : routes.products}>
                     <img
                       alt={review.productImage.alt}
                       className="aspect-[4/5] h-full w-full object-cover"
@@ -82,7 +82,7 @@ export const MyReviewsPage = () => {
                   </Link>
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">{review.brandName}</p>
-                    <Link className="mt-3 inline-block font-display text-[1.7rem] leading-none text-text-primary" to={routePaths.productDetail(review.productSlug)}>
+                    <Link className="mt-3 inline-block font-display text-[1.7rem] leading-none text-text-primary" to={review.productSlug ? routePaths.productDetail(review.productSlug) : routes.products}>
                       {review.productName}
                     </Link>
                     <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -93,9 +93,11 @@ export const MyReviewsPage = () => {
                   </div>
                   <div className="text-left md:text-right">
                     <p className="text-sm text-text-secondary">{formatDate(review.createdAt)}</p>
-                    <Link className="mt-4 inline-flex border-b border-text-primary pb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-text-primary" to={routePaths.orderDetail(review.orderId)}>
-                      View order
-                    </Link>
+                    {review.orderId ? (
+                      <Link className="mt-4 inline-flex border-b border-text-primary pb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-text-primary" to={routePaths.orderDetail(review.orderId)}>
+                        View order
+                      </Link>
+                    ) : null}
                   </div>
                 </article>
               ))}

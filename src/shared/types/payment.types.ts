@@ -46,3 +46,7 @@ export type InitiatePaymentRequest = {
   provider?: string;
   returnUrl?: string;
 };
+
+export type PaymentTransactionResponse = PaymentTransaction;
+
+export type PaymentResponse = Payment;

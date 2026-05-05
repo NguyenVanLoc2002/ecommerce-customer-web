@@ -184,6 +184,10 @@ Critical contract notes:
 - Notifications use `referenceType` and `referenceId`
 - Public PDP lookup is currently documented as `GET /products/{id}`, not slug
 - `voucherCode` on order creation is stored but not yet applied to totals
+- Product keyword search remains `keyword`; do not add or expose `searchText` / `search_text`
+- Customer FE must send the user's raw trimmed keyword only; do not lowercase or strip Vietnamese accents
+- Customer FE must trust backend FULLTEXT relevance ordering when `keyword` is present and must not client-filter returned product results
+- Do not expose admin-only product search actions such as search reindex from the customer web app
 
 ## 11. SEO Rules
 

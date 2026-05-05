@@ -1,19 +1,11 @@
 import type { ChangeEvent } from 'react';
 
-import { SORT_OPTIONS } from '@/shared/types/enums';
+import { PRODUCT_SORT_OPTIONS } from '@/shared/lib/productSearch';
 
 type SortDropdownProps = {
   value: string;
   onChange: (value: string) => void;
 };
-
-const options = [
-  { value: SORT_OPTIONS.FEATURED, label: 'Featured' },
-  { value: SORT_OPTIONS.NEWEST, label: 'Newest' },
-  { value: SORT_OPTIONS.PRICE_ASC, label: 'Price: Low to High' },
-  { value: SORT_OPTIONS.PRICE_DESC, label: 'Price: High to Low' },
-  { value: SORT_OPTIONS.RATING, label: 'Top Rated' },
-];
 
 export const SortDropdown = ({ onChange, value }: SortDropdownProps) => {
   const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -28,7 +20,7 @@ export const SortDropdown = ({ onChange, value }: SortDropdownProps) => {
         onChange={handleChange}
         value={value}
       >
-        {options.map((option) => (
+        {PRODUCT_SORT_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>

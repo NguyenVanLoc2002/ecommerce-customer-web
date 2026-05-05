@@ -89,16 +89,14 @@ export const CheckoutAddressPage = () => {
                 const selected = address.id === selectedAddressId;
 
                 return (
-                  <button
-                    className={`border p-5 text-left transition-colors md:p-6 ${
+                  <article
+                    className={`border p-5 transition-colors md:p-6 ${
                       selected ? 'border-text-primary bg-surface' : 'border-border bg-surface hover:border-text-primary'
                     }`}
                     key={address.id}
-                    onClick={() => setShippingAddressId(address.id)}
-                    type="button"
                   >
                     <div className="flex items-start justify-between gap-5">
-                      <div className="flex items-start gap-4">
+                      <button className="flex flex-1 items-start gap-4 text-left" onClick={() => setShippingAddressId(address.id)} type="button">
                         <span className={`mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full border ${selected ? 'border-text-primary' : 'border-border'}`}>
                           <span className={`h-2 w-2 rounded-full ${selected ? 'bg-text-primary' : 'bg-transparent'}`} />
                         </span>
@@ -111,13 +109,17 @@ export const CheckoutAddressPage = () => {
                           <p className="mt-3 text-sm uppercase tracking-[0.08em] text-text-secondary">{address.phoneNumber}</p>
                           <p className="mt-3 max-w-xl text-sm leading-7 text-text-secondary">{formatAddress(address)}</p>
                         </div>
-                      </div>
-                      <div className="hidden gap-4 text-[11px] font-bold uppercase tracking-[0.18em] text-outline md:flex">
-                        <span>Edit</span>
-                        <span>Delete</span>
+                      </button>
+                      <div className="hidden shrink-0 md:flex">
+                        <Link
+                          className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline transition-colors hover:text-text-primary"
+                          to={routePaths.profileAddressEdit(address.id, 'checkout')}
+                        >
+                          Edit address
+                        </Link>
                       </div>
                     </div>
-                  </button>
+                  </article>
                 );
               })}
               <Link

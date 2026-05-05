@@ -17,25 +17,20 @@ import { PageWrapper } from '@/shared/components/layout/PageWrapper';
 import { JsonLd } from '@/shared/components/seo/JsonLd';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
+import {
+  DEFAULT_PRODUCT_PAGE,
+  getProductListQueryFromSearchParams,
+  trimProductKeyword,
+} from '@/shared/lib/productSearch';
 import type { ProductFilters } from '@/shared/types/catalog.types';
-import { SORT_OPTIONS } from '@/shared/types/enums';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { Button } from '@/shared/components/ui/Button';
 import { createCanonicalUrl } from '@/shared/utils/seo';
 
-const normalizeFilters = (searchParams: URLSearchParams): ProductFilters => ({
-  keyword: searchParams.get('q') ?? '',
-  category: searchParams.get('category') ?? '',
-  brand: searchParams.get('brand') ?? '',
-  minPrice: searchParams.get('minPrice') ?? '',
-  maxPrice: searchParams.get('maxPrice') ?? '',
-  sort: (searchParams.get('sort') as ProductFilters['sort']) ?? SORT_OPTIONS.FEATURED,
-});
-
 export const ProductListPage = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-  const filters = useMemo(() => normalizeFilters(searchParams), [searchParams]);
+  const filters = useMemo(() => getProductListQueryFromSearchParams(searchParams), [searchParams]);
   const [keywordDraft, setKeywordDraft] = useState(filters.keyword);
   const debouncedKeyword = useDebouncedValue(keywordDraft, 350);
 
@@ -44,16 +39,19 @@ export const ProductListPage = () => {
   }, [filters.keyword]);
 
   useEffect(() => {
-    if (debouncedKeyword === filters.keyword) {
+    const trimmedKeyword = trimProductKeyword(debouncedKeyword);
+
+    if (trimmedKeyword === filters.keyword) {
       return;
     }
 
     const next = new URLSearchParams(searchParams);
-    if (debouncedKeyword) {
-      next.set('q', debouncedKeyword);
+    if (trimmedKeyword) {
+      next.set('q', trimmedKeyword);
     } else {
       next.delete('q');
     }
+    next.delete('page');
     setSearchParams(next, { replace: true });
   }, [debouncedKeyword, filters.keyword, searchParams, setSearchParams]);
 
@@ -63,12 +61,27 @@ export const ProductListPage = () => {
 
   const updateFilter = (key: keyof ProductFilters, value: string) => {
     const next = new URLSearchParams(searchParams);
-    if (value) {
-      next.set(key === 'keyword' ? 'q' : key, value);
+    const nextValue = key === 'keyword' ? trimProductKeyword(value) : value;
+
+    if (nextValue) {
+      next.set(key === 'keyword' ? 'q' : key, nextValue);
     } else {
       next.delete(key === 'keyword' ? 'q' : key);
     }
+    next.delete('page');
     setSearchParams(next, { replace: true });
+  };
+
+  const updatePage = (nextPage: number) => {
+    const next = new URLSearchParams(searchParams);
+
+    if (nextPage <= DEFAULT_PRODUCT_PAGE) {
+      next.delete('page');
+    } else {
+      next.set('page', String(nextPage));
+    }
+
+    setSearchParams(next);
   };
 
   const clearFilters = () => {
@@ -192,7 +205,43 @@ export const ProductListPage = () => {
                 />
               ) : null}
 
-              {productsQuery.data && productsQuery.data.items.length > 0 ? <ProductGrid products={productsQuery.data.items} /> : null}
+              {productsQuery.data && productsQuery.data.items.length > 0 ? (
+                <div className="space-y-8">
+                  <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-text-secondary">
+                    <p>
+                      Showing {(productsQuery.data.page * productsQuery.data.size) + 1}
+                      {' - '}
+                      {Math.min((productsQuery.data.page + 1) * productsQuery.data.size, productsQuery.data.totalItems)}
+                      {' of '}
+                      {productsQuery.data.totalItems} products
+                    </p>
+                    {productsQuery.isFetching && !productsQuery.isLoading ? <p>Refreshing results...</p> : null}
+                  </div>
+                  <ProductGrid products={productsQuery.data.items} />
+                  {productsQuery.data.totalPages > 1 ? (
+                    <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
+                      <p className="text-sm text-text-secondary">
+                        Page {productsQuery.data.page + 1} of {productsQuery.data.totalPages}
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <Button
+                          disabled={!productsQuery.data.hasPrevious}
+                          onClick={() => updatePage(filters.page - 1)}
+                          variant="ghost"
+                        >
+                          Previous
+                        </Button>
+                        <Button
+                          disabled={!productsQuery.data.hasNext}
+                          onClick={() => updatePage(filters.page + 1)}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </section>
           </div>
         </Container>

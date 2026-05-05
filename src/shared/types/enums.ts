@@ -10,9 +10,8 @@ export type Role = (typeof USER_ROLES)[keyof typeof USER_ROLES];
 export const SORT_OPTIONS = {
   FEATURED: 'featured',
   NEWEST: 'newest',
-  PRICE_ASC: 'price-asc',
-  PRICE_DESC: 'price-desc',
-  RATING: 'rating',
+  UPDATED: 'updated',
+  NAME_ASC: 'name-asc',
 } as const;
 
 export type ProductSort = (typeof SORT_OPTIONS)[keyof typeof SORT_OPTIONS];

@@ -55,4 +55,6 @@ export const routePaths = {
   profileAddressEdit: (id: string, returnTo?: string) => withReturnTo(`/profile/addresses/${id}/edit`, returnTo),
   loginRedirect: (redirect?: string) =>
     redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login',
+  registerRedirect: (redirect?: string) =>
+    redirect ? `/register?redirect=${encodeURIComponent(redirect)}` : '/register',
 } as const;

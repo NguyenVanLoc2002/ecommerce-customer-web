@@ -209,7 +209,7 @@ export const OrderDetailPage = () => {
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Invoice</p>
                     <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Invoice actions</h2>
                     <p className="mt-4 text-sm leading-7 text-text-secondary">
-                      Open the invoice placeholder route or return to the archive for broader transaction history.
+                      Open the printable invoice view or return to the archive for broader transaction history.
                     </p>
                     <Link className={`${actionLinkClassName} mt-5 inline-flex`} to={routePaths.orderInvoice(order.id)}>
                       Download invoice

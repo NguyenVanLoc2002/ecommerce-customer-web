@@ -86,7 +86,7 @@ export const NotificationsPage = () => {
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const [activeFilter, setActiveFilter] = useState<NotificationFilter>('ALL');
-  const notifications = useMemo(() => notificationsQuery.data ?? [], [notificationsQuery.data]);
+  const notifications = useMemo(() => notificationsQuery.data?.items ?? [], [notificationsQuery.data]);
   const filteredNotifications = useMemo(
     () => notifications.filter((notification) => filterNotification(notification, activeFilter)),
     [activeFilter, notifications],

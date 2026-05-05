@@ -4,6 +4,7 @@ import { routes } from '@/constants/routes';
 import { Container } from '@/shared/components/layout/Container';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import type { ProductSummary } from '@/shared/types/catalog.types';
+import { SORT_OPTIONS } from '@/shared/types/enums';
 
 type PromoBannerProps = {
   products: ProductSummary[];
@@ -24,7 +25,7 @@ export const PromoBanner = ({ products }: PromoBannerProps) => {
               A limited exploration of texture and form. Each piece is meticulously numbered and hand-finished in our atelier.
             </p>
             <div className="mt-10">
-              <Link className={buttonStyles({ size: 'lg' })} to={`${routes.products}?sort=featured`}>
+              <Link className={buttonStyles({ size: 'lg' })} to={`${routes.products}?sort=${SORT_OPTIONS.FEATURED}`}>
                 View Collection
               </Link>
             </div>

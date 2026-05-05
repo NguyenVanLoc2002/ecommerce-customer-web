@@ -11,6 +11,13 @@ Customer-facing web app for the `Fashion Shop` ecommerce system.
 
 Detailed implementation, design, API, and planning docs live in the root-level source-of-truth files and the archived originals under `docs/original/`.
 
+## Catalog Search Contract
+
+- Customer product search still sends `keyword`; there is no `searchText` query param on the frontend.
+- Product keyword matching is backend FULLTEXT over internal catalog fields. Frontend code must treat relevance as backend-owned.
+- Send the user's raw keyword after trimming outer whitespace only. Do not lowercase or strip Vietnamese accents on the client.
+- Do not expose backend-internal `searchText` / `search_text` fields or admin product search/reindex actions in the customer app.
+
 ## Prerequisites
 
 - Node.js `20+`
@@ -45,6 +52,7 @@ npm run dev
 ```bash
 npm run lint
 npm run typecheck
+npm run build
 ```
 
 ## Build
