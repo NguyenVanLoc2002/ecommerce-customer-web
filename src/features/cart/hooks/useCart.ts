@@ -20,6 +20,17 @@ export const useUpdateCartItemQuantity = () => {
   });
 };
 
+export const useAddCartItem = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ variantId, quantity }: { variantId: string; quantity: number }) => cartService.addItem(variantId, quantity),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.cart.detail });
+    },
+  });
+};
+
 export const useRemoveCartItem = () => {
   const queryClient = useQueryClient();
 
@@ -41,4 +52,3 @@ export const useClearCart = () => {
     },
   });
 };
-

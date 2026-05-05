@@ -15,7 +15,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { useUiStore } from '@/shared/stores/uiStore';
 import { formatDate } from '@/shared/utils/formatDate';
-import { formatVnd } from '@/shared/utils/formatVnd';
+import { formatMoney } from '@/shared/utils/formatMoney';
 
 const codeButtonClassName =
   'inline-flex items-center border border-border px-4 py-2 font-mono text-sm text-text-primary transition-colors hover:border-text-primary';
@@ -36,12 +36,20 @@ export const ShipmentTrackingPage = () => {
   const shipment = shipmentQuery.data;
 
   const copyCode = async (value: string, label: string) => {
-    await navigator.clipboard.writeText(value);
-    addToast({
-      tone: 'success',
-      title: 'Copied',
-      description: `${label} copied to clipboard.`,
-    });
+    try {
+      await navigator.clipboard.writeText(value);
+      addToast({
+        tone: 'success',
+        title: 'Copied',
+        description: `${label} copied to clipboard.`,
+      });
+    } catch {
+      addToast({
+        tone: 'danger',
+        title: 'Copy failed',
+        description: 'Clipboard access is unavailable in this browser context.',
+      });
+    }
   };
 
   const errorCode =
@@ -154,7 +162,7 @@ export const ShipmentTrackingPage = () => {
               <section className="border border-border bg-surface px-5 py-5 md:px-6">
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Shipment note</p>
                 <p className="mt-4 text-sm leading-7 text-text-secondary">{shipment.note ?? 'No shipment note available.'}</p>
-                <p className="mt-4 text-sm leading-7 text-text-secondary">Shipping fee {formatVnd(shipment.shippingFee)}</p>
+                <p className="mt-4 text-sm leading-7 text-text-secondary">Shipping fee {formatMoney(shipment.shippingFee)}</p>
               </section>
 
               <Link className={buttonStyles({ fullWidth: true, variant: 'ghost' })} to={routePaths.orderDetail(orderId)}>

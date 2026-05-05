@@ -74,7 +74,12 @@ export const CheckoutVoucherPage = () => {
                 defaultValue={voucherCode}
                 loading={validateVoucher.isPending}
                 onSubmit={(nextVoucherCode) =>
-                  validateVoucher.mutate(nextVoucherCode, {
+                  validateVoucher.mutate(
+                    {
+                      code: nextVoucherCode,
+                      orderAmount: cart?.subTotal ?? 0,
+                    },
+                    {
                     onSuccess: (preview) => {
                       setVoucherCode(preview.code);
                       setVoucherPreview(preview);
@@ -92,7 +97,8 @@ export const CheckoutVoucherPage = () => {
                         description: error instanceof Error ? error.message : 'Try another code.',
                       });
                     },
-                  })
+                    },
+                  )
                 }
               />
             </div>

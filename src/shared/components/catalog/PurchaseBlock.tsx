@@ -7,6 +7,8 @@ import { Button } from '@/shared/components/ui/Button';
 import type { ProductDetail } from '@/shared/types/catalog.types';
 
 type PurchaseBlockProps = {
+  addToCartDisabled?: boolean;
+  addToCartLabel?: string;
   colorSwatches: Record<string, string>;
   colors: string[];
   currentPrice: number;
@@ -23,6 +25,8 @@ type PurchaseBlockProps = {
 };
 
 export const PurchaseBlock = ({
+  addToCartDisabled = false,
+  addToCartLabel = 'Add to Bag',
   colorSwatches,
   colors,
   compareAtPrice,
@@ -62,8 +66,8 @@ export const PurchaseBlock = ({
       </div>
 
       <div className="space-y-4 pt-2">
-        <Button fullWidth onClick={onAddToCart} size="lg">
-          Add to Bag
+        <Button disabled={addToCartDisabled} fullWidth onClick={onAddToCart} size="lg">
+          {addToCartLabel}
         </Button>
         <Button className="justify-between" fullWidth size="lg" variant="ghost">
           <MapPin className="h-4 w-4" />
@@ -78,8 +82,8 @@ export const PurchaseBlock = ({
         </div>
         <div className="mt-4 space-y-4 text-sm leading-7 text-text-secondary">
           <p>{product.description}</p>
-          <p>Materials: {product.materials.join(', ')}.</p>
-          <p>Care: {product.care.join(', ')}.</p>
+          {product.materials.length > 0 ? <p>Materials: {product.materials.join(', ')}.</p> : null}
+          {product.care.length > 0 ? <p>Care: {product.care.join(', ')}.</p> : null}
         </div>
       </div>
     </div>

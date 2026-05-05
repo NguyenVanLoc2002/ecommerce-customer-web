@@ -36,6 +36,9 @@ export const queryKeys = {
   payments: {
     byOrder: (orderId: string) => ['payments', 'order', orderId] as const,
   },
+  invoices: {
+    byOrder: (orderId: string) => ['invoices', 'order', orderId] as const,
+  },
   shipments: {
     byOrder: (orderId: string) => ['shipments', 'order', orderId] as const,
   },

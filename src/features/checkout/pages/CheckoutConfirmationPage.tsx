@@ -12,11 +12,13 @@ import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { getPaymentMethodLabel } from '@/shared/lib/commerceLabels';
+import { useUiStore } from '@/shared/stores/uiStore';
 import { formatAddress } from '@/shared/utils/formatAddress';
 import { formatDate } from '@/shared/utils/formatDate';
 
 export const CheckoutConfirmationPage = () => {
   const navigate = useNavigate();
+  const addToast = useUiStore((state) => state.addToast);
   const confirmationOrder = useCheckoutStore((state) => state.confirmationOrder);
   const resetCheckout = useCheckoutStore((state) => state.resetCheckout);
   const [copied, setCopied] = useState(false);
@@ -82,8 +84,16 @@ export const CheckoutConfirmationPage = () => {
                 <button
                   className="border border-border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary transition-colors hover:border-text-primary"
                   onClick={async () => {
-                    await navigator.clipboard.writeText(confirmationOrder.code);
-                    setCopied(true);
+                    try {
+                      await navigator.clipboard.writeText(confirmationOrder.code);
+                      setCopied(true);
+                    } catch {
+                      addToast({
+                        tone: 'danger',
+                        title: 'Copy failed',
+                        description: 'Clipboard access is unavailable in this browser context.',
+                      });
+                    }
                   }}
                   type="button"
                 >
@@ -112,7 +122,7 @@ export const CheckoutConfirmationPage = () => {
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Next steps</p>
                 <ul className="mt-4 space-y-3 text-sm leading-7 text-text-secondary">
                   <li>Your order is now available in the archive.</li>
-                  <li>Tracking, invoice, and payment-result routes continue in later phases.</li>
+                  <li>Tracking, invoice, and payment status are now available from the order archive.</li>
                   <li>You can return to the archive at any time from the storefront navigation.</li>
                 </ul>
               </section>

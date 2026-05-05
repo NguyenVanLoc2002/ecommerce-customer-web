@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { queryKeys } from '@/constants/queryKeys';
 import { productService } from '@/features/products/services/productService';
-import type { ProductFilters } from '@/shared/types/catalog.types';
+import type { ProductListQuery } from '@/shared/types/catalog.types';
 
 export const useCategories = () =>
   useQuery({
@@ -16,10 +16,11 @@ export const useBrands = () =>
     queryFn: productService.getBrands,
   });
 
-export const useProductList = (filters: ProductFilters) =>
+export const useProductList = (filters: ProductListQuery) =>
   useQuery({
     queryKey: queryKeys.products.list(JSON.stringify(filters)),
     queryFn: () => productService.getProducts(filters),
+    placeholderData: keepPreviousData,
   });
 
 export const useProductDetail = (slug: string) =>
@@ -35,4 +36,3 @@ export const useRelatedProducts = (slug: string) =>
     queryFn: () => productService.getRelatedProducts(slug),
     enabled: Boolean(slug),
   });
-

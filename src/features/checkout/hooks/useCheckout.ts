@@ -8,7 +8,8 @@ export const useCheckoutAddresses = useAddresses;
 
 export const useValidateVoucher = () =>
   useMutation({
-    mutationFn: (code: string) => checkoutService.validateVoucher(code),
+    mutationFn: ({ code, orderAmount }: { code: string; orderAmount: number }) =>
+      checkoutService.validateVoucher(code, orderAmount),
   });
 
 export const usePlaceOrder = () => {

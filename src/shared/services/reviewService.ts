@@ -1,46 +1,85 @@
-import { config } from '@/constants/config';
 import { apiClient } from '@/shared/lib/axios';
-import { mockEngagement } from '@/shared/lib/mockEngagement';
-import { normalizeApiError } from '@/shared/lib/normalizeApiError';
-import type { Review, ReviewCreateRequest, ReviewListItem } from '@/shared/types/review.types';
+import { toProductDetail, toReview, toReviewListItem } from '@/shared/lib/apiMappers';
+import { catalogLookupService } from '@/shared/services/catalogLookupService';
+import type { ApiResponse, PagedResponse } from '@/shared/types/api.types';
+import type { OrderResponse, OrderListItemResponse } from '@/shared/types/commerce.types';
+import type { ReviewCreateRequest, ReviewListItem, ReviewResponse } from '@/shared/types/review.types';
+
+const DEFAULT_PAGE_SIZE = 20;
+
+const getOrdersPage = () =>
+  apiClient.get<ApiResponse<PagedResponse<OrderListItemResponse>>, PagedResponse<OrderListItemResponse>>(
+    `/orders?page=0&size=${DEFAULT_PAGE_SIZE}&sort=createdAt,desc`,
+  );
+
+const getOrderById = (orderId: string) => apiClient.get<ApiResponse<OrderResponse>, OrderResponse>(`/orders/${orderId}`);
+
+const buildOrderItemMap = async () => {
+  const orders = await getOrdersPage();
+  const orderDetails = await Promise.all(orders.items.map((order) => getOrderById(order.id)));
+
+  return new Map<string, string>(
+    orderDetails.flatMap((order) => order.items.map((item) => [item.id, order.id] as const)),
+  );
+};
 
 export const reviewService = {
   async getProductReviews(productId: string) {
-    try {
-      if (config.useMockData) {
-        return await mockEngagement.getProductReviews(productId);
-      }
+    const response = await apiClient.get<ApiResponse<PagedResponse<ReviewResponse>>, PagedResponse<ReviewResponse>>(
+      `/reviews/product/${productId}?page=0&size=${DEFAULT_PAGE_SIZE}&sort=createdAt,desc`,
+    );
 
-      const response = await apiClient.get<Review[]>(`/reviews/product/${productId}`);
-      return response.data;
-    } catch (error) {
-      throw normalizeApiError(error);
-    }
+    return {
+      ...response,
+      items: response.items.map(toReview),
+    };
   },
   async getMyReviews() {
-    try {
-      if (config.useMockData) {
-        return await mockEngagement.getMyReviews();
-      }
+    const [response, orderItemMap] = await Promise.all([
+      apiClient.get<ApiResponse<PagedResponse<ReviewResponse>>, PagedResponse<ReviewResponse>>(
+        `/reviews/my?page=0&size=${DEFAULT_PAGE_SIZE}&sort=createdAt,desc`,
+      ),
+      buildOrderItemMap(),
+    ]);
 
-      const response = await apiClient.get<ReviewListItem[]>('/reviews/my');
-      return response.data;
-    } catch (error) {
-      throw normalizeApiError(error);
-    }
+    const items = await Promise.all(
+      response.items.map(async (review): Promise<ReviewListItem> => {
+        const product = await catalogLookupService.getProductDetailById(review.productId);
+        const mappedProduct = toProductDetail(product);
+
+        return toReviewListItem(
+          review,
+          {
+            productId: mappedProduct.id,
+            productSlug: mappedProduct.slug,
+            brandName: mappedProduct.brandName,
+            primaryImage: mappedProduct.primaryImage,
+          },
+          orderItemMap.get(review.orderItemId) ?? '',
+        );
+      }),
+    );
+
+    return {
+      ...response,
+      items,
+    };
   },
   async createReview(payload: ReviewCreateRequest) {
-    try {
-      if (config.useMockData) {
-        return await mockEngagement.createReview(payload);
-      }
+    const response = await apiClient.post<ApiResponse<ReviewResponse>, ReviewResponse>('/reviews', payload);
+    const orderItemMap = await buildOrderItemMap();
+    const product = await catalogLookupService.getProductDetailById(response.productId);
+    const mappedProduct = toProductDetail(product);
 
-      // Contract note: current API docs list POST /reviews and a 200 OK response, but do not
-      // document the full response body shape beyond the request payload semantics.
-      const response = await apiClient.post<ReviewListItem>('/reviews', payload);
-      return response.data;
-    } catch (error) {
-      throw normalizeApiError(error);
-    }
+    return toReviewListItem(
+      response,
+      {
+        productId: mappedProduct.id,
+        productSlug: mappedProduct.slug,
+        brandName: mappedProduct.brandName,
+        primaryImage: mappedProduct.primaryImage,
+      },
+      orderItemMap.get(response.orderItemId) ?? '',
+    );
   },
 };

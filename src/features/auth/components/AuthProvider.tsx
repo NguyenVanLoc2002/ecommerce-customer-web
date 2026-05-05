@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { config } from '@/constants/config';
 import { authService } from '@/features/auth/services/authService';
@@ -13,44 +13,35 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   const finishBootstrap = useAuthStore((state) => state.finishBootstrap);
   const setSession = useAuthStore((state) => state.setSession);
   const startBootstrap = useAuthStore((state) => state.startBootstrap);
+  const bootstrapStartedRef = useRef(false);
 
   useEffect(() => {
-    let active = true;
+    if (bootstrapStartedRef.current || bootstrapStatus !== 'idle') {
+      return;
+    }
+
+    bootstrapStartedRef.current = true;
+    const refreshToken = typeof window !== 'undefined' ? window.localStorage.getItem(config.authHintKey) : null;
+
+    if (!refreshToken || accessToken) {
+      finishBootstrap();
+      return;
+    }
+
+    startBootstrap();
 
     const bootstrap = async () => {
-      if (bootstrapStatus !== 'idle') {
-        return;
-      }
-
-      startBootstrap();
-      const refreshToken = typeof window !== 'undefined' ? window.localStorage.getItem(config.authHintKey) : null;
-
-      if (!refreshToken || accessToken) {
-        finishBootstrap();
-        return;
-      }
-
       try {
         const session = await authService.refreshToken(refreshToken);
-        if (active) {
-          setSession(session);
-        }
+        setSession(session);
       } catch {
-        if (active) {
-          clearSession();
-        }
+        clearSession();
       } finally {
-        if (active) {
-          finishBootstrap();
-        }
+        finishBootstrap();
       }
     };
 
     void bootstrap();
-
-    return () => {
-      active = false;
-    };
   }, [accessToken, bootstrapStatus, clearSession, finishBootstrap, setSession, startBootstrap]);
 
   if (bootstrapStatus === 'loading') {

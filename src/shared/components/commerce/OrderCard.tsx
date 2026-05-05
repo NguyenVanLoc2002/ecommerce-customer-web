@@ -29,19 +29,21 @@ export const OrderCard = ({ order }: OrderCardProps) => (
             Updated {formatDate(order.updatedAt)}. Review the archive, track fulfillment, or reopen the full order breakdown.
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-          {order.items.slice(0, 4).map((item) => (
-            <img
-              alt={item.primaryImage.alt}
-              className="aspect-[4/5] w-full bg-surface-soft object-cover"
-              height={item.primaryImage.height}
-              key={item.id}
-              loading="lazy"
-              src={item.primaryImage.src}
-              width={item.primaryImage.width}
-            />
-          ))}
-        </div>
+        {order.items.length > 0 ? (
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+            {order.items.slice(0, 4).map((item) => (
+              <img
+                alt={item.primaryImage.alt}
+                className="aspect-[4/5] w-full bg-surface-soft object-cover"
+                height={item.primaryImage.height}
+                key={item.id}
+                loading="lazy"
+                src={item.primaryImage.src}
+                width={item.primaryImage.width}
+              />
+            ))}
+          </div>
+        ) : null}
         <div className="flex flex-wrap gap-x-6 gap-y-3 border-t border-border pt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary">
           <Link className="underline decoration-border underline-offset-4 transition-colors hover:decoration-text-primary" to={routePaths.orderDetail(order.id)}>
             Order details

@@ -1,40 +1,62 @@
-import { config } from '@/constants/config';
 import { apiClient } from '@/shared/lib/axios';
-import { mockCommerce } from '@/shared/lib/mockCommerce';
-import type { CommerceCart } from '@/shared/types/commerce.types';
+import { toCommerceCart, toProductDetail } from '@/shared/lib/apiMappers';
+import { catalogLookupService } from '@/shared/services/catalogLookupService';
+import type { ApiResponse } from '@/shared/types/api.types';
+import type { CartResponse } from '@/shared/types/commerce.types';
+
+const enrichCart = async (cart: CartResponse) => {
+  const entries = await Promise.all(
+    cart.items.map(async (item) => {
+      const product = await catalogLookupService.getProductDetailBySlug(item.productSlug);
+      const mappedProduct = product ? toProductDetail(product) : null;
+      const variant = mappedProduct?.variants.find((candidate) => candidate.id === item.variantId) ?? null;
+
+      return [
+        item.variantId,
+        {
+          productId: mappedProduct?.id,
+          productSlug: mappedProduct?.slug ?? item.productSlug,
+          brandName: mappedProduct?.brandName,
+          primaryImage: variant?.image ?? mappedProduct?.primaryImage,
+          variant,
+        },
+      ] as const;
+    }),
+  );
+
+  return toCommerceCart(cart, Object.fromEntries(entries));
+};
 
 export const cartService = {
   async getCart() {
-    if (config.useMockData) {
-      return mockCommerce.getCart();
-    }
-
-    const response = await apiClient.get<CommerceCart>('/cart');
-    return response.data;
+    const response = await apiClient.get<ApiResponse<CartResponse>, CartResponse>('/cart');
+    return enrichCart(response);
   },
   async updateQuantity(itemId: string, quantity: number) {
-    if (config.useMockData) {
-      return mockCommerce.updateCartItemQuantity(itemId, quantity);
-    }
-
-    const response = await apiClient.patch<CommerceCart>(`/cart/items/${itemId}`, { quantity });
-    return response.data;
+    const response = await apiClient.patch<ApiResponse<CartResponse>, CartResponse>(`/cart/items/${itemId}`, { quantity });
+    return enrichCart(response);
   },
   async removeItem(itemId: string) {
-    if (config.useMockData) {
-      return mockCommerce.removeCartItem(itemId);
-    }
-
-    const response = await apiClient.delete<CommerceCart>(`/cart/items/${itemId}`);
-    return response.data;
+    const response = await apiClient.delete<ApiResponse<CartResponse>, CartResponse>(`/cart/items/${itemId}`);
+    return enrichCart(response);
   },
   async clearCart() {
-    if (config.useMockData) {
-      return mockCommerce.clearCart();
-    }
+    await apiClient.delete<ApiResponse<null>, null>('/cart');
 
-    const response = await apiClient.delete<CommerceCart>('/cart');
-    return response.data;
+    return {
+      id: '',
+      items: [],
+      totalItems: 0,
+      subTotal: 0,
+      shippingFee: 0,
+      discountTotal: 0,
+      grandTotal: 0,
+      updatedAt: new Date().toISOString(),
+      staleItemCount: 0,
+    };
+  },
+  async addItem(variantId: string, quantity: number) {
+    const response = await apiClient.post<ApiResponse<CartResponse>, CartResponse>('/cart/items', { variantId, quantity });
+    return enrichCart(response);
   },
 };
-

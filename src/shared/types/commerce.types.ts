@@ -69,11 +69,95 @@ export interface CommerceOrder extends CartTotals {
   createdAt: string;
   updatedAt: string;
   paymentMethod: PaymentMethod;
+  paymentStatus?: string;
   customerNote: string;
   voucherCode?: string;
   items: OrderItem[];
   shippingAddress: CustomerAddress;
   canCancel: boolean;
+}
+
+export interface CartItemResponse {
+  id: string;
+  variantId: string;
+  variantName: string | null;
+  sku: string | null;
+  productSlug: string;
+  productName: string;
+  unitPrice: number;
+  salePrice: number | null;
+  quantity: number;
+  availableStock: number;
+  lineTotal: number;
+  createdAt: string;
+}
+
+export interface CartResponse {
+  id: string;
+  items: CartItemResponse[];
+  totalItems: number;
+  subTotal: number;
+  updatedAt: string;
+}
+
+export interface ValidateVoucherResponse {
+  voucherCode: string;
+  promotionName: string | null;
+  discountType: string | null;
+  discountValue: number | null;
+  discountAmount: number;
+  orderAmount: number;
+  finalAmount: number;
+}
+
+export interface OrderItemResponse {
+  id: string;
+  productId?: string | null;
+  productName: string;
+  variantId?: string | null;
+  variantName: string | null;
+  sku: string | null;
+  unitPrice: number;
+  salePrice?: number | null;
+  effectivePrice?: number | null;
+  quantity: number;
+  lineTotal: number;
+}
+
+export interface OrderListItemResponse {
+  id: string;
+  orderCode: string;
+  status: OrderStatus;
+  paymentMethod: PaymentMethod | null;
+  paymentStatus: string | null;
+  totalItems: number;
+  totalAmount: number;
+  createdAt: string;
+}
+
+export interface OrderResponse {
+  id: string;
+  orderCode: string;
+  customerId: string;
+  status: OrderStatus;
+  paymentMethod: PaymentMethod | null;
+  paymentStatus: string | null;
+  shippingReceiverName: string;
+  shippingPhoneNumber: string;
+  shippingStreetAddress: string;
+  shippingWard: string;
+  shippingDistrict: string;
+  shippingCity: string;
+  shippingPostalCode: string | null;
+  subTotal: number;
+  discountAmount: number;
+  shippingFee: number;
+  totalAmount: number;
+  voucherCode: string | null;
+  customerNote: string | null;
+  items: OrderItemResponse[];
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface CheckoutDraft {

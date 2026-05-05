@@ -17,6 +17,10 @@ export interface Review {
   status: ReviewStatus;
   authorName: string;
   verifiedPurchase: boolean;
+  variantId?: string;
+  variantName?: string;
+  sku?: string;
+  orderItemId?: string;
   title?: string;
 }
 
@@ -33,4 +37,24 @@ export interface ReviewCreateRequest {
   orderItemId: string;
   rating: number;
   comment: string;
+}
+
+export interface ReviewResponse {
+  id: string;
+  customerId: string;
+  customerName: string;
+  productId: string;
+  productName: string;
+  variantId: string | null;
+  variantName: string | null;
+  sku: string | null;
+  orderItemId: string;
+  rating: number;
+  comment: string | null;
+  status: ReviewStatus;
+  adminNote: string | null;
+  moderatedAt: string | null;
+  moderatedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
 }

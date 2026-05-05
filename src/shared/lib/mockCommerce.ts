@@ -4,6 +4,7 @@ import { mockCatalog } from '@/shared/lib/mockCatalog';
 import { useAuthStore } from '@/shared/stores/authStore';
 import type { Address, CreateAddressRequest, UpdateAddressRequest } from '@/shared/types/address.types';
 import type { CartItem, CommerceCart, CommerceOrder, CustomerAddress, PlaceOrderInput, VoucherPreview } from '@/shared/types/commerce.types';
+import type { Invoice } from '@/shared/types/invoice.types';
 import type { Payment, PaymentTransaction } from '@/shared/types/payment.types';
 import { PAYMENT_STATUSES } from '@/shared/types/payment.types';
 import type { Shipment, ShipmentEvent } from '@/shared/types/shipment.types';
@@ -684,6 +685,10 @@ export const mockCommerce = {
     return buildCart(userId, storage);
   },
   async addCartItem(variantId: string, quantity: number) {
+    if (quantity < 1) {
+      throw createServiceError('CART_ITEM_QUANTITY_INVALID', 'Quantity must be at least 1.');
+    }
+
     const storage = readStorage();
     const userId = getCurrentUserId();
     const userState = ensureUserState(userId, storage);
@@ -701,6 +706,41 @@ export const mockCommerce = {
 
     writeStorage(storage);
     return buildCart(userId, storage);
+  },
+  async getInvoiceByOrderId(orderId: string) {
+    const storage = readStorage();
+    const userId = getCurrentUserId();
+    const userState = ensureUserState(userId, storage);
+    const order = userState.orders.find((item) => item.id === orderId);
+
+    if (!order) {
+      throw createServiceError('ORDER_NOT_FOUND', 'This order could not be located.');
+    }
+
+    const payment = userState.payments.find((item) => item.orderId === orderId);
+    const invoice: Invoice = {
+      id: `invoice-${order.id}`,
+      invoiceCode: `INV-${order.code.replace('FS-', '')}`,
+      orderId: order.id,
+      orderCode: order.code,
+      issuedAt: order.createdAt,
+      dueDate: null,
+      paidAt: payment?.paidAt ?? null,
+      paymentCode: payment?.paymentCode ?? null,
+      paymentMethod: order.paymentMethod,
+      paymentStatus: payment?.status ?? 'NOT_INITIATED',
+      notes: order.customerNote,
+      customerNote: order.customerNote,
+      voucherCode: order.voucherCode,
+      shippingAddress: order.shippingAddress,
+      items: order.items,
+      subTotal: order.subTotal,
+      shippingFee: order.shippingFee,
+      discountTotal: order.discountTotal,
+      grandTotal: order.grandTotal,
+    };
+
+    return invoice;
   },
   async getAddresses() {
     const storage = readStorage();
@@ -731,10 +771,10 @@ export const mockCommerce = {
       ward: payload.ward,
       district: payload.district,
       city: payload.city,
-      postalCode: payload.postalCode,
+      postalCode: payload.postalCode ?? '',
       addressType: payload.addressType,
       isDefault: shouldBecomeDefault,
-      label: payload.label,
+      label: payload.label ?? '',
       createdAt: new Date().toISOString(),
     });
 

@@ -9,16 +9,20 @@ export const AuthLayout = () => (
       <img
         alt=""
         className="h-full w-full object-cover"
+        height={640}
         loading="lazy"
         src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80"
+        width={512}
       />
     </div>
     <div className="pointer-events-none absolute bottom-12 right-8 hidden h-96 w-72 overflow-hidden grayscale opacity-40 lg:block">
       <img
         alt=""
         className="h-full w-full object-cover"
+        height={768}
         loading="lazy"
         src="https://images.unsplash.com/photo-1506629905607-d9c297d14d6a?auto=format&fit=crop&w=600&q=80"
+        width={576}
       />
     </div>
     <main className="relative z-10 flex min-h-screen items-center justify-center px-page py-12">

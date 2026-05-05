@@ -11,26 +11,17 @@ type CategoryGridProps = {
   categories: Category[];
 };
 
-const extraCategory = {
-  slug: 'tailoring',
-  name: 'Tailoring',
-  itemCount: 45,
-  imageUrl: 'https://images.unsplash.com/photo-1506629905607-d9c297d14d6a?auto=format&fit=crop&w=900&q=80',
-  imageAlt: 'Tailoring editorial portrait',
-};
-
 export const CategoryGrid = ({ categories }: CategoryGridProps) => {
   const reducedMotion = useReducedMotion();
-  const categoryItems = [
-    ...categories.map((category) => ({
+  const categoryItems = categories
+    .map((category) => ({
       slug: category.slug,
       name: category.name,
       itemCount: category.itemCount,
       imageUrl: category.imageUrl,
       imageAlt: category.imageAlt,
-    })),
-    extraCategory,
-  ].slice(0, 4);
+    }))
+    .slice(0, 4);
 
   return (
     <section className="py-section">

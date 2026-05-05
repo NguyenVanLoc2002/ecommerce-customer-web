@@ -23,7 +23,7 @@ export const MobileNav = () => {
   ];
 
   return (
-    <nav className="fixed inset-x-4 bottom-4 z-40 border border-border bg-white/90 px-3 py-2 shadow-sticky backdrop-blur lg:hidden">
+    <nav className="fixed inset-x-4 bottom-4 z-40 border border-border bg-white/90 px-3 py-2 shadow-sticky backdrop-blur print:hidden lg:hidden">
       <ul className="grid grid-cols-4 gap-2">
         {items.map((item) => (
           <li key={item.label}>

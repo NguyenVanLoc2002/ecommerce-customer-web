@@ -1,14 +1,21 @@
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { routes } from '@/constants/routes';
+import { routePaths, routes } from '@/constants/routes';
 import { LoginForm } from '@/features/auth/components/LoginForm';
+import { resolveAuthRedirect, withRedirectParam } from '@/features/auth/lib/resolveAuthRedirect';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
-
-const resolveRedirect = (value: string | null) => (value && value.startsWith('/') ? value : routes.profile);
+import { useAuthStore } from '@/shared/stores/authStore';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const user = useAuthStore((state) => state.user);
+  const redirect = searchParams.get('redirect');
+
+  if (user && accessToken) {
+    return <Navigate replace to={resolveAuthRedirect(redirect)} />;
+  }
 
   return (
     <>
@@ -20,11 +27,14 @@ export const LoginPage = () => {
         <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.22em] text-outline">Member Access</p>
       </div>
       <div className="mt-10">
-        <LoginForm onSuccess={() => navigate(resolveRedirect(searchParams.get('redirect')), { replace: true })} />
+        <LoginForm onSuccess={() => navigate(resolveAuthRedirect(redirect), { replace: true })} />
       </div>
       <div className="mt-10 border-t border-black/5 pt-8 text-center">
         <p className="text-base text-text-secondary">Don&apos;t have an account?</p>
-        <Link className="mt-4 inline-block border-b border-text-primary pb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary transition-opacity hover:opacity-70" to={routes.register}>
+        <Link
+          className="mt-4 inline-block border-b border-text-primary pb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary transition-opacity hover:opacity-70"
+          to={withRedirectParam(routePaths.registerRedirect(), redirect)}
+        >
           Create Account
         </Link>
       </div>

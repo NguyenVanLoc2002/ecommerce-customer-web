@@ -1,9 +1,10 @@
+import { DEFAULT_PRODUCT_PAGE, DEFAULT_PRODUCT_PAGE_SIZE, parseProductPrice, trimProductKeyword } from '@/shared/lib/productSearch';
 import { SORT_OPTIONS, type ProductSort } from '@/shared/types/enums';
 import type {
   Brand,
   Category,
   ProductDetail,
-  ProductFilters,
+  ProductListQuery,
   ProductImage,
   ProductListResponse,
   ProductSummary,
@@ -559,18 +560,43 @@ type VariantLookup = {
   variant: ProductVariant;
 };
 
+const keywordSearchCollator = new Intl.Collator('vi', {
+  sensitivity: 'base',
+  usage: 'search',
+});
+
+const matchesMockKeyword = (value: string, keyword: string) => {
+  if (!keyword) {
+    return true;
+  }
+
+  if (value.includes(keyword)) {
+    return true;
+  }
+
+  const source = Array.from(value);
+  const tokenLength = Array.from(keyword).length;
+
+  for (let index = 0; index <= source.length - tokenLength; index += 1) {
+    const candidate = source.slice(index, index + tokenLength).join('');
+    if (keywordSearchCollator.compare(candidate, keyword) === 0) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 const sortProducts = (items: ProductSummary[], sort: ProductSort) => {
   const sorted = [...items];
 
   switch (sort) {
     case SORT_OPTIONS.NEWEST:
       return sorted.sort((a, b) => Number(b.newArrival) - Number(a.newArrival));
-    case SORT_OPTIONS.PRICE_ASC:
-      return sorted.sort((a, b) => a.price - b.price);
-    case SORT_OPTIONS.PRICE_DESC:
-      return sorted.sort((a, b) => b.price - a.price);
-    case SORT_OPTIONS.RATING:
-      return sorted.sort((a, b) => b.rating - a.rating);
+    case SORT_OPTIONS.UPDATED:
+      return sorted.sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
+    case SORT_OPTIONS.NAME_ASC:
+      return sorted.sort((a, b) => a.name.localeCompare(b.name));
     case SORT_OPTIONS.FEATURED:
     default:
       return sorted.sort((a, b) => Number(b.featured) - Number(a.featured));
@@ -614,17 +640,18 @@ export const mockCatalog = {
   },
   getProductBySlug: async (slug: string) => productDetails.find((product) => product.slug === slug) ?? null,
   getProductById: async (id: string) => productDetails.find((product) => product.id === id) ?? null,
-  getProducts: async (filters: ProductFilters): Promise<ProductListResponse> => {
-    const keyword = filters.keyword.trim().toLowerCase();
-    const minPrice = Number(filters.minPrice || 0);
-    const maxPrice = Number(filters.maxPrice || Number.POSITIVE_INFINITY);
+  getProducts: async (filters: ProductListQuery): Promise<ProductListResponse> => {
+    const keyword = trimProductKeyword(filters.keyword);
+    const minPrice = parseProductPrice(filters.minPrice) ?? 0;
+    const maxPrice = parseProductPrice(filters.maxPrice) ?? Number.POSITIVE_INFINITY;
+    const page = filters.page ?? DEFAULT_PRODUCT_PAGE;
 
     const filtered = summaries.filter((product) => {
       const matchesKeyword =
         keyword.length === 0 ||
-        product.name.toLowerCase().includes(keyword) ||
-        product.subtitle.toLowerCase().includes(keyword) ||
-        product.brandName.toLowerCase().includes(keyword);
+        matchesMockKeyword(product.name, keyword) ||
+        matchesMockKeyword(product.subtitle, keyword) ||
+        matchesMockKeyword(product.brandName, keyword);
       const matchesCategory = !filters.category || product.categorySlugs.includes(filters.category);
       const matchesBrand = !filters.brand || brands.find((brand) => brand.id === product.brandId)?.slug === filters.brand;
       const matchesMin = product.price >= minPrice;
@@ -634,15 +661,17 @@ export const mockCatalog = {
     });
 
     const sorted = sortProducts(filtered, filters.sort);
+    const pagedItems = sorted.slice(page * DEFAULT_PRODUCT_PAGE_SIZE, (page + 1) * DEFAULT_PRODUCT_PAGE_SIZE);
+    const totalPages = Math.max(1, Math.ceil(sorted.length / DEFAULT_PRODUCT_PAGE_SIZE));
 
     return {
-      items: sorted,
-      page: 1,
-      size: sorted.length,
+      items: pagedItems,
+      page,
+      size: DEFAULT_PRODUCT_PAGE_SIZE,
       totalItems: sorted.length,
-      totalPages: 1,
-      hasNext: false,
-      hasPrevious: false,
+      totalPages,
+      hasNext: page + 1 < totalPages,
+      hasPrevious: page > DEFAULT_PRODUCT_PAGE,
       appliedFilters: filters,
     };
   },

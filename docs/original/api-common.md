@@ -287,6 +287,16 @@ The current `ErrorCode` enum defines these domain codes.
 - `PRODUCT_VARIANT_NOT_FOUND`
 - `PRODUCT_VARIANT_INACTIVE`
 - `SKU_ALREADY_EXISTS`
+- `BARCODE_ALREADY_EXISTS`
+- `VARIANT_INVALID_PRICE`
+- `VARIANT_INVALID_WEIGHT`
+- `VARIANT_ATTRIBUTE_INVALID`
+- `VARIANT_COMBINATION_DUPLICATE`
+- `PRODUCT_ATTRIBUTE_NOT_FOUND`
+- `PRODUCT_ATTRIBUTE_VALUE_NOT_FOUND`
+- `PRODUCT_ATTRIBUTE_CODE_ALREADY_EXISTS`
+- `PRODUCT_ATTRIBUTE_VALUE_ALREADY_EXISTS`
+- `PRODUCT_ATTRIBUTE_VALUE_IN_USE`
 
 ### 7.6 Inventory
 
@@ -394,6 +404,33 @@ All other pageable routes use Spring `sort=field,direction`.
 
 The codebase contains `PaginationUtils` and `MAX_PAGE_SIZE = 100`, but current controllers bind `Pageable` directly. There is no shared controller-layer clamp applied across all endpoints.
 
+### 8.5 Keyword search
+
+Modules with a `keyword` filter use simple substring matching by default
+(LIKE on the relevant column, case-insensitive).
+
+The product module is the exception: its `keyword` filter runs through a
+**MariaDB FULLTEXT** index over a denormalized `products.search_text` column.
+
+- When `keyword` is blank, the standard JPA Specification path is used.
+- When `keyword` has text, the FULLTEXT path is used:
+  `MATCH(products.name, products.slug, products.search_text) AGAINST (? IN BOOLEAN MODE)`.
+- Search is **case-insensitive** and **accent-insensitive**: input is
+  normalised (lowercase, trim, NFD-strip Vietnamese accents, `đ`→`d`) before
+  hitting the database, so `Áo Thun`, `áo thun` and `ao thun` all match the
+  same rows.
+- Results with a keyword are ordered by FULLTEXT relevance first, then by
+  the requested `sort` (whitelisted columns: `createdAt`, `updatedAt`,
+  `name`, `status`, `featured`).
+- Public query params (`keyword`, `categoryId`, `brandId`, `minPrice`,
+  `maxPrice`, `featured`, `status`, `isDeleted`, `includeDeleted`),
+  pagination, and the response DTO are unchanged.
+- `products.search_text` is **internal** and never exposed in API responses.
+- MariaDB remains the only search engine — Elasticsearch is intentionally
+  not introduced in this phase.
+- Existing rows must be reindexed once after the V17 migration via
+  `POST /api/v1/admin/products/search/reindex`.
+
 ---
 
 ## 9. Enum handling
@@ -443,6 +480,21 @@ Enum values are returned as strings. Some DTOs expose enum-typed fields directly
 - `LocalDateTime` and `Instant` values are serialized as ISO-8601 date-time strings.
 - Money fields are JSON numbers backed by `BigDecimal`.
 - Boolean flags use normal JSON booleans.
+
+### 10.1 Soft-delete convention
+
+- Catalog/admin modules that use `SoftDeleteEntity` are soft-deleted, not hard-deleted.
+- `DELETE` on these resources means soft delete unless an endpoint explicitly documents hard delete.
+- Admin list APIs for these resources default to active rows only.
+- Admin list filters use one shared convention:
+  - `isDeleted=false`: active rows only
+  - `isDeleted=true`: deleted rows only
+  - `includeDeleted=true`: both active and deleted rows
+- If no soft-delete query parameter is provided, the default is active rows only.
+- Reading a soft-deleted resource by ID should behave like a missing resource and return the module's normal `404`/not-found error.
+- Child collections exposed in DTOs should also exclude soft-deleted rows.
+- Picker/reference APIs should resolve active rows only by default and should reject deleted references in create/update flows.
+- Soft-deleted rows may still reserve unique business keys when the backing database unique constraint remains in place.
 
 ---
 

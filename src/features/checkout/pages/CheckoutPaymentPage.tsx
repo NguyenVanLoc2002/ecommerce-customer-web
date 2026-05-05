@@ -25,7 +25,7 @@ const paymentOptions = [
   {
     value: PAYMENT_METHODS.ONLINE,
     title: 'Online payment',
-    description: 'Reserve the order now and complete the payment result flow in the next phase of the product.',
+    description: 'Reserve the order now, then continue to the payment result flow after the order is placed.',
   },
 ] as const;
 

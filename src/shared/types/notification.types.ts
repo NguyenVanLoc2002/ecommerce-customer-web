@@ -31,3 +31,19 @@ export interface Notification {
   previewImage?: ProductImage;
   actionLabel?: string;
 }
+
+export interface NotificationResponse {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  referenceId: string | null;
+  referenceType: string | null;
+  read: boolean;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface UnreadCountResponse {
+  count: number;
+}

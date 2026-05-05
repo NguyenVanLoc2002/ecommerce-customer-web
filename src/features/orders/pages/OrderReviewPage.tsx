@@ -50,7 +50,7 @@ export const OrderReviewPage = () => {
   const selectedComment = watch('comment');
   const eligibleItems = useMemo(
     () => {
-      const existingReviews = myReviewsQuery.data ?? [];
+      const existingReviews = myReviewsQuery.data?.items ?? [];
       const reviewedItemIds = new Set(existingReviews.map((review) => review.orderItemId));
       return order?.items.filter((item) => !reviewedItemIds.has(item.id)) ?? [];
     },

@@ -36,10 +36,10 @@ export const OrdersPage = () => {
 
     const currentFilter = filterOptions.find((option) => option.key === activeFilter);
     if (!currentFilter || currentFilter.statuses === null) {
-      return ordersQuery.data;
+      return ordersQuery.data.items;
     }
 
-    return ordersQuery.data.filter((order) => currentFilter.statuses?.includes(order.status));
+    return ordersQuery.data.items.filter((order) => currentFilter.statuses?.includes(order.status));
   }, [activeFilter, ordersQuery.data]);
 
   return (
