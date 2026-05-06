@@ -18,7 +18,7 @@ Customer Web App cho hệ thống **Fashion Shop** — trang web mua sắm thờ
 - Lucide React (icons)
 
 **Backend**: REST API tại `http://localhost:8080/api/v1`
-**Auth**: JWT Bearer token. Access token lưu trong memory (Zustand). Refresh token lưu trong `localStorage` (hint only — không phải secure storage như mobile).
+**Auth**: JWT Bearer token. Access token lives in memory (Zustand). Refresh token lives only in the backend-managed `HttpOnly` cookie and must never be stored in `localStorage` or `sessionStorage`.
 **Role**: `CUSTOMER` only — web app không phục vụ admin hay staff.
 
 ---
@@ -39,7 +39,7 @@ src/
 │   │   └── routes.ts               # Route path constants
 │   └── providers/
 │       ├── QueryProvider.tsx
-│       ├── AuthProvider.tsx        # Bootstrap auth từ localStorage hint
+│       ├── AuthProvider.tsx        # Bootstrap auth via credentialed refresh-cookie request
 │       └── HelmetProvider.tsx      # React Helmet Async wrapper
 │
 ├── features/
@@ -414,7 +414,7 @@ export const apiClient = axios.create({
 - Unwrap `data.data` từ `ApiResponse<T>` wrapper.
 - 401 → attempt token refresh via `POST /auth/refresh-token`:
   - Success → retry original request once.
-  - Fail → clear `authStore` + clear localStorage refresh hint → `navigate('/login?redirect=...')`.
+  - Fail → clear `authStore` + clear legacy auth storage keys → `navigate('/login?redirect=...')`.
 - Map `fieldErrors[]` thành `Record<string, string>` để feed vào React Hook Form.
 
 Chỉ có một Axios instance duy nhất trong app.
@@ -698,9 +698,9 @@ interface AuthState {
 ```
 
 **Token storage trên web**:
-- `accessToken`: Zustand memory only (mất khi refresh trang — OK, sẽ dùng refresh token để lấy lại).
-- `refreshToken`: `localStorage` (persistent, nhưng không sensitive như token cũ đã expired).
-- Khi app khởi động: check localStorage có refresh token → gọi `POST /auth/refresh-token` → nếu success, set access token mới vào store.
+- `accessToken`: Zustand memory only.
+- `refreshToken`: backend `HttpOnly` cookie only. Frontend không được lưu hay đọc token này trong JavaScript.
+- Khi app khởi động: xóa legacy refresh-token keys trong storage → gọi `POST /auth/refresh-token` với `withCredentials: true` → nếu success, set access token mới vào store.
 
 ### 7.3 Cart Badge & UI Store
 
@@ -869,7 +869,7 @@ Ví dụ: `feat/2001_product_list_page`
 ```ts
 // src/constants/config.ts
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL!;
-export const APP_URL = import.meta.env.VITE_APP_URL!;
+export const SITE_URL = import.meta.env.VITE_SITE_URL!;
 export const REQUEST_TIMEOUT = 15_000;
 export const POLLING_INTERVAL = 3_000;
 export const POLLING_MAX_ATTEMPTS = 10;
@@ -881,13 +881,13 @@ export const ENABLE_3D = import.meta.env.VITE_ENABLE_3D === 'true';
 ```env
 # .env.local
 VITE_API_BASE_URL=http://localhost:8080/api/v1
-VITE_APP_URL=http://localhost:5173
+VITE_SITE_URL=http://localhost:5173
 VITE_APP_NAME=Fashion Shop
 VITE_ENABLE_3D=false
 
 # .env.production
 VITE_API_BASE_URL=https://api.fashionshop.com/api/v1
-VITE_APP_URL=https://fashionshop.vn
+VITE_SITE_URL=https://fashionshop.vn
 VITE_APP_NAME=Fashion Shop
 VITE_ENABLE_3D=true
 ```
@@ -933,7 +933,7 @@ Khi AI hỗ trợ code trong project này:
 6. Không viết business logic trong page/component. Page chỉ render và handle UI event.
 7. Luôn handle 3 state của async operation: loading (skeleton/spinner), error (`ErrorCard`), success.
 8. Mọi action destructive phải qua `ConfirmDialog` — không dùng `window.confirm`.
-9. Token lưu đúng nơi: `accessToken` trong Zustand memory, `refreshToken` trong localStorage.
+9. Token lưu đúng nơi: `accessToken` trong Zustand memory, `refreshToken` trong backend `HttpOnly` cookie only.
 10. Không auto-retry POST/PATCH/DELETE. Mutation failure phải do user trigger lại.
 11. Filter state phải ở URL search params — không Zustand.
 12. Mọi page phải render `<PageSEO>` với đầy đủ title, description, canonical.

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 import { config } from '@/constants/config';
-import { toAuthResponse } from '@/shared/lib/apiMappers';
+import { toAuthUser } from '@/shared/lib/apiMappers';
 import { unwrapApiResponseData } from '@/shared/lib/unwrapApiResponseData';
 import type { ApiResponse } from '@/shared/types/api.types';
 import type { ApiTokenResponse, AuthResponse } from '@/shared/types/auth.types';
@@ -14,9 +14,9 @@ const authBootstrapClient = axios.create({
   },
 });
 
-export const refreshSessionWithToken = async (refreshToken: string): Promise<AuthResponse> => {
-  const tokenResponse = await authBootstrapClient.post<ApiResponse<ApiTokenResponse>>('/auth/refresh-token', {
-    refreshToken,
+export const refreshSession = async (): Promise<AuthResponse> => {
+  const tokenResponse = await authBootstrapClient.post<ApiResponse<ApiTokenResponse>>('/auth/refresh-token', undefined, {
+    withCredentials: true,
   });
   const tokens = unwrapApiResponseData(tokenResponse.data);
 
@@ -27,14 +27,10 @@ export const refreshSessionWithToken = async (refreshToken: string): Promise<Aut
   });
   const profile = unwrapApiResponseData(profileResponse.data);
 
-  return toAuthResponse(
-    {
-      ...tokens,
-      user: {
-        ...profile,
-        gender: profile.gender ?? null,
-      },
-    },
-    profile,
-  );
+  return {
+    accessToken: tokens.accessToken,
+    tokenType: tokens.tokenType,
+    expiresIn: tokens.expiresIn,
+    user: toAuthUser(profile),
+  };
 };

@@ -16,7 +16,6 @@ export interface AuthUser {
 
 export interface AuthTokens {
   accessToken: string;
-  refreshToken: string;
   tokenType: 'Bearer';
   expiresIn: number;
 }
@@ -44,13 +43,10 @@ export interface ApiAuthUserResponse {
 }
 
 export type ApiAuthResponse =
-  | {
-      user: ApiAuthUserResponse;
-      tokens: ApiTokenResponse;
-    }
-  | ({
-      user: ApiAuthUserResponse;
-    } & ApiTokenResponse);
+  {
+    user: ApiAuthUserResponse;
+    tokens: ApiTokenResponse;
+  };
 
 export interface LoginInput {
   email: string;
