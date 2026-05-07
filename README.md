@@ -17,10 +17,20 @@ Detailed implementation, design, API, and planning docs live in the root-level s
 - `POST /auth/login` and `POST /auth/register` return `ApiResponse<AuthResponse>` with `data.user` and `data.tokens.accessToken` / `tokenType` / `expiresIn`.
 - The backend sets the refresh token as an `HttpOnly` cookie. The frontend must not read, store, or send `refreshToken` in JavaScript.
 - `POST /auth/refresh-token` reads the refresh token from the cookie and returns only a new access token payload.
-- `POST /auth/logout` clears the refresh cookie on the backend. The frontend only clears its local auth state.
-- Login, register, refresh, and logout requests should send `withCredentials: true` so the browser can receive and send the refresh cookie.
+- `POST /auth/logout` clears the refresh cookie on the backend. The frontend always clears its local auth state and customer caches even if the API request fails.
+- Login, register, refresh, logout, forgot-password, OTP verification, and password reset requests send `withCredentials: true` so the browser can receive and send the refresh cookie when required.
 - Access tokens stay in memory in the customer web app. Do not store access tokens or bearer tokens in `localStorage`.
 - `localStorage` and `sessionStorage` are reserved for non-sensitive UI data only.
+- Forgot-password flow:
+  - `POST /auth/password/forgot` always shows the same success message: `If the email exists, a verification code has been sent.`
+  - `POST /auth/password/forgot/verify` returns a one-shot `resetToken`.
+  - The frontend keeps `resetToken` in memory/router state only. Never persist it and never place it in the URL.
+- Change-password flow:
+  - `POST /account/password/change` requires `Authorization: Bearer <accessToken>`.
+  - Successful password changes revoke refresh sessions on the backend and force the customer web app to clear auth state and ask the user to sign in again.
+- CSRF:
+  - Current backend docs still describe CSRF double-submit as optional / future-facing.
+  - The frontend is structured to echo `X-XSRF-TOKEN` from the `XSRF-TOKEN` cookie when that cookie is present, without storing the token anywhere else.
 
 ## Catalog Search Contract
 
@@ -55,6 +65,7 @@ Local development notes:
 
 - If the frontend and API run on different origins, the backend must allow credentials for the frontend origin.
 - Local cookie-based auth needs the backend refresh cookie configured for local HTTP development and the frontend to call auth endpoints with `withCredentials: true`.
+- If the backend later enables CSRF double-submit, it must expose a readable `XSRF-TOKEN` cookie for the customer frontend origin so the app can echo `X-XSRF-TOKEN`.
 - `VITE_SITE_URL` should match the customer-web origin used for canonical URLs and SEO metadata.
 
 ## Run

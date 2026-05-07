@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import { config } from '@/constants/config';
+import { getCsrfHeaders } from '@/shared/lib/csrf';
 import { toAuthUser } from '@/shared/lib/apiMappers';
 import { unwrapApiResponseData } from '@/shared/lib/unwrapApiResponseData';
 import type { ApiResponse } from '@/shared/types/api.types';
@@ -16,6 +17,7 @@ const authBootstrapClient = axios.create({
 
 export const refreshSession = async (): Promise<AuthResponse> => {
   const tokenResponse = await authBootstrapClient.post<ApiResponse<ApiTokenResponse>>('/auth/refresh-token', undefined, {
+    headers: getCsrfHeaders(),
     withCredentials: true,
   });
   const tokens = unwrapApiResponseData(tokenResponse.data);

@@ -15,6 +15,7 @@ export const routes = {
   orderReview: '/orders/:orderId/review',
   paymentResult: '/payment/result',
   profile: '/profile',
+  profileSecurity: '/profile/security',
   profileAddresses: '/profile/addresses',
   profileAddressNew: '/profile/addresses/new',
   profileAddressEdit: '/profile/addresses/:id/edit',
@@ -22,6 +23,9 @@ export const routes = {
   notifications: '/notifications',
   login: '/login',
   register: '/register',
+  forgotPassword: '/forgot-password',
+  verifyOtp: '/verify-otp',
+  resetPassword: '/reset-password',
   notFound: '/404',
 } as const;
 
@@ -51,6 +55,7 @@ export const routePaths = {
   orderReview: (orderId: string) => `/orders/${orderId}/review`,
   paymentResult: (orderId?: string) =>
     orderId ? `/payment/result?orderId=${encodeURIComponent(orderId)}` : '/payment/result',
+  profileSecurity: () => routes.profileSecurity,
   profileAddressNew: (returnTo?: string) => withReturnTo(routes.profileAddressNew, returnTo),
   profileAddressEdit: (id: string, returnTo?: string) => withReturnTo(`/profile/addresses/${id}/edit`, returnTo),
   loginRedirect: (redirect?: string) =>

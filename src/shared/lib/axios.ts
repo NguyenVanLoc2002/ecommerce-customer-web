@@ -15,8 +15,23 @@ export const apiClient = axios.create({
 });
 
 const apiBasePath = config.apiBaseUrl.startsWith('http') ? new URL(config.apiBaseUrl).pathname : config.apiBaseUrl;
-const requestsWithoutAuthHeader = new Set(['/auth/login', '/auth/register', '/auth/refresh-token']);
-const refreshRetryExcludedRoutes = new Set(['/auth/login', '/auth/register', '/auth/refresh-token', '/auth/logout']);
+const requestsWithoutAuthHeader = new Set([
+  '/auth/login',
+  '/auth/register',
+  '/auth/refresh-token',
+  '/auth/password/forgot',
+  '/auth/password/forgot/verify',
+  '/auth/password/reset',
+]);
+const refreshRetryExcludedRoutes = new Set([
+  '/auth/login',
+  '/auth/register',
+  '/auth/refresh-token',
+  '/auth/logout',
+  '/auth/password/forgot',
+  '/auth/password/forgot/verify',
+  '/auth/password/reset',
+]);
 let refreshSessionPromise: Promise<ReturnType<typeof refreshSession> extends Promise<infer T> ? T : never> | null = null;
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & {

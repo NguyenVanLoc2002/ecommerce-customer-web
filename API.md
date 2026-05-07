@@ -13,21 +13,36 @@ Applies only to customer/public API usage. Do not use `/api/v1/admin/**` from th
 - Base API path: `/api/v1`
 - Customer/public APIs are under `/api/v1/**` outside `/api/v1/admin/**`
 - Protected endpoints require:
+  - `Authorization: Bearer <accessToken>`
 
 ```http
 Authorization: Bearer <accessToken>
 ```
 
-- JWT only, no session/cookie auth
-- Login/register/refresh return token data:
+- Access token transport is Bearer JWT.
+- Refresh token transport is `HttpOnly` cookie only. The customer frontend must never store or send `refreshToken` in JavaScript.
+- Login/register return:
+  - `user`
   - `accessToken`
-  - `refreshToken`
   - `tokenType`
   - `expiresIn`
+- Refresh returns token data only:
+  - `accessToken`
+  - `tokenType`
+  - `expiresIn`
+- `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh-token`, and `POST /auth/logout` must be called with `withCredentials: true`
+- `POST /auth/password/forgot`, `POST /auth/password/forgot/verify`, and `POST /auth/password/reset` should also keep `withCredentials: true` so cookie-backed security stays compatible
+- Current CSRF note:
+  - backend docs still treat double-submit CSRF as optional / future-facing
+  - when an `XSRF-TOKEN` cookie is present, the frontend should echo it as `X-XSRF-TOKEN`
 - Public routes used by customer frontend:
   - `POST /auth/register`
   - `POST /auth/login`
   - `POST /auth/refresh-token`
+  - `POST /auth/logout`
+  - `POST /auth/password/forgot`
+  - `POST /auth/password/forgot/verify`
+  - `POST /auth/password/reset`
   - `GET /products/**`
   - `GET /categories/**`
   - `GET /brands/**`
@@ -139,13 +154,60 @@ Rules:
 ### `POST /auth/refresh-token`
 - Access: public
 - Request:
-  - `refreshToken` required
+  - send no refresh token body from the customer frontend
+  - backend reads the refresh token from the `HttpOnly` cookie
 - Response: `ApiResponse<TokenResponse>`
 
 ### `POST /auth/logout`
-- Access: authenticated
-- Behavior: blacklists current access token
+- Access: public/idempotent
+- Request:
+  - `withCredentials: true`
+  - send `Authorization: Bearer <accessToken>` when an access token is available
+- Behavior:
+  - clears the refresh cookie
+  - revokes the current refresh session
+  - blacklists the presented access token when valid
+- Frontend behavior:
+  - always clear local auth state and customer-specific query caches, even on `401`, `403`, or network failure
 - Response: `ApiResponse<Void>`
+
+### `POST /auth/password/forgot`
+- Access: public
+- Request:
+  - `email` required, valid email format
+- Response: `ApiResponse<Void>`
+- Frontend behavior:
+  - always show a generic success message
+  - do not reveal whether the email exists
+
+### `POST /auth/password/forgot/verify`
+- Access: public
+- Request:
+  - `email`
+  - `otp` as a 6-digit string
+- Response: `ApiResponse<ResetTokenResponse>`
+- Frontend behavior:
+  - keep `resetToken` in memory/router state only
+  - never persist it and never place it in the URL
+
+### `POST /auth/password/reset`
+- Access: public
+- Request:
+  - `resetToken`
+  - `newPassword`
+  - `confirmPassword`
+- Response: `ApiResponse<Void>`
+
+### `POST /account/password/change`
+- Access: authenticated
+- Request:
+  - `currentPassword`
+  - `newPassword`
+  - `confirmPassword`
+- Response: `ApiResponse<Void>`
+- Frontend behavior:
+  - send Bearer access token
+  - on success, clear auth state and redirect the user to sign in again because the backend revokes refresh sessions
 
 ## 7. Profile Endpoints
 
@@ -578,6 +640,18 @@ Auth and profile:
 - `CUSTOMER_NOT_FOUND`
 - `EMAIL_ALREADY_EXISTS`
 - `PHONE_ALREADY_EXISTS`
+- `OTP_INVALID`
+- `OTP_EXPIRED`
+- `OTP_USED`
+- `OTP_TOO_MANY_ATTEMPTS`
+- `OTP_RATE_LIMITED`
+- `RESET_TOKEN_INVALID`
+- `RESET_TOKEN_EXPIRED`
+- `PASSWORD_MISMATCH`
+- `PASSWORD_POLICY_VIOLATED`
+- `PASSWORD_REUSED`
+- `CURRENT_PASSWORD_INVALID`
+- `CSRF_TOKEN_INVALID`
 
 Address:
 - `ADDRESS_NOT_FOUND`
@@ -642,6 +716,8 @@ Review and notification:
 
 - Axios must unwrap `ApiResponse.data`
 - Protected endpoints require Bearer token
+- Access tokens live in memory only
+- Refresh tokens live in `HttpOnly` cookies only
 - Use `items/page/size/totalItems/totalPages/hasNext/hasPrevious` for pagination
 - Product search is backend FULLTEXT now, but the frontend contract still uses `keyword`
 - Send raw trimmed keywords only; do not normalize Vietnamese accents on the client
@@ -651,6 +727,8 @@ Review and notification:
 - Do not call `/products/{slug}` unless backend supports it
 - Payment callback is not a customer UI endpoint
 - Do not use admin endpoints
+- Never store `refreshToken`, `resetToken`, OTP values, or passwords in `localStorage` or `sessionStorage`
+- Never send `refreshToken` in the customer `POST /auth/refresh-token` body
 - Query/path enums are case-insensitive
 - JSON enum values are case-insensitive
 - Validation failures return HTTP `422`

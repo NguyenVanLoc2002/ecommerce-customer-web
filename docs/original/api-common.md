@@ -50,7 +50,11 @@ Authorization: Bearer <accessToken>
 - Refresh rotates the refresh token on every success and returns only a new access token in the JSON body.
 - `POST /api/v1/auth/logout` is public/idempotent at the filter-chain level so it can still clear the cookie when the access token is missing or expired.
 - `POST /api/v1/auth/logout` blacklists the presented access token when valid, revokes the refresh session when a refresh cookie is present, and clears the refresh cookie.
-- No password-change or password-reset API is implemented in the current source tree.
+- Password reset and authenticated password-change flows are part of the customer security contract:
+  - `POST /api/v1/auth/password/forgot`
+  - `POST /api/v1/auth/password/forgot/verify`
+  - `POST /api/v1/auth/password/reset`
+  - `POST /api/v1/account/password/change`
 - `AuthService.revokeAllRefreshSessions(principalType, principalId)` exists as the reusable integration point for a future password-change flow.
 - The same `/api/v1/auth/login` flow authenticates `CUSTOMER`, `STAFF`, `ADMIN`, and `SUPER_ADMIN` accounts.
 
@@ -97,8 +101,9 @@ These routes are currently unauthenticated at the filter-chain level:
 ### 2.7 Current refresh-token limitations
 
 - A temporary deprecated fallback still allows sending `refreshToken` in the JSON body to `/api/v1/auth/refresh-token`.
-- No password-change endpoint exists yet, so session-family revocation is not yet wired into an account-credential change flow.
-- `SecurityConfig` remains stateless and CSRF is disabled; cookie-based refresh relies on restricted CORS origins, `SameSite`, and the narrow `/api/v1/auth` cookie path rather than a dedicated CSRF token.
+- Refresh-token body fallback is deprecated and should not be used by the customer frontend.
+- `SecurityConfig` remains stateless and CSRF is currently documented as disabled; cookie-based refresh relies on restricted CORS origins, `SameSite`, and the narrow `/api/v1/auth` cookie path rather than a dedicated CSRF token.
+- If CSRF double-submit is later enabled, the frontend should echo `XSRF-TOKEN` as `X-XSRF-TOKEN` on the documented cookie-auth endpoints.
 
 ---
 
@@ -381,6 +386,21 @@ The current `ErrorCode` enum defines these domain codes.
 
 - `NOTIFICATION_NOT_FOUND`
 
+### 7.14 Password reset / OTP
+
+- `OTP_INVALID` — submitted OTP does not match
+- `OTP_EXPIRED` — OTP past `expires_at`
+- `OTP_USED` — OTP has already been verified or superseded
+- `OTP_TOO_MANY_ATTEMPTS` — verify-attempts exceeded `max_attempts`
+- `OTP_RATE_LIMITED` — send cooldown active or per-window limit reached
+- `RESET_TOKEN_INVALID` — reset token unknown, malformed, or already used
+- `RESET_TOKEN_EXPIRED` — reset token past `expires_at`
+- `PASSWORD_MISMATCH` — `confirmPassword` does not equal `newPassword`
+- `PASSWORD_POLICY_VIOLATED` — password fails length / character-class policy
+- `PASSWORD_REUSED` — new password equals current password
+- `CURRENT_PASSWORD_INVALID` — supplied current password is wrong
+- `CSRF_TOKEN_INVALID` — CSRF double-submit cookie/header mismatch
+
 ---
 
 ## 8. Query parameter conventions
@@ -571,4 +591,3 @@ The API expects JSON request bodies for body-based endpoints.
 
 - Use `Content-Type: application/json`
 - Unsupported body content types return `415 Unsupported Media Type`
-

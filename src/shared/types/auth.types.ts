@@ -24,7 +24,9 @@ export interface AuthResponse extends AuthTokens {
   user: AuthUser;
 }
 
-export type ApiTokenResponse = AuthTokens;
+export type TokenResponse = AuthTokens;
+
+export type ApiTokenResponse = TokenResponse;
 
 export interface ApiAuthUserResponse {
   id: string;
@@ -57,6 +59,32 @@ export interface RegisterInput extends LoginInput {
   firstName: string;
   lastName?: string;
   phoneNumber?: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface VerifyForgotPasswordOtpRequest {
+  email: string;
+  otp: string;
+}
+
+export interface VerifyForgotPasswordOtpResponse {
+  resetToken: string;
+  expiresAt: string;
+}
+
+export interface ResetPasswordRequest {
+  resetToken: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 export type AuthBootstrapStatus = 'idle' | 'loading' | 'ready';

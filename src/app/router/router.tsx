@@ -32,6 +32,10 @@ const AddressBookPage = lazy(() => import('@/features/profile/pages/AddressBookP
 const AddressFormPage = lazy(() => import('@/features/profile/pages/AddressFormPage'));
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage'));
+const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage'));
+const VerifyOtpPage = lazy(() => import('@/features/auth/pages/VerifyOtpPage'));
+const ResetPasswordPage = lazy(() => import('@/features/auth/pages/ResetPasswordPage'));
+const ProfileSecurityPage = lazy(() => import('@/features/auth/pages/ProfileSecurityPage'));
 const NotFoundPage = lazy(() => import('@/app/router/NotFoundPage'));
 
 const renderLazyPage = (Component: LazyExoticComponent<ComponentType<Record<string, never>>>) => (
@@ -98,6 +102,10 @@ export const router = createBrowserRouter([
             element: renderLazyPage(ProfilePage),
           },
           {
+            path: routes.profileSecurity,
+            element: renderLazyPage(ProfileSecurityPage),
+          },
+          {
             path: routes.profileAddresses,
             element: renderLazyPage(AddressBookPage),
           },
@@ -161,6 +169,18 @@ export const router = createBrowserRouter([
       {
         path: routes.register,
         element: renderLazyPage(RegisterPage),
+      },
+      {
+        path: routes.forgotPassword,
+        element: renderLazyPage(ForgotPasswordPage),
+      },
+      {
+        path: routes.verifyOtp,
+        element: renderLazyPage(VerifyOtpPage),
+      },
+      {
+        path: routes.resetPassword,
+        element: renderLazyPage(ResetPasswordPage),
       },
     ],
   },
