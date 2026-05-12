@@ -16,6 +16,16 @@ const apiErrorMessages = {
   PASSWORD_REUSED: 'Choose a new password that is different from your current password.',
   CURRENT_PASSWORD_INVALID: 'Your current password is incorrect.',
   CSRF_TOKEN_INVALID: 'Your security session could not be verified. Refresh the page and try again.',
+  IDEMPOTENCY_KEY_REQUIRED: 'Không thể xác định yêu cầu. Vui lòng thử lại.',
+  IDEMPOTENCY_KEY_TOO_LONG: 'Mã xử lý yêu cầu không hợp lệ. Vui lòng thử lại.',
+  IDEMPOTENCY_KEY_CONFLICT: 'Yêu cầu này đã được dùng cho dữ liệu khác. Vui lòng tải lại trang và thử lại.',
+  IDEMPOTENCY_REQUEST_IN_PROGRESS: 'Yêu cầu đang được xử lý. Vui lòng không thao tác lại.',
+  IDEMPOTENCY_REPLAY_NOT_AVAILABLE: 'Yêu cầu trước đó không thể khôi phục. Vui lòng thử lại với thao tác mới.',
+  INSUFFICIENT_STOCK: 'Sản phẩm vừa hết hàng hoặc tồn kho đã thay đổi.',
+  ORDER_STATUS_INVALID: 'Trạng thái đơn hàng đã thay đổi. Vui lòng tải lại.',
+  PAYMENT_ALREADY_PROCESSED: 'Thanh toán đã được ghi nhận trước đó.',
+  CONFLICT: 'Dữ liệu đã thay đổi. Vui lòng tải lại và thử lại.',
+  OPTIMISTIC_LOCK_CONFLICT: 'Dữ liệu đã thay đổi. Vui lòng tải lại và thử lại.',
 } as const;
 
 export const getApiErrorMessage = (code: string, fallbackMessage: string) => {

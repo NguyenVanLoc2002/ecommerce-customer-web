@@ -409,6 +409,14 @@ Order detail fields:
 ### `POST /orders`
 - Access: authenticated
 - Status: `201 Created`
+- Required header:
+  - `Idempotency-Key: <client-generated-unique-string>`
+- Header rules:
+  - required and non-blank
+  - max length `100`
+  - generate one key per user action
+  - reuse the same key only when retrying the same checkout action with the same payload
+  - generate a new key after the checkout payload changes
 - Response: `ApiResponse<OrderResponse>`
 - Current behavior:
   - omitted `paymentMethod` defaults to `COD`
@@ -460,6 +468,14 @@ Transaction shape:
   - `provider` optional
   - `returnUrl` optional
   - body may be omitted
+- Required header:
+  - `Idempotency-Key: <client-generated-unique-string>`
+- Header rules:
+  - required and non-blank
+  - max length `100`
+  - generate one key per user action
+  - reuse the same key only when retrying the same payment-initiate action with the same payload
+  - generate a new key when the payment target or payload changes
 - Response: `ApiResponse<PaymentResponse>`
 - Current behavior:
   - order must belong to current customer
@@ -471,7 +487,7 @@ Transaction shape:
 ### `POST /payments/callback`
 - Not a customer UI endpoint
 - Controller intent: payment gateway callback
-- Current source note: it is not whitelisted in `SecurityConfig`, so it currently requires authentication
+- Access: public server-to-server callback, not a customer frontend route
 - Request:
   - `orderCode` required
   - `status` required string
@@ -627,6 +643,12 @@ General:
 - `VALIDATION_ERROR`
 - `CONFLICT`
 - `INTERNAL_SERVER_ERROR`
+- `IDEMPOTENCY_KEY_REQUIRED`
+- `IDEMPOTENCY_KEY_TOO_LONG`
+- `IDEMPOTENCY_KEY_CONFLICT`
+- `IDEMPOTENCY_REQUEST_IN_PROGRESS`
+- `IDEMPOTENCY_REPLAY_NOT_AVAILABLE`
+- `OPTIMISTIC_LOCK_CONFLICT`
 
 Auth and profile:
 - `INVALID_CREDENTIALS`
@@ -726,6 +748,10 @@ Review and notification:
 - Do not client-side filter or re-sort backend keyword search results
 - Do not call `/products/{slug}` unless backend supports it
 - Payment callback is not a customer UI endpoint
+- Customer Web sends `Idempotency-Key` only for `POST /orders` and `POST /payments/order/{orderId}/initiate`
+- Generate one UUID-like key per user action and keep the same key for same-action retry after timeout or `5xx`
+- Do not reuse an idempotency key for a different checkout payload, order, or payment-initiate payload
+- Do not add `Idempotency-Key` to `POST /payments/callback`
 - Do not use admin endpoints
 - Never store `refreshToken`, `resetToken`, OTP values, or passwords in `localStorage` or `sessionStorage`
 - Never send `refreshToken` in the customer `POST /auth/refresh-token` body
@@ -736,6 +762,5 @@ Review and notification:
 ## Current Risk Notes
 
 - Product detail is documented as `GET /products/{id}`. If the frontend routes by slug, it needs a separate mapping layer or backend support for slug lookup.
-- `POST /payments/callback` is described as a gateway callback, but in the current source it is not public because `SecurityConfig` does not whitelist it.
 - Voucher validation is preview-only. Current order creation stores `voucherCode` but does not apply discount totals in service logic.
 - Review creation requires the parent order to be `COMPLETED`, not merely delivered.

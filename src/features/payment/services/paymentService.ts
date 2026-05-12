@@ -6,10 +6,15 @@ export const paymentService = {
   async getByOrderId(orderId: string) {
     return apiClient.get<ApiResponse<PaymentResponse>, PaymentResponse>(`/payments/order/${orderId}`);
   },
-  async initiate(orderId: string, payload?: InitiatePaymentRequest) {
+  async initiate(orderId: string, payload: InitiatePaymentRequest | undefined, idempotencyKey: string) {
     return apiClient.post<ApiResponse<PaymentResponse>, PaymentResponse>(
       `/payments/order/${orderId}/initiate`,
       payload ?? {},
+      {
+        headers: {
+          'Idempotency-Key': idempotencyKey,
+        },
+      },
     );
   },
 };

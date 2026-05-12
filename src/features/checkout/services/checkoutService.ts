@@ -46,8 +46,12 @@ export const checkoutService = {
     );
     return toVoucherPreview(code, response);
   },
-  async placeOrder(payload: PlaceOrderInput) {
-    const response = await apiClient.post<ApiResponse<OrderResponse>, OrderResponse>('/orders', payload);
+  async placeOrder(payload: PlaceOrderInput, idempotencyKey: string) {
+    const response = await apiClient.post<ApiResponse<OrderResponse>, OrderResponse>('/orders', payload, {
+      headers: {
+        'Idempotency-Key': idempotencyKey,
+      },
+    });
     return enrichOrder(response);
   },
 };

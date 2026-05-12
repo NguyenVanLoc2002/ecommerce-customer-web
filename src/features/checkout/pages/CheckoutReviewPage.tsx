@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { routes } from '@/constants/routes';
@@ -15,12 +15,25 @@ import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { getPaymentMethodLabel, getPaymentMethodNote } from '@/shared/lib/commerceLabels';
+import {
+  isMutationProcessingError,
+  isUncertainMutationFailure,
+  shouldReuseIdempotencyKey,
+} from '@/shared/lib/idempotentMutation';
 import { useUiStore } from '@/shared/stores/uiStore';
+import { createIdempotencyKey } from '@/shared/utils/createIdempotencyKey';
 import { formatAddress } from '@/shared/utils/formatAddress';
 import { formatMoney } from '@/shared/utils/formatMoney';
 
 const editLinkClassName =
   'text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary underline decoration-border underline-offset-4 transition-colors hover:decoration-text-primary';
+const ORDER_STATUS_UNKNOWN_MESSAGE =
+  'Đơn hàng có thể vẫn đang được xử lý. Vui lòng kiểm tra lại trạng thái đơn hàng hoặc thử lại sau.';
+
+type PendingCheckoutAttempt = {
+  idempotencyKey: string;
+  payloadSignature: string;
+};
 
 export const CheckoutReviewPage = () => {
   const navigate = useNavigate();
@@ -35,12 +48,95 @@ export const CheckoutReviewPage = () => {
   const shippingAddressId = useCheckoutStore((state) => state.shippingAddressId);
   const voucherCode = useCheckoutStore((state) => state.voucherCode);
   const voucherPreview = useCheckoutStore((state) => state.voucherPreview);
+  const [pendingAttempt, setPendingAttempt] = useState<PendingCheckoutAttempt | null>(null);
 
   const cart = cartQuery.data;
   const address = useMemo(
     () => addressesQuery.data?.find((item) => item.id === shippingAddressId) ?? null,
     [addressesQuery.data, shippingAddressId],
   );
+  const checkoutPayload = useMemo(
+    () => ({
+      shippingAddressId,
+      paymentMethod,
+      customerNote,
+      voucherCode,
+    }),
+    [customerNote, paymentMethod, shippingAddressId, voucherCode],
+  );
+  const checkoutPayloadSignature = useMemo(() => JSON.stringify(checkoutPayload), [checkoutPayload]);
+
+  useEffect(() => {
+    if (!pendingAttempt || placeOrder.isPending || pendingAttempt.payloadSignature === checkoutPayloadSignature) {
+      return;
+    }
+
+    setPendingAttempt(null);
+  }, [checkoutPayloadSignature, pendingAttempt, placeOrder.isPending]);
+
+  const handlePlaceOrder = () => {
+    if (!address || !cart || cart.staleItemCount > 0 || placeOrder.isPending) {
+      return;
+    }
+
+    const idempotencyKey =
+      pendingAttempt?.payloadSignature === checkoutPayloadSignature
+        ? pendingAttempt.idempotencyKey
+        : createIdempotencyKey('checkout');
+
+    setPendingAttempt({
+      idempotencyKey,
+      payloadSignature: checkoutPayloadSignature,
+    });
+
+    placeOrder.mutate(
+      {
+        payload: checkoutPayload,
+        idempotencyKey,
+      },
+      {
+        onSuccess: (order) => {
+          setPendingAttempt(null);
+          setConfirmationOrder(order);
+          addToast({
+            tone: 'success',
+            title: 'Order placed',
+            description: `${order.code} is now available in your orders list.`,
+          });
+          navigate(routes.checkoutConfirmation);
+        },
+        onError: (error) => {
+          if (!shouldReuseIdempotencyKey(error)) {
+            setPendingAttempt(null);
+          }
+
+          if (isMutationProcessingError(error)) {
+            addToast({
+              tone: 'info',
+              title: 'Đơn hàng đang được xử lý',
+              description: error instanceof Error ? error.message : ORDER_STATUS_UNKNOWN_MESSAGE,
+            });
+            return;
+          }
+
+          if (isUncertainMutationFailure(error)) {
+            addToast({
+              tone: 'info',
+              title: 'Kiểm tra lại trạng thái đơn hàng',
+              description: ORDER_STATUS_UNKNOWN_MESSAGE,
+            });
+            return;
+          }
+
+          addToast({
+            tone: 'danger',
+            title: 'Order placement failed',
+            description: error instanceof Error ? error.message : 'Try again.',
+          });
+        },
+      },
+    );
+  };
 
   if (cart?.items.length === 0) {
     return (
@@ -171,34 +267,7 @@ export const CheckoutReviewPage = () => {
                   <Button
                     disabled={!address || cart.staleItemCount > 0 || placeOrder.isPending}
                     fullWidth
-                    onClick={() =>
-                      placeOrder.mutate(
-                        {
-                          shippingAddressId,
-                          paymentMethod,
-                          customerNote,
-                          voucherCode,
-                        },
-                        {
-                          onSuccess: (order) => {
-                            setConfirmationOrder(order);
-                            addToast({
-                              tone: 'success',
-                              title: 'Order placed',
-                              description: `${order.code} is now available in your orders list.`,
-                            });
-                            navigate(routes.checkoutConfirmation);
-                          },
-                          onError: (error) => {
-                            addToast({
-                              tone: 'danger',
-                              title: 'Order placement failed',
-                              description: error instanceof Error ? error.message : 'Try again.',
-                            });
-                          },
-                        },
-                      )
-                    }
+                    onClick={handlePlaceOrder}
                     size="lg"
                   >
                     {placeOrder.isPending ? 'Placing order...' : 'Place order'}

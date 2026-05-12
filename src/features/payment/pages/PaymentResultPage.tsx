@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, LoaderCircle, XCircle } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 
@@ -11,13 +11,22 @@ import { Container } from '@/shared/components/layout/Container';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
+import {
+  isMutationProcessingError,
+  isPaymentAlreadyProcessedError,
+  isUncertainMutationFailure,
+  shouldReuseIdempotencyKey,
+} from '@/shared/lib/idempotentMutation';
 import { useUiStore } from '@/shared/stores/uiStore';
 import { PAYMENT_STATUSES } from '@/shared/types/payment.types';
+import { createIdempotencyKey } from '@/shared/utils/createIdempotencyKey';
 import { formatDate } from '@/shared/utils/formatDate';
 import { formatMoney } from '@/shared/utils/formatMoney';
 
 const codeButtonClassName =
   'inline-flex items-center border border-border px-4 py-2 font-mono text-sm text-text-primary transition-colors hover:border-text-primary';
+const PAYMENT_STATUS_UNKNOWN_MESSAGE =
+  'Thanh toán có thể vẫn đang được xử lý. Vui lòng kiểm tra lại trạng thái đơn hàng hoặc thử lại sau.';
 
 const statusToneClasses: Record<string, string> = {
   [PAYMENT_STATUSES.PAID]: 'border-success/20 bg-success/10 text-success',
@@ -28,18 +37,46 @@ const statusToneClasses: Record<string, string> = {
   [PAYMENT_STATUSES.PARTIALLY_REFUNDED]: 'border-border bg-surface-muted text-text-primary',
 };
 
+type PendingPaymentAttempt = {
+  idempotencyKey: string;
+  payloadSignature: string;
+};
+
 export const PaymentResultPage = () => {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('orderId') ?? '';
   const addToast = useUiStore((state) => state.addToast);
   const paymentQuery = usePaymentResultPolling(orderId);
   const initiatePayment = useInitiatePayment();
+  const [pendingAttempt, setPendingAttempt] = useState<PendingPaymentAttempt | null>(null);
 
   const payment = paymentQuery.data;
   const notFoundCode = useMemo(
     () => (paymentQuery.error instanceof Error && 'code' in paymentQuery.error ? String((paymentQuery.error as { code?: string }).code) : ''),
     [paymentQuery.error],
   );
+  const initiatePayload = useMemo(
+    () => ({
+      returnUrl: typeof window !== 'undefined' ? `${window.location.origin}${routePaths.paymentResult(orderId)}` : undefined,
+    }),
+    [orderId],
+  );
+  const initiatePayloadSignature = useMemo(
+    () =>
+      JSON.stringify({
+        orderId,
+        payload: initiatePayload,
+      }),
+    [initiatePayload, orderId],
+  );
+
+  useEffect(() => {
+    if (!pendingAttempt || initiatePayment.isPending || pendingAttempt.payloadSignature === initiatePayloadSignature) {
+      return;
+    }
+
+    setPendingAttempt(null);
+  }, [initiatePayloadSignature, initiatePayment.isPending, pendingAttempt]);
 
   const copyCode = async (value: string, label: string) => {
     try {
@@ -58,13 +95,75 @@ export const PaymentResultPage = () => {
     }
   };
 
-  const initiate = () =>
-    initiatePayment.mutate({
-      orderId,
-      payload: {
-        returnUrl: typeof window !== 'undefined' ? `${window.location.origin}${routePaths.paymentResult(orderId)}` : undefined,
-      },
+  const initiate = () => {
+    if (!orderId || initiatePayment.isPending) {
+      return;
+    }
+
+    const idempotencyKey =
+      pendingAttempt?.payloadSignature === initiatePayloadSignature
+        ? pendingAttempt.idempotencyKey
+        : createIdempotencyKey('payment');
+
+    setPendingAttempt({
+      idempotencyKey,
+      payloadSignature: initiatePayloadSignature,
     });
+
+    initiatePayment.mutate(
+      {
+        orderId,
+        payload: initiatePayload,
+        idempotencyKey,
+      },
+      {
+        onSuccess: () => {
+          setPendingAttempt(null);
+        },
+        onError: (error) => {
+          if (!shouldReuseIdempotencyKey(error)) {
+            setPendingAttempt(null);
+          }
+
+          if (isPaymentAlreadyProcessedError(error)) {
+            addToast({
+              tone: 'info',
+              title: 'Thanh toán đã được ghi nhận',
+              description: error instanceof Error ? error.message : 'Thanh toán đã được ghi nhận trước đó.',
+            });
+            void paymentQuery.refetch();
+            return;
+          }
+
+          if (isMutationProcessingError(error)) {
+            addToast({
+              tone: 'info',
+              title: 'Thanh toán đang được xử lý',
+              description: error instanceof Error ? error.message : PAYMENT_STATUS_UNKNOWN_MESSAGE,
+            });
+            void paymentQuery.refetch();
+            return;
+          }
+
+          if (isUncertainMutationFailure(error)) {
+            addToast({
+              tone: 'info',
+              title: 'Kiểm tra lại trạng thái thanh toán',
+              description: PAYMENT_STATUS_UNKNOWN_MESSAGE,
+            });
+            void paymentQuery.refetch();
+            return;
+          }
+
+          addToast({
+            tone: 'danger',
+            title: 'Payment initiation failed',
+            description: error instanceof Error ? error.message : 'Try again.',
+          });
+        },
+      },
+    );
+  };
 
   if (!orderId) {
     return (

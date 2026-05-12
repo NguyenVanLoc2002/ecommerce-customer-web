@@ -50,11 +50,7 @@ Authorization: Bearer <accessToken>
 - Refresh rotates the refresh token on every success and returns only a new access token in the JSON body.
 - `POST /api/v1/auth/logout` is public/idempotent at the filter-chain level so it can still clear the cookie when the access token is missing or expired.
 - `POST /api/v1/auth/logout` blacklists the presented access token when valid, revokes the refresh session when a refresh cookie is present, and clears the refresh cookie.
-- Password reset and authenticated password-change flows are part of the customer security contract:
-  - `POST /api/v1/auth/password/forgot`
-  - `POST /api/v1/auth/password/forgot/verify`
-  - `POST /api/v1/auth/password/reset`
-  - `POST /api/v1/account/password/change`
+- No password-change or password-reset API is implemented in the current source tree.
 - `AuthService.revokeAllRefreshSessions(principalType, principalId)` exists as the reusable integration point for a future password-change flow.
 - The same `/api/v1/auth/login` flow authenticates `CUSTOMER`, `STAFF`, `ADMIN`, and `SUPER_ADMIN` accounts.
 
@@ -76,6 +72,10 @@ These routes are currently unauthenticated at the filter-chain level:
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/refresh-token`
 - `POST /api/v1/auth/logout`
+- `POST /api/v1/auth/password/forgot`
+- `POST /api/v1/auth/password/forgot/verify`
+- `POST /api/v1/auth/password/reset`
+- `POST /api/v1/payments/callback` — gateway callback, server-to-server, no bearer token
 - `GET /api/v1/products/**`
 - `GET /api/v1/categories/**`
 - `GET /api/v1/brands/**`
@@ -94,16 +94,70 @@ These routes are currently unauthenticated at the filter-chain level:
   - user creation
 - All other routes require authentication unless explicitly whitelisted above.
 
-### 2.6 Important current-code note
 
-`POST /api/v1/payments/callback` is described in its controller as a gateway callback, but it is **not** whitelisted in `SecurityConfig`. In the current backend source, it therefore requires authentication.
 
-### 2.7 Current refresh-token limitations
+### 2.6 Payment callback route
+
+`POST /api/v1/payments/callback` is a public route called server-to-server by the payment gateway. No `Authorization` header is required or expected.
+
+**Security note:** HMAC/signature verification is a TODO inside `PaymentServiceImpl.processCallback`. Until it is implemented, the only protection against spoofed callbacks is application-level state-machine guards (idempotent on duplicate `providerTxnId`, no backward state transitions). See `docs/security.md §10` for details.
+
+### 2.7 Idempotency
+
+Two customer-driven mutation endpoints require an `Idempotency-Key` header:
+
+| Endpoint | Required |
+|---|---|
+| `POST /api/v1/orders` | Yes |
+| `POST /api/v1/payments/order/{orderId}/initiate` | Yes |
+
+All other endpoints (including gateway callbacks) use provider-event-id or state-machine guards for duplicate protection — they do **not** use client-supplied `Idempotency-Key`.
+
+**Header format:**
+
+```http
+Idempotency-Key: <client-generated-unique-string>
+```
+
+**Constraints:**
+- Required: non-blank string
+- Maximum length: 100 characters
+
+**Behavior table:**
+
+| Scenario | Response |
+|---|---|
+| New key + any payload | Executes business action, records COMPLETED |
+| Same key + same payload (COMPLETED) | Returns original result — no side effect |
+| Same key + different payload | `409 IDEMPOTENCY_KEY_CONFLICT` |
+| Concurrent same key | Waiting request gets `409 IDEMPOTENCY_REQUEST_IN_PROGRESS` |
+| Missing or blank header | `400 IDEMPOTENCY_KEY_REQUIRED` |
+| Header > 100 chars | `400 IDEMPOTENCY_KEY_TOO_LONG` |
+| FAILED + retryable action (checkout, payment initiate) | Deletes failed record, executes again |
+| FAILED + non-retryable action | `409 IDEMPOTENCY_REPLAY_NOT_AVAILABLE` |
+
+**Error codes:**
+
+| Code | HTTP | When |
+|---|---|---|
+| `IDEMPOTENCY_KEY_REQUIRED` | 400 | Header missing or blank |
+| `IDEMPOTENCY_KEY_TOO_LONG` | 400 | Header > 100 characters |
+| `IDEMPOTENCY_KEY_CONFLICT` | 409 | Same key, different request body hash |
+| `IDEMPOTENCY_REQUEST_IN_PROGRESS` | 409 | Concurrent request with same key is still processing |
+| `IDEMPOTENCY_REPLAY_NOT_AVAILABLE` | 409 | Key maps to a non-retryable FAILED action |
+
+**Frontend guidance:**
+- Generate one UUID per user-initiated action (tap "Place Order", tap "Pay Now").
+- On network timeout or 5xx, reuse the same key to retry — you will get the original result back if the server already succeeded.
+- Do not reuse a key for a different order or different payment provider.
+- On `IDEMPOTENCY_REQUEST_IN_PROGRESS`, the original request is still processing — poll or wait before retrying.
+- On `IDEMPOTENCY_KEY_CONFLICT`, you sent a different body with the same key — generate a new key.
+
+### 2.8 Current refresh-token limitations
 
 - A temporary deprecated fallback still allows sending `refreshToken` in the JSON body to `/api/v1/auth/refresh-token`.
-- Refresh-token body fallback is deprecated and should not be used by the customer frontend.
-- `SecurityConfig` remains stateless and CSRF is currently documented as disabled; cookie-based refresh relies on restricted CORS origins, `SameSite`, and the narrow `/api/v1/auth` cookie path rather than a dedicated CSRF token.
-- If CSRF double-submit is later enabled, the frontend should echo `XSRF-TOKEN` as `X-XSRF-TOKEN` on the documented cookie-auth endpoints.
+- No password-change endpoint exists yet, so session-family revocation is not yet wired into an account-credential change flow.
+- `SecurityConfig` remains stateless and CSRF is disabled; cookie-based refresh relies on restricted CORS origins, `SameSite`, and the narrow `/api/v1/auth` cookie path rather than a dedicated CSRF token.
 
 ---
 
@@ -401,6 +455,14 @@ The current `ErrorCode` enum defines these domain codes.
 - `CURRENT_PASSWORD_INVALID` — supplied current password is wrong
 - `CSRF_TOKEN_INVALID` — CSRF double-submit cookie/header mismatch
 
+### 7.15 Idempotency
+
+- `IDEMPOTENCY_KEY_REQUIRED` — `Idempotency-Key` header is missing or blank
+- `IDEMPOTENCY_KEY_TOO_LONG` — `Idempotency-Key` exceeds 100 characters
+- `IDEMPOTENCY_KEY_CONFLICT` — same key was used with a different request body
+- `IDEMPOTENCY_REQUEST_IN_PROGRESS` — a request with this key is currently being processed
+- `IDEMPOTENCY_REPLAY_NOT_AVAILABLE` — previous attempt failed for a non-retryable action
+
 ---
 
 ## 8. Query parameter conventions
@@ -591,3 +653,4 @@ The API expects JSON request bodies for body-based endpoints.
 
 - Use `Content-Type: application/json`
 - Unsupported body content types return `415 Unsupported Media Type`
+

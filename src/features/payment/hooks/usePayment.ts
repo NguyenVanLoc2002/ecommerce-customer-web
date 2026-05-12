@@ -29,9 +29,10 @@ export const useInitiatePayment = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ orderId, payload }: { orderId: string; payload?: InitiatePaymentRequest }) => paymentService.initiate(orderId, payload),
+    mutationFn: ({ orderId, payload, idempotencyKey }: { orderId: string; payload?: InitiatePaymentRequest; idempotencyKey: string }) =>
+      paymentService.initiate(orderId, payload, idempotencyKey),
     retry: false,
-    onSuccess: (_, variables) => {
+    onSettled: (_, __, variables) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.payments.byOrder(variables.orderId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(variables.orderId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders.list });

@@ -39,6 +39,17 @@ Detailed implementation, design, API, and planning docs live in the root-level s
 - Send the user's raw keyword after trimming outer whitespace only. Do not lowercase or strip Vietnamese accents on the client.
 - Do not expose backend-internal `searchText` / `search_text` fields or admin product search/reindex actions in the customer app.
 
+## Phase 3 Idempotency
+
+- Customer Web sends `Idempotency-Key` only for:
+  - `POST /api/v1/orders`
+  - `POST /api/v1/payments/order/{orderId}/initiate`
+- Generate one UUID-like key per customer action such as tapping `Place Order` or `Pay Now`.
+- Reuse the same key only when retrying the same action with the same payload after a timeout, network failure, or `5xx`.
+- Generate a new key when the checkout payload changes or when payment is initiated for a different order or payload.
+- Do not add `Idempotency-Key` to auth, catalog, cart, or payment callback requests.
+- `POST /api/v1/payments/callback` is server-to-server only. The customer frontend must never call it directly.
+
 ## Prerequisites
 
 - Node.js `20+`
