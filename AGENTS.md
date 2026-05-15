@@ -31,6 +31,7 @@ Rule of thumb:
 - Visual, UX, tokens, component patterns, screen mapping: `DESIGN.md`
 - Build order and milestones: `DELIVERY_PLAN.md`
 - Setup and runtime basics: `README.md`
+- Exception: customer auth cookie/refresh semantics currently follow `docs/original/api-common.md` and `docs/original/customer-api-contract.md` until the consolidated API docs are refreshed
 
 ## 3. Tech Stack
 
@@ -174,7 +175,16 @@ Implementation constraints:
 - Base path: `/api/v1`
 - Auth uses `Authorization: Bearer <accessToken>`
 - Access token lives in Zustand memory
-- Refresh token lives in `localStorage` as a bootstrap hint
+- Refresh token lives only in the backend-managed `HttpOnly` cookie
+- Do not store `refreshToken` in `localStorage`, `sessionStorage`, or any other JavaScript-accessible storage
+- Do not send `refreshToken` in the `POST /auth/refresh-token` body
+- Customer-web must call auth cookie endpoints with credentials:
+  - `POST /auth/login`
+  - `POST /auth/register`
+  - `POST /auth/refresh-token`
+  - `POST /auth/logout`
+- If a temporary access-token persistence fallback is ever introduced, it may use `sessionStorage` only; never `localStorage`
+- `localStorage` is limited to non-sensitive customer UX data such as theme, locale, recently viewed items, and non-sensitive drafts
 - All API behavior must match `API.md`
 
 Critical contract notes:

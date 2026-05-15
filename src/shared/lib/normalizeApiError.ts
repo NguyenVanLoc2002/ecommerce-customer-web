@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+import { getApiErrorMessage } from '@/shared/lib/apiErrorMessages';
 import { createServiceError } from '@/shared/lib/serviceError';
 import type { ApiErrorResponse } from '@/shared/types/api.types';
 
@@ -10,7 +11,7 @@ export const normalizeApiError = (error: unknown) => {
 
   const payload = error.response?.data;
   if (!payload) {
-    return createServiceError('REQUEST_FAILED', error.message);
+    return createServiceError('REQUEST_FAILED', error.message, undefined, error.response?.status);
   }
 
   const fieldErrors =
@@ -21,5 +22,8 @@ export const normalizeApiError = (error: unknown) => {
       return accumulator;
     }, {}) ?? undefined;
 
-  return createServiceError(payload.code ?? 'REQUEST_FAILED', payload.message ?? error.message, fieldErrors);
+  const code = payload.code ?? 'REQUEST_FAILED';
+  const message = getApiErrorMessage(code, payload.message ?? error.message);
+
+  return createServiceError(code, message, fieldErrors, error.response?.status);
 };

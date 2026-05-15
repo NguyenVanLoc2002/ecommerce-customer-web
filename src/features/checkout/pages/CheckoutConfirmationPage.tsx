@@ -11,8 +11,10 @@ import { JsonLd } from '@/shared/components/seo/JsonLd';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
-import { getPaymentMethodLabel } from '@/shared/lib/commerceLabels';
+import { getPaymentMethodLabel, getPaymentProviderLabel } from '@/shared/lib/commerceLabels';
 import { useUiStore } from '@/shared/stores/uiStore';
+import { ORDER_STATUSES, PAYMENT_METHODS } from '@/shared/types/enums';
+import { PAYMENT_PROVIDERS, PAYMENT_STATUSES } from '@/shared/types/payment.types';
 import { formatAddress } from '@/shared/utils/formatAddress';
 import { formatDate } from '@/shared/utils/formatDate';
 
@@ -20,8 +22,13 @@ export const CheckoutConfirmationPage = () => {
   const navigate = useNavigate();
   const addToast = useUiStore((state) => state.addToast);
   const confirmationOrder = useCheckoutStore((state) => state.confirmationOrder);
+  const paymentProvider = useCheckoutStore((state) => state.paymentProvider);
   const resetCheckout = useCheckoutStore((state) => state.resetCheckout);
   const [copied, setCopied] = useState(false);
+  const requiresOnlinePayment =
+    confirmationOrder?.paymentMethod === PAYMENT_METHODS.ONLINE &&
+    confirmationOrder.status === ORDER_STATUSES.AWAITING_PAYMENT &&
+    confirmationOrder.paymentStatus !== PAYMENT_STATUSES.PAID;
 
   if (!confirmationOrder) {
     return (
@@ -42,6 +49,10 @@ export const CheckoutConfirmationPage = () => {
       </>
     );
   }
+
+  const paymentProviderLabel =
+    confirmationOrder.paymentMethod === PAYMENT_METHODS.ONLINE ? getPaymentProviderLabel(paymentProvider) : getPaymentMethodLabel(confirmationOrder.paymentMethod);
+  const paymentActionLabel = paymentProvider === PAYMENT_PROVIDERS.PAYPAL ? 'Pay with PayPal' : 'Pay with MoMo';
 
   return (
     <>
@@ -77,7 +88,7 @@ export const CheckoutConfirmationPage = () => {
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Order confirmed</p>
               <h1 className="mt-4 font-display text-[3.5rem] leading-none text-text-primary md:text-[4.75rem]">Order Confirmed.</h1>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">
-                Created {formatDate(confirmationOrder.createdAt)} with {getPaymentMethodLabel(confirmationOrder.paymentMethod)}. Your archive has been updated.
+                Created {formatDate(confirmationOrder.createdAt)} with {paymentProviderLabel}. Your archive has been updated.
               </p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <OrderStatusBadge status={confirmationOrder.status} />
@@ -101,6 +112,11 @@ export const CheckoutConfirmationPage = () => {
                 </button>
               </div>
               <div className="mt-8 flex flex-wrap gap-3">
+                {requiresOnlinePayment ? (
+                  <Button onClick={() => navigate(routePaths.paymentResult(confirmationOrder.id, paymentProvider))} size="lg">
+                    {paymentActionLabel}
+                  </Button>
+                ) : null}
                 <Button onClick={() => navigate(routePaths.orderDetail(confirmationOrder.id))} size="lg">
                   View full order
                 </Button>

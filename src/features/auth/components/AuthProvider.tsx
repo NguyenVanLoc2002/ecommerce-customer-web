@@ -1,9 +1,9 @@
 import type { PropsWithChildren } from 'react';
 import { useEffect, useRef } from 'react';
 
-import { config } from '@/constants/config';
 import { authService } from '@/features/auth/services/authService';
 import { LoadingOverlay } from '@/shared/components/feedback/LoadingOverlay';
+import { clearLegacyCustomerAuthStorage } from '@/shared/lib/authStorage';
 import { useAuthStore } from '@/shared/stores/authStore';
 
 export const AuthProvider = ({ children }: PropsWithChildren) => {
@@ -21,9 +21,9 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     }
 
     bootstrapStartedRef.current = true;
-    const refreshToken = typeof window !== 'undefined' ? window.localStorage.getItem(config.authHintKey) : null;
+    clearLegacyCustomerAuthStorage();
 
-    if (!refreshToken || accessToken) {
+    if (accessToken) {
       finishBootstrap();
       return;
     }
@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
     const bootstrap = async () => {
       try {
-        const session = await authService.refreshToken(refreshToken);
+        const session = await authService.refreshToken();
         setSession(session);
       } catch {
         clearSession();

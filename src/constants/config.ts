@@ -11,9 +11,7 @@ export const config = {
         ? window.location.origin
         : 'http://localhost:5173',
   useMockData: !rawUseMockData || !mockDataDisabledValues.has(rawUseMockData),
-  authHintKey: 'fashion-shop.refresh-token-hint',
   authUsersKey: 'fashion-shop.mock-users',
-  authSessionKey: 'fashion-shop.mock-session',
   mockCommerceKey: 'fashion-shop.mock-commerce',
   mockEngagementKey: 'fashion-shop.mock-engagement',
   checkoutDraftKey: 'fashion-shop.checkout-draft',

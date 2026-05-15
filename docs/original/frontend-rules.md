@@ -171,6 +171,9 @@ Every page must render `<PageSEO>` with title, description, and canonical URL.
 - Every query must handle: loading, error, empty states.
 - Use `suspense: false` on queries unless inside explicit `<Suspense>`.
 - Infinite scroll uses `useInfiniteQuery`.
+- Customer auth register/refresh/logout/password-reset requests must use `withCredentials: true` so the browser can send the backend `HttpOnly` refresh-token cookie where applicable.
+- Customer auth code must never store `refreshToken`, `accessToken`, or bearer tokens in `localStorage`.
+- If the current auth architecture ever needs temporary access-token persistence, `sessionStorage` is the only acceptable fallback and the value must still not be treated as durable state.
 
 ### Query key convention
 ```ts
@@ -255,7 +258,8 @@ Do not:
 - Call API directly inside a page component
 - Use `any` type
 - Import from another feature's internal files
-- Use `AsyncStorage` style localStorage for tokens
+- Store `refreshToken`, `accessToken`, bearer tokens, or private customer profile data in `localStorage` or `sessionStorage`
+- Do not send `refreshToken` in the `POST /auth/refresh-token` request body once the cookie flow is available
 - Use `ScrollView + map` for long lists (use virtualized rendering or `IntersectionObserver`-based pagination)
 - Animate checkout-critical form controls
 - Block LCP with 3D or heavy assets

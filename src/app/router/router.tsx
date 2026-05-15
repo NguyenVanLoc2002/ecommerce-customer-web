@@ -24,6 +24,9 @@ const OrderDetailPage = lazy(() => import('@/features/orders/pages/OrderDetailPa
 const OrderReviewPage = lazy(() => import('@/features/orders/pages/OrderReviewPage'));
 const InvoicePage = lazy(() => import('@/features/invoice/pages/InvoicePage'));
 const PaymentResultPage = lazy(() => import('@/features/payment/pages/PaymentResultPage'));
+const MomoReturnPage = lazy(() => import('@/features/payment/pages/MomoReturnPage'));
+const PaypalReturnPage = lazy(() => import('@/features/payment/pages/PaypalReturnPage'));
+const PaypalCancelPage = lazy(() => import('@/features/payment/pages/PaypalCancelPage'));
 const ShipmentTrackingPage = lazy(() => import('@/features/shipment/pages/ShipmentTrackingPage'));
 const MyReviewsPage = lazy(() => import('@/features/reviews/pages/MyReviewsPage'));
 const NotificationsPage = lazy(() => import('@/features/notifications/pages/NotificationsPage'));
@@ -32,6 +35,10 @@ const AddressBookPage = lazy(() => import('@/features/profile/pages/AddressBookP
 const AddressFormPage = lazy(() => import('@/features/profile/pages/AddressFormPage'));
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage'));
+const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage'));
+const VerifyOtpPage = lazy(() => import('@/features/auth/pages/VerifyOtpPage'));
+const ResetPasswordPage = lazy(() => import('@/features/auth/pages/ResetPasswordPage'));
+const ProfileSecurityPage = lazy(() => import('@/features/auth/pages/ProfileSecurityPage'));
 const NotFoundPage = lazy(() => import('@/app/router/NotFoundPage'));
 
 const renderLazyPage = (Component: LazyExoticComponent<ComponentType<Record<string, never>>>) => (
@@ -94,8 +101,24 @@ export const router = createBrowserRouter([
             element: renderLazyPage(PaymentResultPage),
           },
           {
+            path: routes.paymentMomoReturn,
+            element: renderLazyPage(MomoReturnPage),
+          },
+          {
+            path: routes.paymentPaypalReturn,
+            element: renderLazyPage(PaypalReturnPage),
+          },
+          {
+            path: routes.paymentPaypalCancel,
+            element: renderLazyPage(PaypalCancelPage),
+          },
+          {
             path: routes.profile,
             element: renderLazyPage(ProfilePage),
+          },
+          {
+            path: routes.profileSecurity,
+            element: renderLazyPage(ProfileSecurityPage),
           },
           {
             path: routes.profileAddresses,
@@ -161,6 +184,18 @@ export const router = createBrowserRouter([
       {
         path: routes.register,
         element: renderLazyPage(RegisterPage),
+      },
+      {
+        path: routes.forgotPassword,
+        element: renderLazyPage(ForgotPasswordPage),
+      },
+      {
+        path: routes.verifyOtp,
+        element: renderLazyPage(VerifyOtpPage),
+      },
+      {
+        path: routes.resetPassword,
+        element: renderLazyPage(ResetPasswordPage),
       },
     ],
   },

@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { routes } from '@/constants/routes';
+import { routePaths, routes } from '@/constants/routes';
 import { useCart } from '@/features/cart/hooks/useCart';
 import { useCheckoutAddresses, usePlaceOrder } from '@/features/checkout/hooks/useCheckout';
 import { useCheckoutStore } from '@/features/checkout/stores/checkoutStore';
@@ -14,13 +14,28 @@ import { Container } from '@/shared/components/layout/Container';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
-import { getPaymentMethodLabel, getPaymentMethodNote } from '@/shared/lib/commerceLabels';
+import { getPaymentMethodLabel, getPaymentMethodNote, getPaymentProviderLabel } from '@/shared/lib/commerceLabels';
+import {
+  isMutationProcessingError,
+  isUncertainMutationFailure,
+  shouldReuseIdempotencyKey,
+} from '@/shared/lib/idempotentMutation';
 import { useUiStore } from '@/shared/stores/uiStore';
+import { createIdempotencyKey } from '@/shared/utils/createIdempotencyKey';
 import { formatAddress } from '@/shared/utils/formatAddress';
 import { formatMoney } from '@/shared/utils/formatMoney';
+import { PAYMENT_METHODS } from '@/shared/types/enums';
+import { PAYMENT_PROVIDERS } from '@/shared/types/payment.types';
 
 const editLinkClassName =
   'text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary underline decoration-border underline-offset-4 transition-colors hover:decoration-text-primary';
+const ORDER_STATUS_UNKNOWN_MESSAGE =
+  'Đơn hàng có thể vẫn đang được xử lý. Vui lòng kiểm tra lại trạng thái đơn hàng hoặc thử lại sau.';
+
+type PendingCheckoutAttempt = {
+  idempotencyKey: string;
+  payloadSignature: string;
+};
 
 export const CheckoutReviewPage = () => {
   const navigate = useNavigate();
@@ -30,17 +45,112 @@ export const CheckoutReviewPage = () => {
   const placeOrder = usePlaceOrder();
   const customerNote = useCheckoutStore((state) => state.customerNote);
   const paymentMethod = useCheckoutStore((state) => state.paymentMethod);
+  const paymentProvider = useCheckoutStore((state) => state.paymentProvider);
   const resetCheckout = useCheckoutStore((state) => state.resetCheckout);
   const setConfirmationOrder = useCheckoutStore((state) => state.setConfirmationOrder);
   const shippingAddressId = useCheckoutStore((state) => state.shippingAddressId);
   const voucherCode = useCheckoutStore((state) => state.voucherCode);
   const voucherPreview = useCheckoutStore((state) => state.voucherPreview);
+  const [pendingAttempt, setPendingAttempt] = useState<PendingCheckoutAttempt | null>(null);
+  const [submitStage, setSubmitStage] = useState<'placing-order' | null>(null);
 
   const cart = cartQuery.data;
   const address = useMemo(
     () => addressesQuery.data?.find((item) => item.id === shippingAddressId) ?? null,
     [addressesQuery.data, shippingAddressId],
   );
+  const checkoutPayload = useMemo(
+    () => ({
+      shippingAddressId,
+      paymentMethod,
+      customerNote,
+      voucherCode,
+    }),
+    [customerNote, paymentMethod, shippingAddressId, voucherCode],
+  );
+  const checkoutPayloadSignature = useMemo(() => JSON.stringify(checkoutPayload), [checkoutPayload]);
+  const isPaypalCheckout = paymentMethod === PAYMENT_METHODS.ONLINE && paymentProvider === PAYMENT_PROVIDERS.PAYPAL;
+
+  useEffect(() => {
+    if (!pendingAttempt || placeOrder.isPending || pendingAttempt.payloadSignature === checkoutPayloadSignature) {
+      return;
+    }
+
+    setPendingAttempt(null);
+  }, [checkoutPayloadSignature, pendingAttempt, placeOrder.isPending]);
+
+  const handlePlaceOrder = () => {
+    if (!address || !cart || cart.staleItemCount > 0 || placeOrder.isPending) {
+      return;
+    }
+
+    const idempotencyKey =
+      pendingAttempt?.payloadSignature === checkoutPayloadSignature
+        ? pendingAttempt.idempotencyKey
+        : createIdempotencyKey('checkout');
+
+    setSubmitStage('placing-order');
+    setPendingAttempt({
+      idempotencyKey,
+      payloadSignature: checkoutPayloadSignature,
+    });
+
+    placeOrder.mutate(
+      {
+        payload: checkoutPayload,
+        idempotencyKey,
+      },
+      {
+        onSuccess: (order) => {
+          setPendingAttempt(null);
+          setConfirmationOrder(order);
+          if (isPaypalCheckout) {
+            setSubmitStage(null);
+            navigate(routePaths.paymentResult(order.id, PAYMENT_PROVIDERS.PAYPAL));
+            return;
+          }
+
+          setSubmitStage(null);
+          addToast({
+            tone: 'success',
+            title: 'Order placed',
+            description: `${order.code} is now available in your orders list.`,
+          });
+          navigate(routes.checkoutConfirmation);
+        },
+        onError: (error) => {
+          setSubmitStage(null);
+          if (!shouldReuseIdempotencyKey(error)) {
+            setPendingAttempt(null);
+          }
+
+          if (isMutationProcessingError(error)) {
+            addToast({
+              tone: 'info',
+              title: 'Đơn hàng đang được xử lý',
+              description: error instanceof Error ? error.message : ORDER_STATUS_UNKNOWN_MESSAGE,
+            });
+            return;
+          }
+
+          if (isUncertainMutationFailure(error)) {
+            addToast({
+              tone: 'info',
+              title: 'Kiểm tra lại trạng thái đơn hàng',
+              description: ORDER_STATUS_UNKNOWN_MESSAGE,
+            });
+            return;
+          }
+
+          addToast({
+            tone: 'danger',
+            title: 'Order placement failed',
+            description: error instanceof Error ? error.message : 'Try again.',
+          });
+        },
+      },
+    );
+  };
 
   if (cart?.items.length === 0) {
     return (
@@ -113,7 +223,10 @@ export const CheckoutReviewPage = () => {
                       Edit
                     </button>
                   </div>
-                  <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">{getPaymentMethodNote(paymentMethod)}</p>
+                  <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">
+                    {getPaymentMethodNote(paymentMethod)}
+                    {paymentMethod === PAYMENT_METHODS.ONLINE ? ` Provider: ${getPaymentProviderLabel(paymentProvider)}.` : ''}
+                  </p>
                 </section>
 
                 <section className="border border-border bg-surface px-5 py-5 md:px-6">
@@ -171,37 +284,10 @@ export const CheckoutReviewPage = () => {
                   <Button
                     disabled={!address || cart.staleItemCount > 0 || placeOrder.isPending}
                     fullWidth
-                    onClick={() =>
-                      placeOrder.mutate(
-                        {
-                          shippingAddressId,
-                          paymentMethod,
-                          customerNote,
-                          voucherCode,
-                        },
-                        {
-                          onSuccess: (order) => {
-                            setConfirmationOrder(order);
-                            addToast({
-                              tone: 'success',
-                              title: 'Order placed',
-                              description: `${order.code} is now available in your orders list.`,
-                            });
-                            navigate(routes.checkoutConfirmation);
-                          },
-                          onError: (error) => {
-                            addToast({
-                              tone: 'danger',
-                              title: 'Order placement failed',
-                              description: error instanceof Error ? error.message : 'Try again.',
-                            });
-                          },
-                        },
-                      )
-                    }
+                    onClick={handlePlaceOrder}
                     size="lg"
                   >
-                    {placeOrder.isPending ? 'Placing order...' : 'Place order'}
+                    {submitStage === 'placing-order' ? 'Đang tạo đơn hàng...' : 'Place order'}
                   </Button>
                   <Button fullWidth onClick={() => navigate(routes.checkoutVoucher)} variant="ghost">
                     Back to rewards
@@ -219,13 +305,18 @@ export const CheckoutReviewPage = () => {
                 </div>
               }
               note="Voucher validation is preview-only in this phase, so the grand total remains aligned with the current API contract."
-              supplementary={<p className="text-sm leading-7 text-text-secondary">The order is created immediately after placement and moved into the archive.</p>}
+              supplementary={
+                <p className="text-sm leading-7 text-text-secondary">
+                  The order is created immediately after placement and moved into the archive.
+                  {isPaypalCheckout ? ' PayPal orders redirect to provider approval immediately after order creation.' : ''}
+                </p>
+              }
               totals={cart}
             />
           ) : null}
         </div>
       </Container>
-      {placeOrder.isPending ? <LoadingOverlay label="Placing your order..." /> : null}
+      {submitStage ? <LoadingOverlay label="Đang tạo đơn hàng..." /> : null}
     </>
   );
 };

@@ -13,21 +13,36 @@ Applies only to customer/public API usage. Do not use `/api/v1/admin/**` from th
 - Base API path: `/api/v1`
 - Customer/public APIs are under `/api/v1/**` outside `/api/v1/admin/**`
 - Protected endpoints require:
+  - `Authorization: Bearer <accessToken>`
 
 ```http
 Authorization: Bearer <accessToken>
 ```
 
-- JWT only, no session/cookie auth
-- Login/register/refresh return token data:
+- Access token transport is Bearer JWT.
+- Refresh token transport is `HttpOnly` cookie only. The customer frontend must never store or send `refreshToken` in JavaScript.
+- Login/register return:
+  - `user`
   - `accessToken`
-  - `refreshToken`
   - `tokenType`
   - `expiresIn`
+- Refresh returns token data only:
+  - `accessToken`
+  - `tokenType`
+  - `expiresIn`
+- `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh-token`, and `POST /auth/logout` must be called with `withCredentials: true`
+- `POST /auth/password/forgot`, `POST /auth/password/forgot/verify`, and `POST /auth/password/reset` should also keep `withCredentials: true` so cookie-backed security stays compatible
+- Current CSRF note:
+  - backend docs still treat double-submit CSRF as optional / future-facing
+  - when an `XSRF-TOKEN` cookie is present, the frontend should echo it as `X-XSRF-TOKEN`
 - Public routes used by customer frontend:
   - `POST /auth/register`
   - `POST /auth/login`
   - `POST /auth/refresh-token`
+  - `POST /auth/logout`
+  - `POST /auth/password/forgot`
+  - `POST /auth/password/forgot/verify`
+  - `POST /auth/password/reset`
   - `GET /products/**`
   - `GET /categories/**`
   - `GET /brands/**`
@@ -139,13 +154,60 @@ Rules:
 ### `POST /auth/refresh-token`
 - Access: public
 - Request:
-  - `refreshToken` required
+  - send no refresh token body from the customer frontend
+  - backend reads the refresh token from the `HttpOnly` cookie
 - Response: `ApiResponse<TokenResponse>`
 
 ### `POST /auth/logout`
-- Access: authenticated
-- Behavior: blacklists current access token
+- Access: public/idempotent
+- Request:
+  - `withCredentials: true`
+  - send `Authorization: Bearer <accessToken>` when an access token is available
+- Behavior:
+  - clears the refresh cookie
+  - revokes the current refresh session
+  - blacklists the presented access token when valid
+- Frontend behavior:
+  - always clear local auth state and customer-specific query caches, even on `401`, `403`, or network failure
 - Response: `ApiResponse<Void>`
+
+### `POST /auth/password/forgot`
+- Access: public
+- Request:
+  - `email` required, valid email format
+- Response: `ApiResponse<Void>`
+- Frontend behavior:
+  - always show a generic success message
+  - do not reveal whether the email exists
+
+### `POST /auth/password/forgot/verify`
+- Access: public
+- Request:
+  - `email`
+  - `otp` as a 6-digit string
+- Response: `ApiResponse<ResetTokenResponse>`
+- Frontend behavior:
+  - keep `resetToken` in memory/router state only
+  - never persist it and never place it in the URL
+
+### `POST /auth/password/reset`
+- Access: public
+- Request:
+  - `resetToken`
+  - `newPassword`
+  - `confirmPassword`
+- Response: `ApiResponse<Void>`
+
+### `POST /account/password/change`
+- Access: authenticated
+- Request:
+  - `currentPassword`
+  - `newPassword`
+  - `confirmPassword`
+- Response: `ApiResponse<Void>`
+- Frontend behavior:
+  - send Bearer access token
+  - on success, clear auth state and redirect the user to sign in again because the backend revokes refresh sessions
 
 ## 7. Profile Endpoints
 
@@ -347,6 +409,14 @@ Order detail fields:
 ### `POST /orders`
 - Access: authenticated
 - Status: `201 Created`
+- Required header:
+  - `Idempotency-Key: <client-generated-unique-string>`
+- Header rules:
+  - required and non-blank
+  - max length `100`
+  - generate one key per user action
+  - reuse the same key only when retrying the same checkout action with the same payload
+  - generate a new key after the checkout payload changes
 - Response: `ApiResponse<OrderResponse>`
 - Current behavior:
   - omitted `paymentMethod` defaults to `COD`
@@ -398,6 +468,14 @@ Transaction shape:
   - `provider` optional
   - `returnUrl` optional
   - body may be omitted
+- Required header:
+  - `Idempotency-Key: <client-generated-unique-string>`
+- Header rules:
+  - required and non-blank
+  - max length `100`
+  - generate one key per user action
+  - reuse the same key only when retrying the same payment-initiate action with the same payload
+  - generate a new key when the payment target or payload changes
 - Response: `ApiResponse<PaymentResponse>`
 - Current behavior:
   - order must belong to current customer
@@ -409,7 +487,7 @@ Transaction shape:
 ### `POST /payments/callback`
 - Not a customer UI endpoint
 - Controller intent: payment gateway callback
-- Current source note: it is not whitelisted in `SecurityConfig`, so it currently requires authentication
+- Access: public server-to-server callback, not a customer frontend route
 - Request:
   - `orderCode` required
   - `status` required string
@@ -565,6 +643,12 @@ General:
 - `VALIDATION_ERROR`
 - `CONFLICT`
 - `INTERNAL_SERVER_ERROR`
+- `IDEMPOTENCY_KEY_REQUIRED`
+- `IDEMPOTENCY_KEY_TOO_LONG`
+- `IDEMPOTENCY_KEY_CONFLICT`
+- `IDEMPOTENCY_REQUEST_IN_PROGRESS`
+- `IDEMPOTENCY_REPLAY_NOT_AVAILABLE`
+- `OPTIMISTIC_LOCK_CONFLICT`
 
 Auth and profile:
 - `INVALID_CREDENTIALS`
@@ -578,6 +662,18 @@ Auth and profile:
 - `CUSTOMER_NOT_FOUND`
 - `EMAIL_ALREADY_EXISTS`
 - `PHONE_ALREADY_EXISTS`
+- `OTP_INVALID`
+- `OTP_EXPIRED`
+- `OTP_USED`
+- `OTP_TOO_MANY_ATTEMPTS`
+- `OTP_RATE_LIMITED`
+- `RESET_TOKEN_INVALID`
+- `RESET_TOKEN_EXPIRED`
+- `PASSWORD_MISMATCH`
+- `PASSWORD_POLICY_VIOLATED`
+- `PASSWORD_REUSED`
+- `CURRENT_PASSWORD_INVALID`
+- `CSRF_TOKEN_INVALID`
 
 Address:
 - `ADDRESS_NOT_FOUND`
@@ -642,6 +738,8 @@ Review and notification:
 
 - Axios must unwrap `ApiResponse.data`
 - Protected endpoints require Bearer token
+- Access tokens live in memory only
+- Refresh tokens live in `HttpOnly` cookies only
 - Use `items/page/size/totalItems/totalPages/hasNext/hasPrevious` for pagination
 - Product search is backend FULLTEXT now, but the frontend contract still uses `keyword`
 - Send raw trimmed keywords only; do not normalize Vietnamese accents on the client
@@ -650,7 +748,13 @@ Review and notification:
 - Do not client-side filter or re-sort backend keyword search results
 - Do not call `/products/{slug}` unless backend supports it
 - Payment callback is not a customer UI endpoint
+- Customer Web sends `Idempotency-Key` only for `POST /orders` and `POST /payments/order/{orderId}/initiate`
+- Generate one UUID-like key per user action and keep the same key for same-action retry after timeout or `5xx`
+- Do not reuse an idempotency key for a different checkout payload, order, or payment-initiate payload
+- Do not add `Idempotency-Key` to `POST /payments/callback`
 - Do not use admin endpoints
+- Never store `refreshToken`, `resetToken`, OTP values, or passwords in `localStorage` or `sessionStorage`
+- Never send `refreshToken` in the customer `POST /auth/refresh-token` body
 - Query/path enums are case-insensitive
 - JSON enum values are case-insensitive
 - Validation failures return HTTP `422`
@@ -658,6 +762,5 @@ Review and notification:
 ## Current Risk Notes
 
 - Product detail is documented as `GET /products/{id}`. If the frontend routes by slug, it needs a separate mapping layer or backend support for slug lookup.
-- `POST /payments/callback` is described as a gateway callback, but in the current source it is not public because `SecurityConfig` does not whitelist it.
 - Voucher validation is preview-only. Current order creation stores `voucherCode` but does not apply discount totals in service logic.
 - Review creation requires the parent order to be `COMPLETED`, not merely delivered.

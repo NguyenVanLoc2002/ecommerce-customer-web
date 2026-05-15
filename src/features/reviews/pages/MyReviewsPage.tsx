@@ -21,7 +21,6 @@ export const MyReviewsPage = () => {
       <PageSEO description="Review your submitted customer feedback and moderation status." noIndex path={routes.profileReviews} title="My Reviews" />
       <Container className="pb-16 pt-28 md:pb-20 md:pt-32">
         <AccountShell
-          activeTab="reviews"
           description="Review the status of your submitted product feedback and revisit any completed order notes."
           eyebrow="Customer archive"
           title="My Reviews"

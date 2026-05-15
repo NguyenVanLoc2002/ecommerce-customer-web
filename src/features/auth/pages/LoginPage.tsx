@@ -29,6 +29,14 @@ export const LoginPage = () => {
       <div className="mt-10">
         <LoginForm onSuccess={() => navigate(resolveAuthRedirect(redirect), { replace: true })} />
       </div>
+      <div className="mt-6 text-right">
+        <Link
+          className="inline-block border-b border-text-primary pb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary transition-opacity hover:opacity-70"
+          to={routes.forgotPassword}
+        >
+          Forgot password?
+        </Link>
+      </div>
       <div className="mt-10 border-t border-black/5 pt-8 text-center">
         <p className="text-base text-text-secondary">Don&apos;t have an account?</p>
         <Link

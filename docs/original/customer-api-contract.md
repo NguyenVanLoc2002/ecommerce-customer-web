@@ -33,7 +33,7 @@ Shared response, error, auth, enum, and pagination rules are defined in [api-com
 
 ### Important current-code note
 
-`POST /api/v1/payments/callback` is **not** public in the current source because `SecurityConfig` does not whitelist it. It currently requires authentication even though the controller comment describes it as a gateway callback.
+`POST /api/v1/payments/callback` is a **public** endpoint called server-to-server by the payment gateway. No `Authorization` header is needed. HMAC signature verification is a pending TODO — see `docs/security.md §10`.
 
 ### Legacy review moderation routes intentionally excluded
 
@@ -60,7 +60,7 @@ These non-admin paths exist in code but are admin/staff endpoints, not customer 
   - `email`: required, valid email
   - `password`: required
 - `RefreshTokenRequest`
-  - `refreshToken`: required
+  - `refreshToken`: optional, deprecated fallback for refresh only
 - `AuthResponse`
   - `user`
   - `tokens`
@@ -68,7 +68,24 @@ These non-admin paths exist in code but are admin/staff endpoints, not customer 
   - `id`, `email`, `firstName`, `lastName`, `phoneNumber`
   - `status`, `roles`, `createdAt`
 - `TokenResponse`
-  - `accessToken`, `refreshToken`, `tokenType`, `expiresIn`
+  - `accessToken`, `tokenType`, `expiresIn`
+
+### Current auth contract
+
+- Register and login both return `ApiResponse<AuthResponse>`.
+- `AuthResponse.data.tokens` contains `accessToken`, `tokenType`, and `expiresIn`.
+- Register and login set the refresh token in an HttpOnly cookie.
+- Refresh reads the cookie by default and returns only a new access token in the JSON body.
+- A JSON-body `refreshToken` fallback is still accepted temporarily for refresh and is deprecated.
+- Logout revokes the current refresh session, clears the cookie, and blacklists the presented access token when valid.
+- There is no password-change or password-reset endpoint in the current backend source.
+- The same login endpoint is used for customer and non-customer accounts; authorization is role-based after login.
+
+### Frontend contract notes
+
+- Frontends must call login, refresh, and logout with `withCredentials: true`.
+- Frontends must not store refresh tokens in LocalStorage, sessionStorage, or other JavaScript-accessible storage.
+- Frontends may keep a temporary body-based refresh fallback only during migration and should remove it once all environments rely on the cookie flow.
 
 ### POST `/api/v1/auth/register`
 
@@ -89,22 +106,95 @@ These non-admin paths exist in code but are admin/staff endpoints, not customer 
   - `LoginRequest`
 - Response:
   - `ApiResponse<AuthResponse>`
+- Current response behavior:
+  - returns `data.user`
+  - returns `data.tokens.accessToken`
+  - returns `data.tokens.tokenType`
+  - returns `data.tokens.expiresIn`
+- Cookie behavior:
+  - sets the refresh-token cookie
+  - cookie defaults: `HttpOnly`, `SameSite=Lax`, `Path=/api/v1/auth`
+  - `Secure` is configurable and should be `true` in production
 
 ### POST `/api/v1/auth/refresh-token`
 
 - Access: public
-- Description: exchange refresh token for a new token pair
+- Description: exchange refresh token for a new access token and rotated refresh cookie
 - Request body:
   - `RefreshTokenRequest`
 - Response:
   - `ApiResponse<TokenResponse>`
+- Transport behavior:
+  - reads refresh token from HttpOnly cookie by default
+  - temporarily supports `refreshToken` from request JSON body as a deprecated fallback
+  - does not read from `Authorization`
+- Rotation behavior:
+  - rotates the refresh token cookie on every success
+  - returns only `accessToken`, `tokenType`, and `expiresIn`
+  - revokes the previously issued refresh session
+  - rejects reused/mismatched refresh tokens with `401`
 
 ### POST `/api/v1/auth/logout`
 
-- Access: authenticated
-- Description: blacklist current access token
+- Access: public/idempotent
+- Description: revoke current refresh session, clear refresh cookie, and blacklist current access token when supplied
 - Response:
   - `ApiResponse<Void>`
+- Current behavior:
+  - accepts missing or expired access token without failing
+  - blacklists the presented access token in Redis until access-token expiry when valid
+  - revokes the matching refresh session when the refresh cookie is present
+  - clears the refresh-token cookie
+
+### Current auth storage model
+
+- Refresh sessions are stored in Redis with TTL.
+- Redis stores a SHA-256 hash of the refresh token, not the raw token.
+- Refresh tokens carry session identity (`jti`) plus principal and family claims for server-side validation and revocation.
+- `AuthService.revokeAllRefreshSessions(principalType, principalId)` is available for a future password-change integration.
+
+### POST `/api/v1/auth/password/forgot`
+
+- Access: public, no token required.
+- Description: request a password-reset OTP. Always returns 200 to avoid leaking which emails are registered.
+- Request body: `ForgotPasswordRequest { email }`.
+- Response: `ApiResponse<Void>` (`code: SUCCESS`).
+- Side effects (when the email belongs to an active account):
+  - issues a 6-digit OTP, stored as a SHA-256 hash with a server pepper
+  - dispatches the OTP via `EmailSender`
+  - increments the per-target rate-limit counters (Redis)
+- Errors: `OTP_RATE_LIMITED` (429) when the cooldown / window limit is exceeded.
+
+### POST `/api/v1/auth/password/forgot/verify`
+
+- Access: public.
+- Description: verify the OTP and obtain a one-shot reset token.
+- Request body: `VerifyOtpRequest { email, otp }`.
+- Response: `ApiResponse<ResetTokenResponse { resetToken, expiresAt }>`.
+- Errors: `OTP_INVALID`, `OTP_EXPIRED`, `OTP_USED`, `OTP_TOO_MANY_ATTEMPTS`.
+
+### POST `/api/v1/auth/password/reset`
+
+- Access: public.
+- Description: consume the reset token, update the password, revoke all refresh sessions.
+- Request body: `ResetPasswordRequest { resetToken, newPassword, confirmPassword }`.
+- Password policy: min 8 chars, requires uppercase, lowercase, digit; cannot equal the current password.
+- Response: `ApiResponse<Void>`.
+- Errors: `RESET_TOKEN_INVALID`, `RESET_TOKEN_EXPIRED`, `PASSWORD_MISMATCH`, `PASSWORD_POLICY_VIOLATED`, `PASSWORD_REUSED`, `USER_NOT_FOUND`, `ACCOUNT_DISABLED`.
+
+### POST `/api/v1/account/password/change`
+
+- Access: authenticated (Bearer JWT).
+- Description: authenticated change-password. Verifies the current password, applies the policy, and revokes all refresh sessions on success.
+- Request body: `ChangePasswordRequest { currentPassword, newPassword, confirmPassword }`.
+- Response: `ApiResponse<Void>`.
+- Errors: `CURRENT_PASSWORD_INVALID`, `PASSWORD_MISMATCH`, `PASSWORD_POLICY_VIOLATED`, `PASSWORD_REUSED`.
+
+### TODO / Future work
+
+- Promote `app.security.refresh-token-body-fallback-enabled` to `false` in all environments and fully remove the body fallback in a later release.
+- Enable `app.security.csrf-double-submit-enabled=true` once the front end echoes `X-XSRF-TOKEN`.
+- Replace `LoggingEmailSender` with a real SMTP / SES provider before production rollout.
 
 ---
 
@@ -409,6 +499,7 @@ These non-admin paths exist in code but are admin/staff endpoints, not customer 
 
 - Access: authenticated customer flow
 - Description: create order from active cart
+- Required header: `Idempotency-Key: <unique-string>` (max 100 chars). Missing or blank key returns `400 IDEMPOTENCY_KEY_REQUIRED`. Same key + same payload returns the original order without re-executing checkout.
 - Request body:
   - `CreateOrderRequest`
 - Current HTTP status:
@@ -461,6 +552,9 @@ These non-admin paths exist in code but are admin/staff endpoints, not customer 
 - `InitPaymentRequest`
   - `provider`: optional
   - `returnUrl`: optional
+- `PaymentCaptureRequest`
+  - `provider`: required — provider name (e.g., `PAYPAL`), case-insensitive
+  - `providerToken`: required — provider-assigned order token from the redirect URL (max 200 chars)
 - `PaymentCallbackRequest`
   - `orderCode`: required
   - `status`: required string
@@ -470,6 +564,9 @@ These non-admin paths exist in code but are admin/staff endpoints, not customer 
 - `PaymentResponse`
   - `id`, `orderId`, `orderCode`, `paymentCode`
   - `method`, `status`, `amount`, `paidAt`, `createdAt`
+  - `paymentUrl` — web redirect URL for the payment gateway (null for COD, null after payment settled)
+  - `deeplink` — mobile app deeplink (MoMo only; null for providers that don't support it)
+  - `qrCodeUrl` — raw QR code data string to encode as a QR image (MoMo only; null for others)
   - `transactions`
 - `TransactionResponse`
   - `id`, `transactionCode`, `status`, `amount`
@@ -488,6 +585,7 @@ These non-admin paths exist in code but are admin/staff endpoints, not customer 
 
 - Access: authenticated customer flow
 - Description: initiate or retry online payment
+- Required header: `Idempotency-Key: <unique-string>` (max 100 chars). Missing or blank key returns `400 IDEMPOTENCY_KEY_REQUIRED`. Same key + same payload returns existing payment without re-initiating. After a FAILED payment, the same key retries the payment.
 - Request body:
   - optional `InitPaymentRequest`
   - if the body is omitted, the controller creates an empty request object internally
@@ -495,25 +593,74 @@ These non-admin paths exist in code but are admin/staff endpoints, not customer 
   - `201 Created`
 - Response:
   - `ApiResponse<PaymentResponse>`
+  - `paymentUrl` is populated for all online providers
+  - `deeplink` and `qrCodeUrl` are populated when using the MoMo provider
 - Current service behavior:
   - order must belong to the current customer
   - order payment method must be `ONLINE`
   - existing `PENDING` or `INITIATED` payment returns existing record
   - existing `FAILED` payment is retried
   - terminal processed states are rejected
+- Supported providers:
+  - `MOMO` — active when `app.payment.momo.enabled=true`; amount must be 1,000–50,000,000 VND
+  - `PAYPAL` — active when `app.payment.paypal.enabled=true`; uses PayPal Orders API v2 sandbox. Returns PayPal approval URL as `paymentUrl`. Orders are VND; enable `app.payment.paypal.test-conversion-enabled=true` for sandbox VND→USD conversion. After initiation the frontend redirects to PayPal; upon return, call the capture endpoint below with the `?token=` param.
+  - `MOCK` — dev/test only; active when `app.payment.mock.enabled=true`
+- PayPal frontend routes:
+  - Approval return: configured via `app.payment.paypal.return-url` (default `http://localhost:5173/payment/paypal/return`)
+  - Cancellation: configured via `app.payment.paypal.cancel-url` (default `http://localhost:5173/payment/paypal/cancel`)
+
+### POST `/api/v1/payments/order/{orderId}/capture`
+
+- Access: authenticated customer flow
+- Description: capture an authorized online payment after the customer returns from the provider. For PayPal, this must be called with the `token` query parameter from the PayPal redirect URL.
+- Request body:
+  - `PaymentCaptureRequest`
+  - `provider`: e.g. `PAYPAL`
+  - `providerToken`: the provider order ID (for PayPal, the `?token=` value from the redirect URL)
+- Response:
+  - `ApiResponse<PaymentResponse>`
+- Current service behavior:
+  - order must belong to the current customer
+  - order payment method must be `ONLINE`
+  - payment already `PAID` → returns existing record (idempotent)
+  - payment status must be `INITIATED` or `PENDING` to be capturable
+  - `providerToken` is verified against the stored `providerOrderId` to prevent substitution attacks
+  - on `COMPLETED` capture → payment `PAID`, order `paymentStatus = PAID`
+  - on failed capture → payment `FAILED`, order `paymentStatus = FAILED`
+  - pessimistic row lock prevents duplicate concurrent captures
 
 ### POST `/api/v1/payments/callback`
 
-- Access: authenticated in the current source
-- Description: payment callback endpoint
+- Access: **public** — called server-to-server by the payment gateway. No auth token required.
+- Description: payment gateway callback endpoint. Idempotent on duplicate `providerTxnId`.
 - Request body:
   - `PaymentCallbackRequest`
 - Response:
   - `ApiResponse<PaymentResponse>`
 - Current service behavior:
-  - `status=SUCCESS` marks payment paid
-  - any other status value is treated as failed
-  - duplicate `providerTxnId` is idempotent
+  - `status=SUCCESS` marks payment PAID, order.paymentStatus → PAID
+  - any other status is treated as FAILED
+  - duplicate `providerTxnId` → returns existing result, no side effect
+  - stale callback cannot move a PAID/REFUNDED payment backward
+- Security limitation: HMAC signature verification is not yet implemented. See `docs/security.md §10`.
+
+### POST `/api/v1/webhooks/payment/PAYPAL`
+
+- Access: **public** — called server-to-server by PayPal. No auth token required.
+- Description: PayPal webhook notification receiver. Verifies the signature using PayPal's Webhooks API v1 before processing. Idempotent on duplicate `providerTxnId`. Returns `HTTP 200` as required by PayPal.
+- Required headers (all passed by PayPal):
+  - `PAYPAL-AUTH-ALGO`, `PAYPAL-CERT-URL`, `PAYPAL-TRANSMISSION-ID`, `PAYPAL-TRANSMISSION-SIG`, `PAYPAL-TRANSMISSION-TIME`
+- Supported event types:
+  - `PAYMENT.CAPTURE.COMPLETED` → marks payment PAID (if not already)
+  - `PAYMENT.CAPTURE.DENIED` / `PAYMENT.CAPTURE.DECLINED` → marks payment FAILED
+  - Other events (e.g., `CHECKOUT.ORDER.APPROVED`) → logged and ignored
+- Security: signature verified via PayPal's `/v1/notifications/verify-webhook-signature` API; invalid signatures are rejected before any DB mutation.
+
+### POST `/api/v1/webhooks/payment/{provider}`
+
+- Access: **public** — called server-to-server by non-PayPal gateways (MoMo, VNPay, etc.).
+- Description: generic gateway IPN/webhook receiver. Signature is verified internally via the registered provider. Returns `HTTP 204 No Content` as required by MoMo IPN spec.
+- Required header: `X-Signature: <signature-value>`
 
 ---
 
@@ -704,4 +851,3 @@ These non-admin paths exist in code but are admin/staff endpoints, not customer 
 - Description: mark all notifications as read
 - Response:
   - `ApiResponse<Void>`
-

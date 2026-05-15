@@ -163,7 +163,6 @@ export const AddressFormPage = () => {
       <PageSEO description="Create or edit a saved customer delivery destination." noIndex path={seoPath} title={pageTitle} />
       <Container className="pb-16 pt-28 md:pb-20 md:pt-32">
         <AccountShell
-          activeTab="addresses"
           actions={
             isEditMode ? (
               <Button onClick={() => setConfirmDeleteOpen(true)} variant="danger">

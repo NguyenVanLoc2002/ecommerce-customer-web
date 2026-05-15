@@ -14,7 +14,11 @@ export const routes = {
   orderInvoice: '/orders/:orderId/invoice',
   orderReview: '/orders/:orderId/review',
   paymentResult: '/payment/result',
+  paymentMomoReturn: '/payment/momo/return',
+  paymentPaypalReturn: '/payment/paypal/return',
+  paymentPaypalCancel: '/payment/paypal/cancel',
   profile: '/profile',
+  profileSecurity: '/profile/security',
   profileAddresses: '/profile/addresses',
   profileAddressNew: '/profile/addresses/new',
   profileAddressEdit: '/profile/addresses/:id/edit',
@@ -22,6 +26,9 @@ export const routes = {
   notifications: '/notifications',
   login: '/login',
   register: '/register',
+  forgotPassword: '/forgot-password',
+  verifyOtp: '/verify-otp',
+  resetPassword: '/reset-password',
   notFound: '/404',
 } as const;
 
@@ -49,8 +56,18 @@ export const routePaths = {
   orderTracking: (orderId: string) => `/orders/${orderId}/tracking`,
   orderInvoice: (orderId: string) => `/orders/${orderId}/invoice`,
   orderReview: (orderId: string) => `/orders/${orderId}/review`,
-  paymentResult: (orderId?: string) =>
-    orderId ? `/payment/result?orderId=${encodeURIComponent(orderId)}` : '/payment/result',
+  paymentResult: (orderId?: string, provider?: string) =>
+    withQuery(routes.paymentResult, {
+      orderId,
+      provider,
+    }),
+  paymentMomoReturn: (orderId?: string) =>
+    orderId ? `/payment/momo/return?orderId=${encodeURIComponent(orderId)}` : '/payment/momo/return',
+  paymentPaypalReturn: (orderId?: string) =>
+    orderId ? `/payment/paypal/return?orderId=${encodeURIComponent(orderId)}` : '/payment/paypal/return',
+  paymentPaypalCancel: (orderId?: string) =>
+    orderId ? `/payment/paypal/cancel?orderId=${encodeURIComponent(orderId)}` : '/payment/paypal/cancel',
+  profileSecurity: () => routes.profileSecurity,
   profileAddressNew: (returnTo?: string) => withReturnTo(routes.profileAddressNew, returnTo),
   profileAddressEdit: (id: string, returnTo?: string) => withReturnTo(`/profile/addresses/${id}/edit`, returnTo),
   loginRedirect: (redirect?: string) =>

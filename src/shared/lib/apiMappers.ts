@@ -77,14 +77,11 @@ export const toAuthUser = (user: ApiAuthUserResponse): AuthUser => {
   };
 };
 
-const getAuthTokens = (response: ApiAuthResponse): AuthTokens => ('tokens' in response ? response.tokens : response);
-
 export const toAuthResponse = (response: ApiAuthResponse, profile?: ApiUserProfileResponse): AuthResponse => {
-  const tokens = getAuthTokens(response);
+  const tokens: AuthTokens = response.tokens;
 
   return {
     accessToken: tokens.accessToken,
-    refreshToken: tokens.refreshToken,
     tokenType: tokens.tokenType,
     expiresIn: tokens.expiresIn,
     user: toAuthUser(profile ?? response.user),

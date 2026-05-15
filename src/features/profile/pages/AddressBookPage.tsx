@@ -32,7 +32,6 @@ export const AddressBookPage = () => {
       <PageSEO description="Manage saved delivery destinations for checkout and future orders." noIndex path={routes.profileAddresses} title="Address Book" />
       <Container className="pb-16 pt-28 md:pb-20 md:pt-32">
         <AccountShell
-          activeTab="addresses"
           actions={
             <Link className={buttonStyles({})} to={routePaths.profileAddressNew()}>
               <Plus className="h-4 w-4" />

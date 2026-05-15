@@ -5,7 +5,7 @@ import { useAuthStore } from '@/shared/stores/authStore';
 import type { Address, CreateAddressRequest, UpdateAddressRequest } from '@/shared/types/address.types';
 import type { CartItem, CommerceCart, CommerceOrder, CustomerAddress, PlaceOrderInput, VoucherPreview } from '@/shared/types/commerce.types';
 import type { Invoice } from '@/shared/types/invoice.types';
-import type { Payment, PaymentTransaction } from '@/shared/types/payment.types';
+import type { Payment, PaymentStatus, PaymentTransaction } from '@/shared/types/payment.types';
 import { PAYMENT_STATUSES } from '@/shared/types/payment.types';
 import type { Shipment, ShipmentEvent } from '@/shared/types/shipment.types';
 import { SHIPMENT_STATUSES } from '@/shared/types/shipment.types';
@@ -728,7 +728,7 @@ export const mockCommerce = {
       paidAt: payment?.paidAt ?? null,
       paymentCode: payment?.paymentCode ?? null,
       paymentMethod: order.paymentMethod,
-      paymentStatus: payment?.status ?? 'NOT_INITIATED',
+      paymentStatus: (payment?.status as PaymentStatus | undefined) ?? 'NOT_INITIATED',
       notes: order.customerNote,
       customerNote: order.customerNote,
       voucherCode: order.voucherCode,
