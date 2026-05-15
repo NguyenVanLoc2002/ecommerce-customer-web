@@ -13,8 +13,9 @@ import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { Textarea } from '@/shared/components/ui/Textarea';
-import { getPaymentMethodLabel, getPaymentMethodNote } from '@/shared/lib/commerceLabels';
+import { getPaymentMethodLabel, getPaymentMethodNote, getPaymentProviderLabel } from '@/shared/lib/commerceLabels';
 import { PAYMENT_METHODS } from '@/shared/types/enums';
+import { PAYMENT_PROVIDERS } from '@/shared/types/payment.types';
 
 const paymentOptions = [
   {
@@ -24,8 +25,21 @@ const paymentOptions = [
   },
   {
     value: PAYMENT_METHODS.ONLINE,
-    title: 'Online payment',
-    description: 'Reserve the order now, then continue to the payment result flow after the order is placed.',
+    title: 'Thanh toán online',
+    description: 'Reserve the order now, then continue to the payment flow after the order is placed. Hiện hỗ trợ MoMo và PayPal.',
+  },
+] as const;
+
+const providerOptions = [
+  {
+    value: PAYMENT_PROVIDERS.MOMO,
+    title: 'MoMo',
+    description: 'Ví điện tử nội địa. Bạn sẽ được chuyển sang MoMo để xác nhận thanh toán.',
+  },
+  {
+    value: PAYMENT_PROVIDERS.PAYPAL,
+    title: 'PayPal',
+    description: 'Thanh toán quốc tế qua PayPal. Bạn sẽ được chuyển sang PayPal để xác nhận thanh toán.',
   },
 ] as const;
 
@@ -34,8 +48,10 @@ export const CheckoutPaymentPage = () => {
   const cartQuery = useCart();
   const customerNote = useCheckoutStore((state) => state.customerNote);
   const paymentMethod = useCheckoutStore((state) => state.paymentMethod);
+  const paymentProvider = useCheckoutStore((state) => state.paymentProvider);
   const setCustomerNote = useCheckoutStore((state) => state.setCustomerNote);
   const setPaymentMethod = useCheckoutStore((state) => state.setPaymentMethod);
+  const setPaymentProvider = useCheckoutStore((state) => state.setPaymentProvider);
   const shippingAddressId = useCheckoutStore((state) => state.shippingAddressId);
 
   useEffect(() => {
@@ -108,6 +124,42 @@ export const CheckoutPaymentPage = () => {
                 );
               })}
             </div>
+            {paymentMethod === PAYMENT_METHODS.ONLINE ? (
+              <div className="border border-border bg-surface px-5 py-5 md:px-6">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Provider</p>
+                <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Choose your online gateway</h2>
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-text-secondary">
+                  Chọn cổng thanh toán online trước khi tiếp tục đặt đơn.
+                </p>
+                <div className="mt-6 grid gap-4">
+                  {providerOptions.map((option) => {
+                    const selected = paymentProvider === option.value;
+
+                    return (
+                      <button
+                        className={`border p-5 text-left transition-colors md:p-6 ${
+                          selected ? 'border-text-primary bg-surface' : 'border-border bg-surface hover:border-text-primary'
+                        }`}
+                        key={option.value}
+                        onClick={() => setPaymentProvider(option.value)}
+                        type="button"
+                      >
+                        <div className="flex items-start gap-4">
+                          <span className={`mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full border ${selected ? 'border-text-primary' : 'border-border'}`}>
+                            <span className={`h-2 w-2 rounded-full ${selected ? 'bg-text-primary' : 'bg-transparent'}`} />
+                          </span>
+                          <div>
+                            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Online provider</p>
+                            <h3 className="mt-3 font-display text-[1.75rem] leading-none text-text-primary">{option.title}</h3>
+                            <p className="mt-3 max-w-2xl text-sm leading-7 text-text-secondary">{option.description}</p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
             <div className="border border-border bg-surface px-5 py-5 md:px-6">
               <Textarea
                 hint="Optional note saved on the order record."
@@ -121,7 +173,11 @@ export const CheckoutPaymentPage = () => {
           </section>
           {cart ? (
             <CartSummary
-              description={getPaymentMethodNote(paymentMethod)}
+              description={
+                paymentMethod === PAYMENT_METHODS.ONLINE
+                  ? `${getPaymentMethodNote(paymentMethod)} Provider: ${getPaymentProviderLabel(paymentProvider)}.`
+                  : getPaymentMethodNote(paymentMethod)
+              }
               eyebrow="Selected payment"
               footer={
                 <div className="space-y-3">
@@ -133,7 +189,12 @@ export const CheckoutPaymentPage = () => {
                   </Button>
                 </div>
               }
-              supplementary={<p className="text-sm uppercase tracking-[0.08em] text-text-primary">{getPaymentMethodLabel(paymentMethod)}</p>}
+              supplementary={
+                <p className="text-sm uppercase tracking-[0.08em] text-text-primary">
+                  {getPaymentMethodLabel(paymentMethod)}
+                  {paymentMethod === PAYMENT_METHODS.ONLINE ? ` / ${getPaymentProviderLabel(paymentProvider)}` : ''}
+                </p>
+              }
               title="Order value"
               totals={cart}
               variant="checkout"

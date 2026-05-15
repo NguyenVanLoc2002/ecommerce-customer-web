@@ -1,6 +1,7 @@
 import type { ProductImage } from '@/shared/types/catalog.types';
 import type { Address } from '@/shared/types/address.types';
 import type { OrderStatus, PaymentMethod } from '@/shared/types/enums';
+import type { PaymentProvider } from '@/shared/types/payment.types';
 
 export type CustomerAddress = Address;
 
@@ -163,6 +164,7 @@ export interface OrderResponse {
 export interface CheckoutDraft {
   shippingAddressId: string;
   paymentMethod: PaymentMethod;
+  paymentProvider: PaymentProvider;
   customerNote: string;
   voucherCode: string;
   voucherPreview: VoucherPreview | null;

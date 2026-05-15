@@ -24,6 +24,9 @@ const OrderDetailPage = lazy(() => import('@/features/orders/pages/OrderDetailPa
 const OrderReviewPage = lazy(() => import('@/features/orders/pages/OrderReviewPage'));
 const InvoicePage = lazy(() => import('@/features/invoice/pages/InvoicePage'));
 const PaymentResultPage = lazy(() => import('@/features/payment/pages/PaymentResultPage'));
+const MomoReturnPage = lazy(() => import('@/features/payment/pages/MomoReturnPage'));
+const PaypalReturnPage = lazy(() => import('@/features/payment/pages/PaypalReturnPage'));
+const PaypalCancelPage = lazy(() => import('@/features/payment/pages/PaypalCancelPage'));
 const ShipmentTrackingPage = lazy(() => import('@/features/shipment/pages/ShipmentTrackingPage'));
 const MyReviewsPage = lazy(() => import('@/features/reviews/pages/MyReviewsPage'));
 const NotificationsPage = lazy(() => import('@/features/notifications/pages/NotificationsPage'));
@@ -96,6 +99,18 @@ export const router = createBrowserRouter([
           {
             path: routes.paymentResult,
             element: renderLazyPage(PaymentResultPage),
+          },
+          {
+            path: routes.paymentMomoReturn,
+            element: renderLazyPage(MomoReturnPage),
+          },
+          {
+            path: routes.paymentPaypalReturn,
+            element: renderLazyPage(PaypalReturnPage),
+          },
+          {
+            path: routes.paymentPaypalCancel,
+            element: renderLazyPage(PaypalCancelPage),
           },
           {
             path: routes.profile,

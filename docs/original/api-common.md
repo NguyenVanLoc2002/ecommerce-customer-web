@@ -405,7 +405,13 @@ The current `ErrorCode` enum defines these domain codes.
 - `PAYMENT_NOT_FOUND`
 - `PAYMENT_FAILED`
 - `PAYMENT_ALREADY_PROCESSED`
-- `PAYMENT_CALLBACK_INVALID`
+- `PAYMENT_CALLBACK_INVALID` — IPN order not found, or amount mismatch between IPN and stored payment
+- `PAYMENT_REFUND_NOT_FOUND`
+- `PAYMENT_REFUND_AMOUNT_EXCEEDED`
+- `PAYMENT_REFUND_INVALID_STATUS`
+- `PAYMENT_WEBHOOK_SIGNATURE_INVALID` — HMAC or partnerCode verification failed; IPN rejected without state mutation
+- `PAYMENT_PROVIDER_NOT_SUPPORTED`
+- `PAYMENT_CURRENCY_UNSUPPORTED` — order currency is not compatible with the requested payment provider (e.g. VND order to PayPal USD without test conversion enabled)
 
 ### 7.10 Promotion and voucher
 

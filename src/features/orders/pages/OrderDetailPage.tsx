@@ -14,12 +14,13 @@ import { ConfirmDialog } from '@/shared/components/overlays/ConfirmDialog';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
-import { getPaymentMethodLabel, getPaymentMethodNote } from '@/shared/lib/commerceLabels';
+import { getPaymentMethodLabel, getPaymentMethodNote, getPaymentStatusLabel } from '@/shared/lib/commerceLabels';
 import { useUiStore } from '@/shared/stores/uiStore';
 import { formatAddress } from '@/shared/utils/formatAddress';
 import { formatDate } from '@/shared/utils/formatDate';
 import { formatMoney } from '@/shared/utils/formatMoney';
 import { ORDER_STATUSES, PAYMENT_METHODS } from '@/shared/types/enums';
+import { PAYMENT_STATUSES } from '@/shared/types/payment.types';
 
 const actionLinkClassName =
   'text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary underline decoration-border underline-offset-4 transition-colors hover:decoration-text-primary';
@@ -31,15 +32,23 @@ export const OrderDetailPage = () => {
   const orderQuery = useOrderDetail(orderId);
   const cancelOrder = useCancelOrder();
   const order = orderQuery.data;
+  const onlinePaymentPending =
+    order?.paymentMethod === PAYMENT_METHODS.ONLINE &&
+    order.status === ORDER_STATUSES.AWAITING_PAYMENT &&
+    (order.paymentStatus === PAYMENT_STATUSES.PENDING ||
+      order.paymentStatus === PAYMENT_STATUSES.PROCESSING ||
+      order.paymentStatus === PAYMENT_STATUSES.INITIATED);
   const paymentActionVisible =
-    order?.paymentMethod === PAYMENT_METHODS.ONLINE && order.status === ORDER_STATUSES.AWAITING_PAYMENT;
+    order?.paymentMethod === PAYMENT_METHODS.ONLINE &&
+    order.status === ORDER_STATUSES.AWAITING_PAYMENT &&
+    order.paymentStatus !== PAYMENT_STATUSES.PAID &&
+    !onlinePaymentPending;
   const shipmentActionVisible =
     order?.status === ORDER_STATUSES.PROCESSING ||
     order?.status === ORDER_STATUSES.SHIPPED ||
     order?.status === ORDER_STATUSES.DELIVERED ||
     order?.status === ORDER_STATUSES.COMPLETED;
-  const reviewActionVisible =
-    order?.status === ORDER_STATUSES.DELIVERED || order?.status === ORDER_STATUSES.COMPLETED;
+  const reviewActionVisible = order?.status === ORDER_STATUSES.DELIVERED || order?.status === ORDER_STATUSES.COMPLETED;
 
   return (
     <>
@@ -55,7 +64,7 @@ export const OrderDetailPage = () => {
           <ErrorCard
             action={<Button onClick={() => void orderQuery.refetch()}>Retry</Button>}
             className="border-border bg-surface"
-            description="The order detail could not be loaded from the mock commerce source."
+            description="The order detail could not be loaded from the current commerce source."
             title="Order detail unavailable"
           />
         ) : null}
@@ -162,6 +171,11 @@ export const OrderDetailPage = () => {
                     </div>
                     <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{getPaymentMethodLabel(order.paymentMethod)}</h2>
                     <p className="mt-4 text-sm leading-7 text-text-secondary">{getPaymentMethodNote(order.paymentMethod)}</p>
+                    {order.paymentStatus ? (
+                      <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
+                        Payment status: {getPaymentStatusLabel(order.paymentStatus)}
+                      </p>
+                    ) : null}
                   </section>
                 </div>
 
@@ -184,10 +198,23 @@ export const OrderDetailPage = () => {
                       <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Payment</p>
                       <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Complete payment</h2>
                       <p className="mt-4 text-sm leading-7 text-text-secondary">
-                        This online order is waiting for payment confirmation. Continue to the payment result flow to initiate or retry the transaction.
+                        This online order is waiting for payment confirmation. Continue to the payment result flow to initiate or retry the online payment transaction.
                       </p>
                       <Link className={`${actionLinkClassName} mt-5 inline-flex`} to={routePaths.paymentResult(order.id)}>
                         Pay now
+                      </Link>
+                    </section>
+                  ) : null}
+
+                  {onlinePaymentPending ? (
+                    <section className="border border-border bg-surface px-5 py-5 md:px-6">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Payment</p>
+                      <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Online payment processing</h2>
+                      <p className="mt-4 text-sm leading-7 text-text-secondary">
+                        Thanh toán online đang được xử lý.
+                      </p>
+                      <Link className={`${actionLinkClassName} mt-5 inline-flex`} to={routePaths.paymentResult(order.id)}>
+                        View payment status
                       </Link>
                     </section>
                   ) : null}
@@ -235,7 +262,7 @@ export const OrderDetailPage = () => {
         <ConfirmDialog
           cancelLabel="Keep order"
           confirmLabel={cancelOrder.isPending ? 'Cancelling...' : 'Cancel order'}
-          description="This releases the pending order in the mock flow and updates its status to Cancelled."
+          description="This releases the pending order in the current flow and updates its status to Cancelled."
           onClose={() => setConfirmOpen(false)}
           onConfirm={() =>
             cancelOrder.mutate(order.id, {

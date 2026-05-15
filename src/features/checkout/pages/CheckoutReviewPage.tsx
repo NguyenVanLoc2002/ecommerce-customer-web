@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { routes } from '@/constants/routes';
+import { routePaths, routes } from '@/constants/routes';
 import { useCart } from '@/features/cart/hooks/useCart';
 import { useCheckoutAddresses, usePlaceOrder } from '@/features/checkout/hooks/useCheckout';
 import { useCheckoutStore } from '@/features/checkout/stores/checkoutStore';
@@ -14,7 +14,7 @@ import { Container } from '@/shared/components/layout/Container';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
-import { getPaymentMethodLabel, getPaymentMethodNote } from '@/shared/lib/commerceLabels';
+import { getPaymentMethodLabel, getPaymentMethodNote, getPaymentProviderLabel } from '@/shared/lib/commerceLabels';
 import {
   isMutationProcessingError,
   isUncertainMutationFailure,
@@ -24,6 +24,8 @@ import { useUiStore } from '@/shared/stores/uiStore';
 import { createIdempotencyKey } from '@/shared/utils/createIdempotencyKey';
 import { formatAddress } from '@/shared/utils/formatAddress';
 import { formatMoney } from '@/shared/utils/formatMoney';
+import { PAYMENT_METHODS } from '@/shared/types/enums';
+import { PAYMENT_PROVIDERS } from '@/shared/types/payment.types';
 
 const editLinkClassName =
   'text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary underline decoration-border underline-offset-4 transition-colors hover:decoration-text-primary';
@@ -43,12 +45,14 @@ export const CheckoutReviewPage = () => {
   const placeOrder = usePlaceOrder();
   const customerNote = useCheckoutStore((state) => state.customerNote);
   const paymentMethod = useCheckoutStore((state) => state.paymentMethod);
+  const paymentProvider = useCheckoutStore((state) => state.paymentProvider);
   const resetCheckout = useCheckoutStore((state) => state.resetCheckout);
   const setConfirmationOrder = useCheckoutStore((state) => state.setConfirmationOrder);
   const shippingAddressId = useCheckoutStore((state) => state.shippingAddressId);
   const voucherCode = useCheckoutStore((state) => state.voucherCode);
   const voucherPreview = useCheckoutStore((state) => state.voucherPreview);
   const [pendingAttempt, setPendingAttempt] = useState<PendingCheckoutAttempt | null>(null);
+  const [submitStage, setSubmitStage] = useState<'placing-order' | null>(null);
 
   const cart = cartQuery.data;
   const address = useMemo(
@@ -65,6 +69,7 @@ export const CheckoutReviewPage = () => {
     [customerNote, paymentMethod, shippingAddressId, voucherCode],
   );
   const checkoutPayloadSignature = useMemo(() => JSON.stringify(checkoutPayload), [checkoutPayload]);
+  const isPaypalCheckout = paymentMethod === PAYMENT_METHODS.ONLINE && paymentProvider === PAYMENT_PROVIDERS.PAYPAL;
 
   useEffect(() => {
     if (!pendingAttempt || placeOrder.isPending || pendingAttempt.payloadSignature === checkoutPayloadSignature) {
@@ -84,6 +89,7 @@ export const CheckoutReviewPage = () => {
         ? pendingAttempt.idempotencyKey
         : createIdempotencyKey('checkout');
 
+    setSubmitStage('placing-order');
     setPendingAttempt({
       idempotencyKey,
       payloadSignature: checkoutPayloadSignature,
@@ -98,6 +104,13 @@ export const CheckoutReviewPage = () => {
         onSuccess: (order) => {
           setPendingAttempt(null);
           setConfirmationOrder(order);
+          if (isPaypalCheckout) {
+            setSubmitStage(null);
+            navigate(routePaths.paymentResult(order.id, PAYMENT_PROVIDERS.PAYPAL));
+            return;
+          }
+
+          setSubmitStage(null);
           addToast({
             tone: 'success',
             title: 'Order placed',
@@ -106,6 +119,7 @@ export const CheckoutReviewPage = () => {
           navigate(routes.checkoutConfirmation);
         },
         onError: (error) => {
+          setSubmitStage(null);
           if (!shouldReuseIdempotencyKey(error)) {
             setPendingAttempt(null);
           }
@@ -209,7 +223,10 @@ export const CheckoutReviewPage = () => {
                       Edit
                     </button>
                   </div>
-                  <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">{getPaymentMethodNote(paymentMethod)}</p>
+                  <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">
+                    {getPaymentMethodNote(paymentMethod)}
+                    {paymentMethod === PAYMENT_METHODS.ONLINE ? ` Provider: ${getPaymentProviderLabel(paymentProvider)}.` : ''}
+                  </p>
                 </section>
 
                 <section className="border border-border bg-surface px-5 py-5 md:px-6">
@@ -270,7 +287,7 @@ export const CheckoutReviewPage = () => {
                     onClick={handlePlaceOrder}
                     size="lg"
                   >
-                    {placeOrder.isPending ? 'Placing order...' : 'Place order'}
+                    {submitStage === 'placing-order' ? 'Đang tạo đơn hàng...' : 'Place order'}
                   </Button>
                   <Button fullWidth onClick={() => navigate(routes.checkoutVoucher)} variant="ghost">
                     Back to rewards
@@ -288,13 +305,18 @@ export const CheckoutReviewPage = () => {
                 </div>
               }
               note="Voucher validation is preview-only in this phase, so the grand total remains aligned with the current API contract."
-              supplementary={<p className="text-sm leading-7 text-text-secondary">The order is created immediately after placement and moved into the archive.</p>}
+              supplementary={
+                <p className="text-sm leading-7 text-text-secondary">
+                  The order is created immediately after placement and moved into the archive.
+                  {isPaypalCheckout ? ' PayPal orders redirect to provider approval immediately after order creation.' : ''}
+                </p>
+              }
               totals={cart}
             />
           ) : null}
         </div>
       </Container>
-      {placeOrder.isPending ? <LoadingOverlay label="Placing your order..." /> : null}
+      {submitStage ? <LoadingOverlay label="Đang tạo đơn hàng..." /> : null}
     </>
   );
 };

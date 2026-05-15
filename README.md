@@ -78,6 +78,14 @@ Local development notes:
 - Local cookie-based auth needs the backend refresh cookie configured for local HTTP development and the frontend to call auth endpoints with `withCredentials: true`.
 - If the backend later enables CSRF double-submit, it must expose a readable `XSRF-TOKEN` cookie for the customer frontend origin so the app can echo `X-XSRF-TOKEN`.
 - `VITE_SITE_URL` should match the customer-web origin used for canonical URLs and SEO metadata.
+- For local MoMo tests, the backend can either honor the frontend-sent `returnUrl` or configure `APP_PAYMENT_MOMO_REDIRECT_URL=http://localhost:5173/payment/momo/return`.
+- For local PayPal tests, the backend can either honor the frontend-sent `returnUrl` / `cancelUrl` or configure:
+  - `APP_PAYMENT_PAYPAL_RETURN_URL=http://localhost:5173/payment/paypal/return`
+  - `APP_PAYMENT_PAYPAL_CANCEL_URL=http://localhost:5173/payment/paypal/cancel`
+- The customer web redirects only to the backend-returned `paymentUrl` / `payUrl` / `redirectUrl`.
+- The customer web never trusts MoMo redirect query params as final payment status; `/payment/momo/return` verifies the result from backend payment status APIs.
+- PayPal remains a provider under `ONLINE` payment. The frontend redirects only to the backend-returned `paymentUrl` / `approvalUrl` / `redirectUrl` / `payUrl`, captures approved PayPal orders via backend APIs, and verifies final status from backend payment endpoints.
+- The frontend never stores PayPal secrets and never handles webhook verification; backend webhook configuration remains separate.
 
 ## Run
 
