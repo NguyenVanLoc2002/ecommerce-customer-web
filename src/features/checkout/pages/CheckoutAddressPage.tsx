@@ -97,7 +97,7 @@ export const CheckoutAddressPage = () => {
               <ErrorCard
                 action={<Button onClick={() => void addressesQuery.refetch()}>Try again</Button>}
                 className="border-border bg-surface"
-                description="The mock address book could not be loaded."
+                description="The address book could not be loaded from the storefront service."
                 title="Address loading failed"
               />
             ) : null}
