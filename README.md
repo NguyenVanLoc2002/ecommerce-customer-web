@@ -72,9 +72,12 @@ VITE_SITE_URL=http://localhost:5173
 VITE_USE_MOCK_DATA=false
 ```
 
+`VITE_USE_MOCK_DATA` is opt-in: mock catalog data is used only when its value is exactly `true` (case-insensitive after trimming). When it is missing, empty, or any other value, the storefront calls `VITE_API_BASE_URL`. Restart the Vite dev server after changing an environment file.
+
 Local development notes:
 
 - If the frontend and API run on different origins, the backend must allow credentials for the frontend origin.
+- Keep `VITE_USE_MOCK_DATA=false` when validating catalog, cart, and checkout against the local development backend.
 - Local cookie-based auth needs the backend refresh cookie configured for local HTTP development and the frontend to call auth endpoints with `withCredentials: true`.
 - If the backend later enables CSRF double-submit, it must expose a readable `XSRF-TOKEN` cookie for the customer frontend origin so the app can echo `X-XSRF-TOKEN`.
 - `VITE_SITE_URL` should match the customer-web origin used for canonical URLs and SEO metadata.
