@@ -6,12 +6,33 @@ import { resolveAuthRedirect, withRedirectParam } from '@/features/auth/lib/reso
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { useAuthStore } from '@/shared/stores/authStore';
 
+const getLoginContextCopy = (redirect: string | null) => {
+  if (!redirect) {
+    return null;
+  }
+
+  if (redirect.startsWith(routes.cart) || redirect.startsWith('/products/')) {
+    return 'Sign in to add items to your bag and continue shopping.';
+  }
+
+  if (redirect.startsWith('/checkout')) {
+    return 'Sign in to continue checkout and keep your order moving.';
+  }
+
+  if (redirect.startsWith('/orders')) {
+    return 'Sign in to view your order details and account activity.';
+  }
+
+  return 'Sign in to continue where you left off.';
+};
+
 export const LoginPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const accessToken = useAuthStore((state) => state.accessToken);
   const user = useAuthStore((state) => state.user);
   const redirect = searchParams.get('redirect');
+  const loginContextCopy = getLoginContextCopy(redirect);
 
   if (user && accessToken) {
     return <Navigate replace to={resolveAuthRedirect(redirect)} />;
@@ -26,6 +47,12 @@ export const LoginPage = () => {
         </Link>
         <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.22em] text-outline">Member Access</p>
       </div>
+      {loginContextCopy ? (
+        <div className="mt-8 border border-border bg-surface-muted px-5 py-4 text-left">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Sign-in required</p>
+          <p className="mt-2 text-sm leading-7 text-text-secondary">{loginContextCopy}</p>
+        </div>
+      ) : null}
       <div className="mt-10">
         <LoginForm onSuccess={() => navigate(resolveAuthRedirect(redirect), { replace: true })} />
       </div>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, LoaderCircle, XCircle } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
 import { useInitiatePayment, usePaymentResultPolling } from '@/features/payment/hooks/usePayment';
@@ -13,6 +13,7 @@ import { Container } from '@/shared/components/layout/Container';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
+import { isAuthenticationError } from '@/shared/lib/authErrors';
 import { getPaymentProviderLabel, getPaymentStatusLabel } from '@/shared/lib/commerceLabels';
 import {
   isMutationProcessingError,
@@ -72,6 +73,8 @@ const isProcessingStatus = (status: string | undefined) =>
   status === PAYMENT_STATUSES.INITIATED || status === PAYMENT_STATUSES.PENDING || status === PAYMENT_STATUSES.PROCESSING;
 
 export const PaymentResultPage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('orderId') ?? '';
   const requestedProvider = normalizePaymentProvider(searchParams.get('provider'));
@@ -207,6 +210,16 @@ export const PaymentResultPage = () => {
             setPendingAttempt(null);
           }
 
+          if (isAuthenticationError(error)) {
+            addToast({
+              tone: 'info',
+              title: 'Please sign in to continue',
+              description: 'Sign in again to continue this payment flow.',
+            });
+            navigate(routePaths.loginRedirect(location.pathname + location.search));
+            return;
+          }
+
           if (isPaymentAlreadyProcessedError(error)) {
             addToast({
               tone: 'info',
@@ -253,6 +266,9 @@ export const PaymentResultPage = () => {
     paymentProviderLabel,
     paymentQuery,
     pendingAttempt,
+    location.pathname,
+    location.search,
+    navigate,
   ]);
 
   const isNotFound = notFoundCode === 'PAYMENT_NOT_FOUND';

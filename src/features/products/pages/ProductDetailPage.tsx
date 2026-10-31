@@ -15,8 +15,10 @@ import { ErrorCard } from '@/shared/components/feedback/ErrorCard';
 import { SkeletonDetail } from '@/shared/components/feedback/SkeletonDetail';
 import { Container } from '@/shared/components/layout/Container';
 import { PageWrapper } from '@/shared/components/layout/PageWrapper';
+import { isAuthenticationError } from '@/shared/lib/authErrors';
 import { JsonLd } from '@/shared/components/seo/JsonLd';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
+import { useAuthStore } from '@/shared/stores/authStore';
 import { useUiStore } from '@/shared/stores/uiStore';
 import { createCanonicalUrl } from '@/shared/utils/seo';
 
@@ -25,9 +27,11 @@ export const ProductDetailPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const addToast = useUiStore((state) => state.addToast);
+  const accessToken = useAuthStore((state) => state.accessToken);
   const addCartItem = useAddCartItem();
   const productQuery = useProductDetail(slug);
   const relatedQuery = useRelatedProducts(slug);
+  const user = useAuthStore((state) => state.user);
   const product = productQuery.data;
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
@@ -69,11 +73,14 @@ export const ProductDetailPage = () => {
   const currentVariant =
     product?.variants.find((variant) => variant.color === selectedColor && variant.size === selectedSize) ??
     product?.variants[0];
+  const requiresLogin = !user || !accessToken;
   const addToCartDisabled = addCartItem.isPending || !currentVariant;
   const addToCartLabel = currentVariant
-    ? addCartItem.isPending
-      ? 'Adding...'
-      : 'Add to Bag'
+    ? requiresLogin
+      ? 'Sign in to add to bag'
+      : addCartItem.isPending
+        ? 'Adding...'
+        : 'Add to Bag'
     : 'Temporarily unavailable';
   const colorSwatches = useMemo(
     () =>
@@ -143,6 +150,11 @@ export const ProductDetailPage = () => {
       return;
     }
 
+    if (requiresLogin) {
+      navigate(routePaths.loginRedirect(location.pathname + location.search));
+      return;
+    }
+
     addCartItem.mutate(
       {
         variantId: currentVariant.id,
@@ -158,10 +170,13 @@ export const ProductDetailPage = () => {
         },
         onError: (error) => {
           const message = error instanceof Error ? error.message : 'Please try again.';
-          const errorCode =
-            error instanceof Error && 'code' in error ? String((error as { code?: string }).code) : '';
 
-          if (errorCode === 'UNAUTHORIZED') {
+          if (isAuthenticationError(error)) {
+            addToast({
+              tone: 'info',
+              title: 'Please sign in to continue',
+              description: 'Sign in to add this item to your bag.',
+            });
             navigate(routePaths.loginRedirect(location.pathname + location.search));
             return;
           }

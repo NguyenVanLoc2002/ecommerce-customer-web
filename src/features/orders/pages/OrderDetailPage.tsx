@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { routePaths } from '@/constants/routes';
 import { useCancelOrder, useOrderDetail } from '@/features/orders/hooks/useOrders';
@@ -14,6 +14,7 @@ import { ConfirmDialog } from '@/shared/components/overlays/ConfirmDialog';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
+import { isAuthenticationError } from '@/shared/lib/authErrors';
 import { getPaymentMethodLabel, getPaymentMethodNote, getPaymentStatusLabel } from '@/shared/lib/commerceLabels';
 import { useUiStore } from '@/shared/stores/uiStore';
 import { formatAddress } from '@/shared/utils/formatAddress';
@@ -26,6 +27,8 @@ const actionLinkClassName =
   'text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary underline decoration-border underline-offset-4 transition-colors hover:decoration-text-primary';
 
 export const OrderDetailPage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { orderId = '' } = useParams();
   const addToast = useUiStore((state) => state.addToast);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -233,6 +236,16 @@ export const OrderDetailPage = () => {
                   ) : null}
 
                   <section className="border border-border bg-surface px-5 py-5 md:px-6">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Carrier snapshot</p>
+                    <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{order.carrierName ?? 'Carrier not selected'}</h2>
+                    <p className="mt-4 text-sm leading-7 text-text-secondary">
+                      {order.carrierName
+                        ? `${order.carrierCode ?? order.carrierName}${order.carrierProviderType ? ` / ${order.carrierProviderType}` : ''}.`
+                        : 'This order was created without a selected carrier, so shipping remained at the backend fallback value.'}
+                    </p>
+                  </section>
+
+                  <section className="border border-border bg-surface px-5 py-5 md:px-6">
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Invoice</p>
                     <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Invoice actions</h2>
                     <p className="mt-4 text-sm leading-7 text-text-secondary">
@@ -251,7 +264,12 @@ export const OrderDetailPage = () => {
               </section>
 
               <OrderSummaryPanel
-                supplementary={<p className="text-sm leading-7 text-text-secondary">Voucher code {order.voucherCode ?? 'not applied'}.</p>}
+                supplementary={
+                  <div className="space-y-3 text-sm leading-7 text-text-secondary">
+                    <p>Voucher code {order.voucherCode ?? 'not applied'}.</p>
+                    <p>{order.carrierName ? `Carrier ${order.carrierName}.` : 'Carrier not selected.'}</p>
+                  </div>
+                }
                 totals={order}
               />
             </div>
@@ -275,6 +293,16 @@ export const OrderDetailPage = () => {
                 });
               },
               onError: (error) => {
+                if (isAuthenticationError(error)) {
+                  addToast({
+                    tone: 'info',
+                    title: 'Please sign in to continue',
+                    description: 'Sign in again to manage this order.',
+                  });
+                  navigate(routePaths.loginRedirect(location.pathname + location.search));
+                  return;
+                }
+
                 addToast({
                   tone: 'danger',
                   title: 'Cancellation failed',

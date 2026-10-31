@@ -3,7 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
 import { useCart } from '@/features/cart/hooks/useCart';
-import { useCheckoutAddresses } from '@/features/checkout/hooks/useCheckout';
+import { CheckoutCarrierSelector } from '@/features/checkout/components/CheckoutCarrierSelector';
+import { useCheckoutAddresses, useCheckoutPricing } from '@/features/checkout/hooks/useCheckout';
 import { useCheckoutStore } from '@/features/checkout/stores/checkoutStore';
 import { CartSummary } from '@/shared/components/commerce/CartSummary';
 import { CheckoutStepper } from '@/shared/components/commerce/CheckoutStepper';
@@ -21,7 +22,25 @@ export const CheckoutAddressPage = () => {
   const [searchParams] = useSearchParams();
   const cartQuery = useCart();
   const addressesQuery = useCheckoutAddresses();
+  const cart = cartQuery.data;
+  const {
+    carrierOptions,
+    carrierSelectionError,
+    carrierSelectionRequired,
+    carriersQuery,
+    previewError,
+    previewLoading,
+    previewQuery,
+    previewValueOverrides,
+    selectedCarrier,
+    summaryTotals,
+  } = useCheckoutPricing(cart);
+  const orderPreview = useCheckoutStore((state) => state.orderPreview);
   const selectedAddressId = useCheckoutStore((state) => state.shippingAddressId);
+  const selectedCarrierId = useCheckoutStore((state) => state.selectedCarrierId);
+  const setCarrierSelectionError = useCheckoutStore((state) => state.setCarrierSelectionError);
+  const setOrderPreview = useCheckoutStore((state) => state.setOrderPreview);
+  const setSelectedCarrierId = useCheckoutStore((state) => state.setSelectedCarrierId);
   const setShippingAddressId = useCheckoutStore((state) => state.setShippingAddressId);
   const selectedAddressQuery = searchParams.get('selectedAddressId');
 
@@ -36,8 +55,6 @@ export const CheckoutAddressPage = () => {
       setShippingAddressId(defaultAddress.id);
     }
   }, [addressesQuery.data, selectedAddressId, selectedAddressQuery, setShippingAddressId]);
-
-  const cart = cartQuery.data;
 
   if (cart?.items.length === 0) {
     return (
@@ -129,10 +146,43 @@ export const CheckoutAddressPage = () => {
                 Add new address
               </Link>
             </div>
+            {selectedAddressId ? (
+              <CheckoutCarrierSelector
+                carrierLoading={carriersQuery.isLoading}
+                errorMessage={carriersQuery.isError ? (carriersQuery.error instanceof Error ? carriersQuery.error.message : 'The live carrier list could not be loaded.') : null}
+                onChange={(carrierId) => {
+                  setCarrierSelectionError(null);
+                  setSelectedCarrierId(carrierId);
+                  setOrderPreview(null);
+                }}
+                onRetry={() => void carriersQuery.refetch()}
+                onRetryPreview={() => void previewQuery.refetch()}
+                options={carrierOptions}
+                previewError={previewError}
+                previewLoading={previewLoading}
+                selectedCarrierId={selectedCarrierId}
+                selectionError={carrierSelectionError}
+                shippingServiceName={orderPreview?.shippingServiceName ?? null}
+              />
+            ) : null}
           </section>
-          {cart ? (
+          {cart && summaryTotals ? (
             <CartSummary
-              description="Taxes and delivery fees are finalized during review."
+              description={
+                !selectedAddressId
+                  ? 'Select an address first, then request a live backend shipping quote.'
+                  : carriersQuery.isError
+                    ? 'Carrier options failed to load. Retry before relying on shipping totals.'
+                    : carrierSelectionError
+                      ? carrierSelectionError
+                      : carrierSelectionRequired && !selectedCarrierId
+                        ? 'Choose a carrier here so checkout can request the live shipping fee before review.'
+                        : previewError
+                          ? 'The live shipping quote failed. Retry the quote before placing the order.'
+                          : orderPreview
+                            ? 'Live totals now come from POST /orders/preview and will refresh when the cart, address, voucher, or carrier changes.'
+                            : 'Waiting for the live backend shipping quote.'
+              }
               eyebrow="Secure checkout"
               footer={
                 <div className="space-y-3">
@@ -144,9 +194,22 @@ export const CheckoutAddressPage = () => {
                   </Link>
                 </div>
               }
-              supplementary={<p className="text-sm leading-7 text-text-secondary">Your selected address is stored only for this customer checkout draft.</p>}
+              isTotalsUpdating={previewLoading}
+              supplementary={
+                <div className="space-y-3 text-sm leading-7 text-text-secondary">
+                  <p>Your selected address is stored only for this customer checkout draft.</p>
+                  <p>
+                    {selectedCarrier
+                      ? `${selectedCarrier.name}${orderPreview?.shippingServiceName ? ` / ${orderPreview.shippingServiceName}` : ''}.`
+                      : carrierSelectionRequired
+                        ? 'Carrier selection is still required for a live shipping quote.'
+                        : 'No active carrier is currently available, so preview will fall back to backend shipping fee 0.'}
+                  </p>
+                </div>
+              }
               title="Order value"
-              totals={cart}
+              totals={summaryTotals}
+              valueOverrides={previewValueOverrides}
               variant="checkout"
             />
           ) : null}

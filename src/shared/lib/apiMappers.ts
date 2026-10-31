@@ -1,7 +1,22 @@
 import type { AddressResponse } from '@/shared/types/address.types';
 import type { ApiAuthResponse, ApiAuthUserResponse, AuthResponse, AuthTokens, AuthUser } from '@/shared/types/auth.types';
 import type { Brand, BrandResponse, Category, CategoryResponse, ProductDetail, ProductDetailResponse, ProductImage, ProductListItemResponse, ProductSummary, ProductVariant } from '@/shared/types/catalog.types';
-import type { CartItem, CartResponse, CommerceCart, CommerceOrder, OrderItem, OrderItemResponse, OrderListItemResponse, OrderResponse, ValidateVoucherResponse, VoucherPreview } from '@/shared/types/commerce.types';
+import type {
+  CartItem,
+  CartResponse,
+  CheckoutCarrierOption,
+  CheckoutCarrierOptionResponse,
+  CommerceCart,
+  CommerceOrder,
+  OrderItem,
+  OrderItemResponse,
+  OrderListItemResponse,
+  OrderPreview,
+  OrderPreviewResponse,
+  OrderResponse,
+  ValidateVoucherResponse,
+  VoucherPreview,
+} from '@/shared/types/commerce.types';
 import type { Invoice, InvoiceItem, InvoiceResponse } from '@/shared/types/invoice.types';
 import type { Notification, NotificationResponse } from '@/shared/types/notification.types';
 import type { ApiUserProfileResponse, UserProfile } from '@/shared/types/profile.types';
@@ -178,6 +193,30 @@ export const toVoucherPreview = (code: string, response: ValidateVoucherResponse
   discountAmount: response.discountAmount,
 });
 
+export const toCheckoutCarrierOption = (carrier: CheckoutCarrierOptionResponse): CheckoutCarrierOption => ({
+  id: carrier.id,
+  code: carrier.code,
+  name: carrier.name,
+  providerType: carrier.providerType,
+  logoUrl: carrier.logoUrl,
+  description: carrier.description,
+});
+
+export const toOrderPreview = (preview: OrderPreviewResponse): OrderPreview => ({
+  carrierId: preview.carrierId,
+  carrierCode: preview.carrierCode,
+  carrierName: preview.carrierName,
+  carrierProviderType: preview.carrierProviderType,
+  shippingServiceName: preview.shippingServiceName,
+  paymentMethod: preview.paymentMethod,
+  subTotal: preview.subTotal,
+  discountAmount: preview.discountAmount,
+  shippingFee: preview.shippingFee,
+  totalAmount: preview.totalAmount,
+  voucherCode: preview.voucherCode,
+  customerNote: preview.customerNote,
+});
+
 const toCartItem = (item: CartResponse['items'][number], enrichment?: ProductEnrichment): CartItem => {
   const variant = enrichment?.variant ?? null;
   const color = variant?.color ?? titleCaseToken(getVariantAttributeFromName(item.variantName, 0));
@@ -287,6 +326,10 @@ export const toCommerceOrder = (
     status: order.status,
     createdAt: order.createdAt,
     updatedAt: order.updatedAt ?? order.createdAt,
+    carrierId: order.carrierId ?? undefined,
+    carrierCode: order.carrierCode ?? undefined,
+    carrierName: order.carrierName ?? undefined,
+    carrierProviderType: order.carrierProviderType ?? undefined,
     paymentMethod: (order.paymentMethod ?? 'COD') as PaymentMethod,
     paymentStatus: order.paymentStatus ?? undefined,
     customerNote: order.customerNote ?? '',
@@ -308,6 +351,10 @@ export const toCommerceOrderFromListItem = (order: OrderListItemResponse): Comme
   status: order.status,
   createdAt: order.createdAt,
   updatedAt: order.createdAt,
+  carrierId: undefined,
+  carrierCode: undefined,
+  carrierName: undefined,
+  carrierProviderType: undefined,
   paymentMethod: (order.paymentMethod ?? 'COD') as PaymentMethod,
   paymentStatus: order.paymentStatus ?? undefined,
   customerNote: '',

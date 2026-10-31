@@ -32,6 +32,15 @@ export interface CartTotals {
   grandTotal: number;
 }
 
+export interface CheckoutCarrierOption {
+  id: string;
+  code: string;
+  name: string;
+  providerType: string;
+  logoUrl?: string | null;
+  description?: string | null;
+}
+
 export interface CommerceCart extends CartTotals {
   id: string;
   items: CartItem[];
@@ -69,6 +78,10 @@ export interface CommerceOrder extends CartTotals {
   status: OrderStatus;
   createdAt: string;
   updatedAt: string;
+  carrierId?: string;
+  carrierCode?: string;
+  carrierName?: string;
+  carrierProviderType?: string;
   paymentMethod: PaymentMethod;
   paymentStatus?: string;
   customerNote: string;
@@ -136,6 +149,45 @@ export interface OrderListItemResponse {
   createdAt: string;
 }
 
+export interface CheckoutCarrierOptionResponse {
+  id: string;
+  code: string;
+  name: string;
+  providerType: string;
+  logoUrl: string | null;
+  description: string | null;
+}
+
+export interface OrderPreviewResponse {
+  carrierId: string | null;
+  carrierCode: string | null;
+  carrierName: string | null;
+  carrierProviderType: string | null;
+  shippingServiceName: string | null;
+  paymentMethod: PaymentMethod | null;
+  subTotal: number;
+  discountAmount: number;
+  shippingFee: number;
+  totalAmount: number;
+  voucherCode: string | null;
+  customerNote: string | null;
+}
+
+export interface OrderPreview {
+  carrierId?: string | null;
+  carrierCode?: string | null;
+  carrierName?: string | null;
+  carrierProviderType?: string | null;
+  shippingServiceName?: string | null;
+  paymentMethod?: PaymentMethod | null;
+  subTotal: number;
+  discountAmount: number;
+  shippingFee: number;
+  totalAmount: number;
+  voucherCode?: string | null;
+  customerNote?: string | null;
+}
+
 export interface OrderResponse {
   id: string;
   orderCode: string;
@@ -143,6 +195,10 @@ export interface OrderResponse {
   status: OrderStatus;
   paymentMethod: PaymentMethod | null;
   paymentStatus: string | null;
+  carrierId: string | null;
+  carrierCode: string | null;
+  carrierName: string | null;
+  carrierProviderType: string | null;
   shippingReceiverName: string;
   shippingPhoneNumber: string;
   shippingStreetAddress: string;
@@ -163,6 +219,7 @@ export interface OrderResponse {
 
 export interface CheckoutDraft {
   shippingAddressId: string;
+  selectedCarrierId: string;
   paymentMethod: PaymentMethod;
   paymentProvider: PaymentProvider;
   customerNote: string;
@@ -170,9 +227,14 @@ export interface CheckoutDraft {
   voucherPreview: VoucherPreview | null;
 }
 
-export interface PlaceOrderInput {
+export interface CheckoutOrderInput {
   shippingAddressId: string;
+  carrierId?: string;
   paymentMethod: PaymentMethod;
   customerNote: string;
   voucherCode?: string;
 }
+
+export type PlaceOrderInput = CheckoutOrderInput;
+
+export type OrderPreviewInput = CheckoutOrderInput;
