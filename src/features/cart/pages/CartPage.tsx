@@ -57,7 +57,7 @@ export const CartPage = () => {
           <ErrorCard
             action={<Button onClick={() => void cartQuery.refetch()}>Try again</Button>}
             className="border-border bg-surface"
-            description="The current cart could not be loaded from the mock commerce state."
+            description="The current cart could not be loaded from the storefront service."
             title="Bag loading failed"
           />
         ) : null}
