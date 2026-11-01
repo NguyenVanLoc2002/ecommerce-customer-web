@@ -116,7 +116,7 @@ $env:E2E_PRODUCT_SLUG='seeded-product-slug'
 npm run test:e2e
 ```
 
-The test checks product-to-checkout UI flow, Mock payment completion, paid order/payment persistence, cart clearing, and reduced available stock. Mock payment is exposed in the UI only while `VITE_E2E=true`, which the Playwright web-server configuration sets automatically. Do not enable Mock payment in production.
+The test checks product-to-checkout UI flow, carrier selection and server-side quote propagation when an active carrier is available, the zero-fee fallback when none is available, Mock payment completion, paid order/payment persistence, cart clearing, and reduced available stock. It also verifies that the order request never sends client-calculated pricing fields. Mock payment is exposed in the UI only while `VITE_E2E=true`, which the Playwright web-server configuration sets automatically. Do not enable Mock payment in production.
 
 ## Build
 
