@@ -104,6 +104,20 @@ npm run typecheck
 npm run build
 ```
 
+## Browser E2E: Mock payment
+
+The Playwright purchase journey always calls the local backend; it never enables browser mock catalog data. Start the backend with Mock payment enabled, using an isolated development/test database and a seeded customer, address, product variant, and stock.
+
+```powershell
+$env:APP_PAYMENT_MOCK_ENABLED='true'
+$env:E2E_CUSTOMER_EMAIL='e2e-customer@example.test'
+$env:E2E_CUSTOMER_PASSWORD='replace-with-test-password'
+$env:E2E_PRODUCT_SLUG='seeded-product-slug'
+npm run test:e2e
+```
+
+The test checks product-to-checkout UI flow, Mock payment completion, paid order/payment persistence, cart clearing, and reduced available stock. Mock payment is exposed in the UI only while `VITE_E2E=true`, which the Playwright web-server configuration sets automatically. Do not enable Mock payment in production.
+
 ## Build
 
 ```bash
