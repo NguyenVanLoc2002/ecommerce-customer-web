@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { config } from '@/constants/config';
 import { routes } from '@/constants/routes';
 import { useCart } from '@/features/cart/hooks/useCart';
 import { useCheckoutPricing } from '@/features/checkout/hooks/useCheckout';
@@ -44,6 +45,12 @@ const providerOptions = [
   },
 ] as const;
 
+const mockProviderOption = {
+  value: PAYMENT_PROVIDERS.MOCK,
+  title: 'Mock payment',
+  description: 'Development-only gateway used by the automated end-to-end purchase journey.',
+} as const;
+
 export const CheckoutPaymentPage = () => {
   const navigate = useNavigate();
   const cartQuery = useCart();
@@ -67,6 +74,7 @@ export const CheckoutPaymentPage = () => {
   const setPaymentMethod = useCheckoutStore((state) => state.setPaymentMethod);
   const setPaymentProvider = useCheckoutStore((state) => state.setPaymentProvider);
   const shippingAddressId = useCheckoutStore((state) => state.shippingAddressId);
+  const visibleProviderOptions = config.e2eMode ? [...providerOptions, mockProviderOption] : providerOptions;
 
   useEffect(() => {
     if (!shippingAddressId) {
@@ -144,7 +152,7 @@ export const CheckoutPaymentPage = () => {
                   Chọn cổng thanh toán online trước khi tiếp tục đặt đơn.
                 </p>
                 <div className="mt-6 grid gap-4">
-                  {providerOptions.map((option) => {
+                  {visibleProviderOptions.map((option) => {
                     const selected = paymentProvider === option.value;
 
                     return (
