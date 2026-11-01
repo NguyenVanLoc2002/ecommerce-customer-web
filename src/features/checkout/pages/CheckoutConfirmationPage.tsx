@@ -52,7 +52,12 @@ export const CheckoutConfirmationPage = () => {
 
   const paymentProviderLabel =
     confirmationOrder.paymentMethod === PAYMENT_METHODS.ONLINE ? getPaymentProviderLabel(paymentProvider) : getPaymentMethodLabel(confirmationOrder.paymentMethod);
-  const paymentActionLabel = paymentProvider === PAYMENT_PROVIDERS.PAYPAL ? 'Pay with PayPal' : 'Pay with MoMo';
+  const paymentActionLabel =
+    paymentProvider === PAYMENT_PROVIDERS.PAYPAL
+      ? 'Pay with PayPal'
+      : paymentProvider === PAYMENT_PROVIDERS.MOCK
+        ? 'Continue to Mock payment'
+        : 'Pay with MoMo';
 
   return (
     <>
