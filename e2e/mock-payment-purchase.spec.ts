@@ -186,17 +186,22 @@ test.describe('Mock payment purchase journey', () => {
       expect(createdOrder.carrierId ?? null).toBe(selectedCarrierId);
       expect(createdOrder.shippingFee).toBeGreaterThanOrEqual(0);
 
-      const initiatePaymentResponse = await customerApi.post(`payments/order/${createdOrder.id}/initiate`, {
-        data: { provider: 'MOCK' },
-        headers: { 'Idempotency-Key': `e2e-mock-payment-${createdOrder.id}` },
-      });
-      expect(initiatePaymentResponse.ok()).toBeTruthy();
-      const initiatedPayment = unwrap<Payment>(await initiatePaymentResponse.json());
-      if (!initiatedPayment.paymentUrl) {
-        throw new Error('Mock payment initiation did not return a completion URL.');
-      }
-      const mockCompletionResponse = await page.goto(initiatedPayment.paymentUrl);
-      expect(mockCompletionResponse?.ok()).toBeTruthy();
+      const initiatePaymentRequest = page.waitForRequest(
+        (request) => request.method() === 'POST' && new URL(request.url()).pathname.endsWith(`/api/v1/payments/order/${createdOrder.id}/initiate`),
+      );
+      const initiatePaymentResponse = page.waitForResponse(
+        (response) => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith(`/api/v1/payments/order/${createdOrder.id}/initiate`),
+      );
+      const mockCompletionResponse = page.waitForResponse(
+        (response) => response.request().method() === 'GET' && new URL(response.url()).pathname.endsWith('/api/v1/payments/mock/complete'),
+      );
+      await page.getByRole('button', { name: 'Continue to Mock payment' }).click();
+
+      const initiatedPaymentRequest = await initiatePaymentRequest;
+      expect(initiatedPaymentRequest.postDataJSON()).toEqual({ provider: 'MOCK' });
+      expect(initiatedPaymentRequest.headers()['idempotency-key']).toBeTruthy();
+      expect((await initiatePaymentResponse).ok()).toBeTruthy();
+      expect((await mockCompletionResponse).ok()).toBeTruthy();
 
       const orderResponse = await customerApi.get(`orders/${createdOrder.id}`);
       expect(orderResponse.ok()).toBeTruthy();
@@ -207,6 +212,9 @@ test.describe('Mock payment purchase journey', () => {
       const paymentResponse = await customerApi.get(`payments/order/${createdOrder.id}`);
       expect(paymentResponse.ok()).toBeTruthy();
       expect(unwrap<Payment>(await paymentResponse.json()).status).toBe('PAID');
+
+      await page.goto(`/payment/result?orderId=${createdOrder.id}&provider=MOCK`);
+      await expect(page.getByRole('heading', { name: 'Payment Completed.' })).toBeVisible();
 
       const restockProbeResponse = await customerApi.post('cart/items', {
         data: { variantId: selectedItem.variantId, quantity: 1 },
