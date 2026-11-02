@@ -3,6 +3,7 @@ import { CheckCircle2, LoaderCircle, XCircle } from 'lucide-react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
+import { config } from '@/constants/config';
 import { useInitiatePayment, usePaymentResultPolling } from '@/features/payment/hooks/usePayment';
 import { readPendingPaypalPayment, writePendingPaypalPayment } from '@/features/payment/lib/pendingPaypalPayment';
 import { getPaymentRedirectUrl } from '@/features/payment/services/paymentService';
@@ -50,6 +51,10 @@ type PendingPaymentAttempt = {
 };
 
 const createInitiatePayload = (orderId: string, provider: PaymentProvider) => {
+  if (provider === PAYMENT_PROVIDERS.MOCK) {
+    return { provider };
+  }
+
   if (typeof window === 'undefined') {
     return {
       provider,
@@ -299,7 +304,11 @@ export const PaymentResultPage = () => {
       return;
     }
 
-    if (requestedProvider !== PAYMENT_PROVIDERS.PAYPAL) {
+    const canAutoInitiate =
+      requestedProvider === PAYMENT_PROVIDERS.PAYPAL ||
+      (requestedProvider === PAYMENT_PROVIDERS.MOCK && config.e2eMode);
+
+    if (!canAutoInitiate) {
       return;
     }
 
