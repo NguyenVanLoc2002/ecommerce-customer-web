@@ -96,8 +96,11 @@ export interface CartItemResponse {
   variantId: string;
   variantName: string | null;
   sku: string | null;
+  productId: string;
   productSlug: string;
   productName: string;
+  brandName: string | null;
+  productImageUrl: string | null;
   unitPrice: number;
   salePrice: number | null;
   quantity: number;
@@ -126,8 +129,10 @@ export interface ValidateVoucherResponse {
 
 export interface OrderItemResponse {
   id: string;
-  productId?: string | null;
+  productId: string | null;
+  productSlug: string | null;
   productName: string;
+  brandName: string | null;
   variantId?: string | null;
   variantName: string | null;
   sku: string | null;
@@ -136,6 +141,7 @@ export interface OrderItemResponse {
   effectivePrice?: number | null;
   quantity: number;
   lineTotal: number;
+  productImageUrl: string | null;
 }
 
 export interface OrderListItemResponse {

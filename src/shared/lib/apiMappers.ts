@@ -1,6 +1,6 @@
 import type { AddressResponse } from '@/shared/types/address.types';
 import type { ApiAuthResponse, ApiAuthUserResponse, AuthResponse, AuthTokens, AuthUser } from '@/shared/types/auth.types';
-import type { Brand, BrandResponse, Category, CategoryResponse, ProductDetail, ProductDetailResponse, ProductImage, ProductListItemResponse, ProductSummary, ProductVariant } from '@/shared/types/catalog.types';
+import type { Brand, BrandResponse, Category, CategoryResponse, ProductDetail, ProductDetailResponse, ProductImage, ProductListItemResponse, ProductSummary } from '@/shared/types/catalog.types';
 import type {
   CartItem,
   CartResponse,
@@ -23,14 +23,6 @@ import type { ApiUserProfileResponse, UserProfile } from '@/shared/types/profile
 import type { Review, ReviewListItem, ReviewResponse } from '@/shared/types/review.types';
 import { mapProductDetailResponse } from '@/shared/lib/productDetailMapper';
 import { USER_ROLES, type PaymentMethod } from '@/shared/types/enums';
-
-type ProductEnrichment = {
-  brandName?: string;
-  productId?: string;
-  productSlug?: string;
-  primaryImage?: ProductImage;
-  variant?: ProductVariant | null;
-};
 
 const PLACEHOLDER_IMAGE = `data:image/svg+xml;utf8,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000"><rect width="800" height="1000" fill="#f3efe7"/><rect x="120" y="140" width="560" height="720" fill="#e4dbcf"/><text x="400" y="520" text-anchor="middle" font-family="Arial" font-size="42" fill="#6f6559">Fashion Shop</text></svg>',
@@ -217,17 +209,16 @@ export const toOrderPreview = (preview: OrderPreviewResponse): OrderPreview => (
   customerNote: preview.customerNote,
 });
 
-const toCartItem = (item: CartResponse['items'][number], enrichment?: ProductEnrichment): CartItem => {
-  const variant = enrichment?.variant ?? null;
-  const color = variant?.color ?? titleCaseToken(getVariantAttributeFromName(item.variantName, 0));
-  const size = variant?.size ?? titleCaseToken(getVariantAttributeFromName(item.variantName, 1));
+const toCartItem = (item: CartResponse['items'][number]): CartItem => {
+  const color = titleCaseToken(getVariantAttributeFromName(item.variantName, 0));
+  const size = titleCaseToken(getVariantAttributeFromName(item.variantName, 1));
 
   return {
     id: item.id,
-    productId: enrichment?.productId ?? item.productSlug,
-    productSlug: enrichment?.productSlug ?? item.productSlug,
+    productId: item.productId,
+    productSlug: item.productSlug,
     productName: item.productName,
-    brandName: enrichment?.brandName ?? 'Fashion Shop',
+    brandName: item.brandName ?? 'Fashion Shop',
     variantId: item.variantId,
     sku: item.sku ?? '',
     color: color || 'Default',
@@ -237,7 +228,7 @@ const toCartItem = (item: CartResponse['items'][number], enrichment?: ProductEnr
     compareAtPrice: item.salePrice && item.salePrice < item.unitPrice ? item.unitPrice : undefined,
     subtotal: item.lineTotal,
     stockAvailable: item.availableStock,
-    primaryImage: enrichment?.primaryImage ?? createProductImage(null, `${item.productName} product image`),
+    primaryImage: createProductImage(item.productImageUrl, `${item.productName} product image`),
     isStale: item.availableStock < item.quantity,
   };
 };
@@ -250,11 +241,10 @@ const getVariantAttributeFromName = (variantName: string | null, index: number) 
 
 export const toCommerceCart = (
   cart: CartResponse,
-  enrichments: Record<string, ProductEnrichment>,
   shippingFee = 0,
   discountTotal = 0,
 ): CommerceCart => {
-  const items = cart.items.map((item) => toCartItem(item, enrichments[item.variantId]));
+  const items = cart.items.map(toCartItem);
   const grandTotal = cart.subTotal + shippingFee - discountTotal;
 
   return {
@@ -270,18 +260,17 @@ export const toCommerceCart = (
   };
 };
 
-const toOrderItem = (item: OrderItemResponse, enrichment?: ProductEnrichment): OrderItem => {
-  const variant = enrichment?.variant ?? null;
-  const color = variant?.color ?? titleCaseToken(getVariantAttributeFromName(item.variantName, 0));
-  const size = variant?.size ?? titleCaseToken(getVariantAttributeFromName(item.variantName, 1));
+const toOrderItem = (item: OrderItemResponse): OrderItem => {
+  const color = titleCaseToken(getVariantAttributeFromName(item.variantName, 0));
+  const size = titleCaseToken(getVariantAttributeFromName(item.variantName, 1));
   const effectivePrice = item.effectivePrice ?? item.salePrice ?? item.unitPrice;
 
   return {
     id: item.id,
-    productId: enrichment?.productId ?? item.productId ?? '',
-    productSlug: enrichment?.productSlug ?? enrichment?.productId ?? item.productId ?? item.id,
+    productId: item.productId ?? '',
+    productSlug: item.productSlug ?? item.productId ?? item.id,
     productName: item.productName,
-    brandName: enrichment?.brandName ?? 'Fashion Shop',
+    brandName: item.brandName ?? 'Fashion Shop',
     variantId: item.variantId ?? '',
     sku: item.sku ?? '',
     color: color || 'Default',
@@ -289,7 +278,7 @@ const toOrderItem = (item: OrderItemResponse, enrichment?: ProductEnrichment): O
     quantity: item.quantity,
     unitPrice: effectivePrice,
     subtotal: item.lineTotal,
-    primaryImage: enrichment?.primaryImage ?? createProductImage(null, `${item.productName} product image`),
+    primaryImage: createProductImage(item.productImageUrl, `${item.productName} product image`),
   };
 };
 
@@ -316,9 +305,8 @@ const toOrderShippingAddress = (order: OrderResponse) => ({
 
 export const toCommerceOrder = (
   order: OrderResponse,
-  enrichments: Record<string, ProductEnrichment>,
 ): CommerceOrder => {
-  const items = order.items.map((item) => toOrderItem(item, enrichments[item.id] ?? enrichments[item.variantId ?? '']));
+  const items = order.items.map(toOrderItem);
 
   return {
     id: order.id,
@@ -445,16 +433,14 @@ export const toReview = (review: ReviewResponse): Review => ({
 
 export const toReviewListItem = (
   review: ReviewResponse,
-  enrichment: ProductEnrichment,
-  orderId: string,
 ): ReviewListItem => ({
   ...toReview(review),
-  orderId,
+  orderId: review.orderId ?? '',
   orderItemId: review.orderItemId,
-  productSlug: enrichment.productSlug ?? review.productId,
+  productSlug: review.productSlug ?? review.productId,
   productName: review.productName,
-  brandName: enrichment.brandName ?? 'Fashion Shop',
-  productImage: enrichment.primaryImage ?? createProductImage(null, `${review.productName} product image`),
+  brandName: review.brandName ?? 'Fashion Shop',
+  productImage: createProductImage(review.productImageUrl, `${review.productName} product image`),
 });
 
 export const toNotification = (notification: NotificationResponse): Notification => ({
