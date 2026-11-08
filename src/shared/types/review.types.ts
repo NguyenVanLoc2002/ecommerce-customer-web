@@ -44,11 +44,15 @@ export interface ReviewResponse {
   customerId: string;
   customerName: string;
   productId: string;
+  productSlug: string | null;
   productName: string;
+  brandName: string | null;
+  productImageUrl: string | null;
   variantId: string | null;
   variantName: string | null;
   sku: string | null;
   orderItemId: string;
+  orderId: string | null;
   rating: number;
   comment: string | null;
   status: ReviewStatus;

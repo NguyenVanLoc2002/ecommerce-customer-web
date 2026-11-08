@@ -339,6 +339,11 @@ List item fields used by frontend:
   - `brand`, `categories`, `variants`, `media`
   - `createdAt`, `updatedAt`
 
+### `GET /products/slug/{slug}`
+- Access: public
+- Response: `ApiResponse<ProductDetailResponse>`
+- Resolve storefront PDPs by this exact slug endpoint. Do not page through `GET /products` to find a slug.
+
 Variant fields:
 - `id`, `sku`, `barcode`, `variantName`
 - `basePrice`, `salePrice`, `compareAtPrice`
@@ -354,7 +359,7 @@ Cart shape:
 
 Cart item shape:
 - `id`, `variantId`, `variantName`, `sku`
-- `productSlug`, `productName`
+- `productId`, `productSlug`, `productName`, `brandName`, `productImageUrl`
 - `unitPrice`, `salePrice`
 - `quantity`, `availableStock`, `lineTotal`
 - `createdAt`
@@ -405,6 +410,10 @@ Order detail fields:
 - `subTotal`, `discountAmount`, `shippingFee`, `totalAmount`
 - `voucherCode`, `customerNote`
 - `items`, `createdAt`
+
+Order item fields:
+- `id`, `variantId`, `productId`, `productSlug`, `productName`, `brandName`
+- `variantName`, `sku`, `productImageUrl`, `unitPrice`, `salePrice`, `effectivePrice`, `quantity`, `lineTotal`
 
 ### `POST /orders`
 - Access: authenticated
@@ -562,9 +571,9 @@ Create review request:
 Review fields:
 - `id`
 - `customerId`, `customerName`
-- `productId`, `productName`
+- `productId`, `productSlug`, `productName`, `brandName`, `productImageUrl`
 - `variantId`, `variantName`, `sku`
-- `orderItemId`
+- `orderItemId`, `orderId`
 - `rating`, `comment`
 - `status`, `adminNote`, `moderatedAt`, `moderatedBy`
 - `createdAt`, `updatedAt`
@@ -746,7 +755,7 @@ Review and notification:
 - Do not expose or display `searchText` / `search_text`
 - Do not call admin product search endpoints from the customer app
 - Do not client-side filter or re-sort backend keyword search results
-- Do not call `/products/{slug}` unless backend supports it
+- Use `/products/slug/{slug}` for storefront slug lookup; do not scan paged `/products` responses.
 - Payment callback is not a customer UI endpoint
 - Customer Web sends `Idempotency-Key` only for `POST /orders` and `POST /payments/order/{orderId}/initiate`
 - Generate one UUID-like key per user action and keep the same key for same-action retry after timeout or `5xx`
@@ -761,6 +770,6 @@ Review and notification:
 
 ## Current Risk Notes
 
-- Product detail is documented as `GET /products/{id}`. If the frontend routes by slug, it needs a separate mapping layer or backend support for slug lookup.
+- Storefront product slugs resolve through `GET /products/slug/{slug}`.
 - Voucher validation is preview-only. Current order creation stores `voucherCode` but does not apply discount totals in service logic.
 - Review creation requires the parent order to be `COMPLETED`, not merely delivered.
