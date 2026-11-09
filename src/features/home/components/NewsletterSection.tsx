@@ -7,6 +7,8 @@ import { useUiStore } from '@/shared/stores/uiStore';
 export const NewsletterSection = () => {
   const addToast = useUiStore((state) => state.addToast);
   const [email, setEmail] = useState('');
+  const newsletterButtonClassName =
+    'w-full !border-white !bg-white !text-text-primary hover:!border-text-primary hover:!bg-text-primary hover:!text-white focus-visible:!outline-white focus-visible:outline-offset-4 md:w-auto';
 
   return (
     <section className="mb-section bg-promo-dark py-24 text-center md:py-32">
@@ -17,24 +19,37 @@ export const NewsletterSection = () => {
           Receive exclusive access to private collection previews, atelier journals, and invitations to international exhibitions.
         </p>
         <form
-          className="mx-auto mt-12 flex max-w-xl flex-col border-b border-white/10 md:flex-row"
+          className="mx-auto mt-12 flex max-w-xl flex-col gap-4 border-b border-white/10 pb-4 md:flex-row md:items-end md:gap-0 md:pb-0"
           onSubmit={(event) => {
             event.preventDefault();
+            const trimmedEmail = email.trim();
+
+            if (!trimmedEmail) {
+              addToast({
+                tone: 'info',
+                title: 'Add your email address',
+                description: 'Enter your email address to join the editorial preview list.',
+              });
+              return;
+            }
+
             addToast({
               tone: 'success',
               title: 'Preview signup captured',
-              description: email ? `${email} was added to the editorial preview list.` : 'Add an email to continue.',
+              description: `${trimmedEmail} was added to the editorial preview list.`,
             });
+            setEmail('');
           }}
         >
           <input
-            className="h-16 flex-1 border-0 bg-transparent px-0 text-[11px] font-bold uppercase tracking-[0.22em] text-white placeholder:text-white/20 focus:outline-none focus:ring-0"
+            aria-label="Email address"
+            className="h-16 flex-1 border-0 bg-transparent px-0 text-[11px] font-bold uppercase tracking-[0.22em] text-white placeholder:text-white/45 focus:outline-none focus:ring-0"
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="Enter your email address"
+            placeholder="ENTER YOUR EMAIL ADDRESS"
             type="email"
             value={email}
           />
-          <Button className="bg-white text-brand-primary hover:bg-white/85" size="lg" type="submit">
+          <Button aria-label="Subscribe to the newsletter" className={newsletterButtonClassName} size="lg" type="submit" variant="ghost">
             Subscribe
           </Button>
         </form>

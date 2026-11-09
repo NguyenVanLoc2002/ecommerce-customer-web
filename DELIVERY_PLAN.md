@@ -263,12 +263,10 @@ Parallelism guidance after Phase 7:
 - Phase 10, 11, and 12 can run in parallel if ownership boundaries are clear
 - Phase 13 must wait until all user-facing flows are present
 
-## 5. Current Recommended Starting Point
+## 5. Current Recommended Planning Baseline
 
-Because the repo is currently documentation-first, start with:
+The repository has progressed beyond a documentation-first scaffold: the route shell and customer flows for checkout, orders, payment, reviews, and notifications are present in source. This roadmap remains a feature inventory and sequencing guide, not proof that every phase is complete or production-validated.
 
-1. Phase 0 scaffold
-2. Phase 1 auth
-3. Phase 2 routing shell
+Before starting a new feature, use the current GitHub Issue, `AGENTS.md`, and `API.md` to verify the applicable code path and acceptance criteria. Run the relevant scoped checks and record any unverified runtime, provider, or browser evidence.
 
-Do not start feature implementation before those three phases exist.
+Use the phase order above to identify prerequisites. Do not restart Phase 0 through Phase 2 solely because this roadmap was restored.

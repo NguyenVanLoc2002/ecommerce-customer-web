@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-import { routes } from '@/constants/routes';
+import { routePaths, routes } from '@/constants/routes';
 import { StaleCartBanner } from '@/features/cart/components/StaleCartBanner';
 import { useCart, useClearCart, useRemoveCartItem, useUpdateCartItemQuantity } from '@/features/cart/hooks/useCart';
 import { CartItemCard } from '@/shared/components/commerce/CartItemCard';
@@ -14,9 +14,11 @@ import { ConfirmDialog } from '@/shared/components/overlays/ConfirmDialog';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
+import { isAuthenticationError } from '@/shared/lib/authErrors';
 import { useUiStore } from '@/shared/stores/uiStore';
 
 export const CartPage = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const addToast = useUiStore((state) => state.addToast);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -55,7 +57,7 @@ export const CartPage = () => {
           <ErrorCard
             action={<Button onClick={() => void cartQuery.refetch()}>Try again</Button>}
             className="border-border bg-surface"
-            description="The current cart could not be loaded from the mock commerce state."
+            description="The current cart could not be loaded from the storefront service."
             title="Bag loading failed"
           />
         ) : null}
@@ -85,6 +87,16 @@ export const CartPage = () => {
                         { itemId: item.id, quantity },
                         {
                           onError: (error) => {
+                            if (isAuthenticationError(error)) {
+                              addToast({
+                                tone: 'info',
+                                title: 'Please sign in to continue',
+                                description: 'Sign in again to keep editing your bag.',
+                              });
+                              navigate(routePaths.loginRedirect(location.pathname + location.search));
+                              return;
+                            }
+
                             addToast({
                               tone: 'danger',
                               title: 'Quantity update failed',

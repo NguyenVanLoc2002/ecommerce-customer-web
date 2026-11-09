@@ -72,9 +72,12 @@ VITE_SITE_URL=http://localhost:5173
 VITE_USE_MOCK_DATA=false
 ```
 
+`VITE_USE_MOCK_DATA` is opt-in: mock catalog data is used only when its value is exactly `true` (case-insensitive after trimming). When it is missing, empty, or any other value, the storefront calls `VITE_API_BASE_URL`. Restart the Vite dev server after changing an environment file.
+
 Local development notes:
 
 - If the frontend and API run on different origins, the backend must allow credentials for the frontend origin.
+- Keep `VITE_USE_MOCK_DATA=false` when validating catalog, cart, and checkout against the local development backend.
 - Local cookie-based auth needs the backend refresh cookie configured for local HTTP development and the frontend to call auth endpoints with `withCredentials: true`.
 - If the backend later enables CSRF double-submit, it must expose a readable `XSRF-TOKEN` cookie for the customer frontend origin so the app can echo `X-XSRF-TOKEN`.
 - `VITE_SITE_URL` should match the customer-web origin used for canonical URLs and SEO metadata.
@@ -100,6 +103,20 @@ npm run lint
 npm run typecheck
 npm run build
 ```
+
+## Browser E2E: Mock payment
+
+The Playwright purchase journey always calls the local backend; it never enables browser mock catalog data. Start the backend with Mock payment enabled, using an isolated development/test database and a seeded customer, address, product variant, and stock.
+
+```powershell
+$env:APP_PAYMENT_MOCK_ENABLED='true'
+$env:E2E_CUSTOMER_EMAIL='e2e-customer@example.test'
+$env:E2E_CUSTOMER_PASSWORD='replace-with-test-password'
+$env:E2E_PRODUCT_SLUG='seeded-product-slug'
+npm run test:e2e
+```
+
+The test checks product-to-checkout UI flow, carrier selection and server-side quote propagation when an active carrier is available, the zero-fee fallback when none is available, Mock payment completion, paid order/payment persistence, cart clearing, and reduced available stock. It also verifies that the order request never sends client-calculated pricing fields. Mock payment is exposed in the UI only while `VITE_E2E=true`, which the Playwright web-server configuration sets automatically. Do not enable Mock payment in production.
 
 ## Build
 

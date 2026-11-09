@@ -8,6 +8,12 @@ import { motionPresets } from '@/shared/lib/motionPresets';
 
 export const HeroSection = () => {
   const reducedMotion = useReducedMotion();
+  const heroCtaClassName = buttonStyles({
+    variant: 'ghost',
+    className:
+      '!border-white !bg-white !text-text-primary shadow-card hover:!border-text-primary hover:!bg-text-primary hover:!text-white focus-visible:!outline-white focus-visible:outline-offset-4',
+    size: 'lg',
+  });
 
   return (
     <section className="relative flex min-h-[750px] items-center overflow-hidden pt-20">
@@ -34,8 +40,8 @@ export const HeroSection = () => {
             Discover the harmony between minimalist architecture and high-end tailoring in our latest editorial collection.
           </p>
           <div className="mt-10">
-            <Link className={buttonStyles({ className: 'bg-white text-brand-primary hover:bg-white/85', size: 'lg' })} to={routes.products}>
-              Explore the Series
+            <Link aria-label="Discover the collection" className={heroCtaClassName} to={routes.products}>
+              Discover the Collection
             </Link>
           </div>
         </motion.div>

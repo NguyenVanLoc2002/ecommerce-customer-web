@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
 import { useCart } from '@/features/cart/hooks/useCart';
-import { useCheckoutAddresses, usePlaceOrder } from '@/features/checkout/hooks/useCheckout';
+import { CheckoutCarrierSelector } from '@/features/checkout/components/CheckoutCarrierSelector';
+import { buildOrderPreviewFromOrder } from '@/features/checkout/lib/checkoutOrder';
+import { useCheckoutAddresses, useCheckoutPricing, usePlaceOrder } from '@/features/checkout/hooks/useCheckout';
 import { useCheckoutStore } from '@/features/checkout/stores/checkoutStore';
 import { OrderSummaryPanel } from '@/shared/components/commerce/OrderSummaryPanel';
 import { CheckoutStepper } from '@/shared/components/commerce/CheckoutStepper';
@@ -15,6 +17,7 @@ import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { getPaymentMethodLabel, getPaymentMethodNote, getPaymentProviderLabel } from '@/shared/lib/commerceLabels';
+import { isAuthenticationError } from '@/shared/lib/authErrors';
 import {
   isMutationProcessingError,
   isUncertainMutationFailure,
@@ -30,7 +33,7 @@ import { PAYMENT_PROVIDERS } from '@/shared/types/payment.types';
 const editLinkClassName =
   'text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary underline decoration-border underline-offset-4 transition-colors hover:decoration-text-primary';
 const ORDER_STATUS_UNKNOWN_MESSAGE =
-  'Đơn hàng có thể vẫn đang được xử lý. Vui lòng kiểm tra lại trạng thái đơn hàng hoặc thử lại sau.';
+  'The order may still be processing. Please check the order status again or try again later.';
 
 type PendingCheckoutAttempt = {
   idempotencyKey: string;
@@ -38,61 +41,85 @@ type PendingCheckoutAttempt = {
 };
 
 export const CheckoutReviewPage = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const addToast = useUiStore((state) => state.addToast);
   const cartQuery = useCart();
+  const cart = cartQuery.data;
+  const {
+    canPreview,
+    carrierOptions,
+    carrierSelectionError,
+    carrierSelectionRequired,
+    carriersQuery,
+    checkoutPayload,
+    previewError,
+    previewLoading,
+    previewRequestSignature,
+    previewQuery,
+    previewValueOverrides,
+    selectedCarrier,
+    summaryTotals,
+  } = useCheckoutPricing(cart);
   const addressesQuery = useCheckoutAddresses();
   const placeOrder = usePlaceOrder();
   const customerNote = useCheckoutStore((state) => state.customerNote);
+  const orderPreview = useCheckoutStore((state) => state.orderPreview);
   const paymentMethod = useCheckoutStore((state) => state.paymentMethod);
   const paymentProvider = useCheckoutStore((state) => state.paymentProvider);
   const resetCheckout = useCheckoutStore((state) => state.resetCheckout);
+  const selectedCarrierId = useCheckoutStore((state) => state.selectedCarrierId);
+  const setCarrierSelectionError = useCheckoutStore((state) => state.setCarrierSelectionError);
   const setConfirmationOrder = useCheckoutStore((state) => state.setConfirmationOrder);
+  const setOrderPreview = useCheckoutStore((state) => state.setOrderPreview);
+  const setSelectedCarrierId = useCheckoutStore((state) => state.setSelectedCarrierId);
   const shippingAddressId = useCheckoutStore((state) => state.shippingAddressId);
   const voucherCode = useCheckoutStore((state) => state.voucherCode);
   const voucherPreview = useCheckoutStore((state) => state.voucherPreview);
   const [pendingAttempt, setPendingAttempt] = useState<PendingCheckoutAttempt | null>(null);
   const [submitStage, setSubmitStage] = useState<'placing-order' | null>(null);
 
-  const cart = cartQuery.data;
   const address = useMemo(
     () => addressesQuery.data?.find((item) => item.id === shippingAddressId) ?? null,
     [addressesQuery.data, shippingAddressId],
   );
-  const checkoutPayload = useMemo(
-    () => ({
-      shippingAddressId,
-      paymentMethod,
-      customerNote,
-      voucherCode,
-    }),
-    [customerNote, paymentMethod, shippingAddressId, voucherCode],
-  );
-  const checkoutPayloadSignature = useMemo(() => JSON.stringify(checkoutPayload), [checkoutPayload]);
   const isPaypalCheckout = paymentMethod === PAYMENT_METHODS.ONLINE && paymentProvider === PAYMENT_PROVIDERS.PAYPAL;
+  const previewBlocked = canPreview && !orderPreview;
+  const carrierErrorMessage = carriersQuery.error instanceof Error ? carriersQuery.error.message : 'The live carrier list could not be loaded.';
+  const placeOrderDisabled =
+    !address ||
+    !cart ||
+    cart.staleItemCount > 0 ||
+    placeOrder.isPending ||
+    carriersQuery.isLoading ||
+    carriersQuery.isError ||
+    (carrierSelectionRequired && !selectedCarrierId) ||
+    previewLoading ||
+    Boolean(previewError) ||
+    previewBlocked;
 
   useEffect(() => {
-    if (!pendingAttempt || placeOrder.isPending || pendingAttempt.payloadSignature === checkoutPayloadSignature) {
+    if (!pendingAttempt || placeOrder.isPending || pendingAttempt.payloadSignature === previewRequestSignature) {
       return;
     }
 
     setPendingAttempt(null);
-  }, [checkoutPayloadSignature, pendingAttempt, placeOrder.isPending]);
+  }, [pendingAttempt, placeOrder.isPending, previewRequestSignature]);
 
   const handlePlaceOrder = () => {
-    if (!address || !cart || cart.staleItemCount > 0 || placeOrder.isPending) {
+    if (placeOrderDisabled || !cart) {
       return;
     }
 
     const idempotencyKey =
-      pendingAttempt?.payloadSignature === checkoutPayloadSignature
+      pendingAttempt?.payloadSignature === previewRequestSignature
         ? pendingAttempt.idempotencyKey
         : createIdempotencyKey('checkout');
 
     setSubmitStage('placing-order');
     setPendingAttempt({
       idempotencyKey,
-      payloadSignature: checkoutPayloadSignature,
+      payloadSignature: previewRequestSignature,
     });
 
     placeOrder.mutate(
@@ -103,6 +130,9 @@ export const CheckoutReviewPage = () => {
       {
         onSuccess: (order) => {
           setPendingAttempt(null);
+          setCarrierSelectionError(null);
+          setSelectedCarrierId(order.carrierId ?? '');
+          setOrderPreview(buildOrderPreviewFromOrder(order));
           setConfirmationOrder(order);
           if (isPaypalCheckout) {
             setSubmitStage(null);
@@ -124,10 +154,20 @@ export const CheckoutReviewPage = () => {
             setPendingAttempt(null);
           }
 
+          if (isAuthenticationError(error)) {
+            addToast({
+              tone: 'info',
+              title: 'Please sign in to continue',
+              description: 'Sign in again to place your order.',
+            });
+            navigate(routePaths.loginRedirect(location.pathname + location.search));
+            return;
+          }
+
           if (isMutationProcessingError(error)) {
             addToast({
               tone: 'info',
-              title: 'Đơn hàng đang được xử lý',
+              title: 'Order is still processing',
               description: error instanceof Error ? error.message : ORDER_STATUS_UNKNOWN_MESSAGE,
             });
             return;
@@ -136,7 +176,7 @@ export const CheckoutReviewPage = () => {
           if (isUncertainMutationFailure(error)) {
             addToast({
               tone: 'info',
-              title: 'Kiểm tra lại trạng thái đơn hàng',
+              title: 'Check the order status again',
               description: ORDER_STATUS_UNKNOWN_MESSAGE,
             });
             return;
@@ -213,6 +253,24 @@ export const CheckoutReviewPage = () => {
                   <p className="mt-3 max-w-xl text-sm leading-7 text-text-secondary">{formatAddress(address)}</p>
                 </section>
 
+                <CheckoutCarrierSelector
+                  carrierLoading={carriersQuery.isLoading}
+                  errorMessage={carriersQuery.isError ? carrierErrorMessage : null}
+                  onChange={(carrierId) => {
+                    setCarrierSelectionError(null);
+                    setSelectedCarrierId(carrierId);
+                    setOrderPreview(null);
+                  }}
+                  onRetry={() => void carriersQuery.refetch()}
+                  onRetryPreview={() => void previewQuery.refetch()}
+                  options={carrierOptions}
+                  previewError={previewError}
+                  previewLoading={previewLoading}
+                  selectedCarrierId={selectedCarrierId}
+                  selectionError={carrierSelectionError}
+                  shippingServiceName={orderPreview?.shippingServiceName ?? null}
+                />
+
                 <section className="border border-border bg-surface px-5 py-5 md:px-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
@@ -277,17 +335,12 @@ export const CheckoutReviewPage = () => {
               </div>
             ) : null}
           </section>
-          {cart ? (
+          {cart && summaryTotals ? (
             <OrderSummaryPanel
               footer={
                 <div className="space-y-3">
-                  <Button
-                    disabled={!address || cart.staleItemCount > 0 || placeOrder.isPending}
-                    fullWidth
-                    onClick={handlePlaceOrder}
-                    size="lg"
-                  >
-                    {submitStage === 'placing-order' ? 'Đang tạo đơn hàng...' : 'Place order'}
+                  <Button disabled={placeOrderDisabled} fullWidth onClick={handlePlaceOrder} size="lg">
+                    {submitStage === 'placing-order' ? 'Creating order...' : 'Place order'}
                   </Button>
                   <Button fullWidth onClick={() => navigate(routes.checkoutVoucher)} variant="ghost">
                     Back to rewards
@@ -304,19 +357,44 @@ export const CheckoutReviewPage = () => {
                   </Button>
                 </div>
               }
-              note="Voucher validation is preview-only in this phase, so the grand total remains aligned with the current API contract."
-              supplementary={
-                <p className="text-sm leading-7 text-text-secondary">
-                  The order is created immediately after placement and moved into the archive.
-                  {isPaypalCheckout ? ' PayPal orders redirect to provider approval immediately after order creation.' : ''}
-                </p>
+              isTotalsUpdating={previewLoading}
+              note={
+                carriersQuery.isError
+                  ? 'Carrier options failed to load. Retry before placing the order so shipping totals remain server-sourced.'
+                  : carrierSelectionError
+                    ? carrierSelectionError
+                    : carrierSelectionRequired && !selectedCarrierId
+                    ? 'Select one carrier to refresh the live shipping quote and final total.'
+                    : previewError
+                      ? 'The shipping quote preview failed. Refresh the carrier selection before placing the order.'
+                      : orderPreview
+                        ? 'Live totals are sourced from POST /orders/preview. Voucher codes still persist without changing discount totals in the current backend.'
+                        : 'Waiting for a live shipping quote from the server.'
               }
-              totals={cart}
+              supplementary={
+                <div className="space-y-3 text-sm leading-7 text-text-secondary">
+                  <p>
+                    {orderPreview?.carrierName
+                      ? `${orderPreview.carrierName}${orderPreview.shippingServiceName ? ` / ${orderPreview.shippingServiceName}` : ''}.`
+                      : selectedCarrier
+                        ? `${selectedCarrier.name}${orderPreview?.shippingServiceName ? ` / ${orderPreview.shippingServiceName}` : ''}.`
+                      : carrierSelectionRequired
+                        ? 'Choose a carrier to finish the shipping quote preview.'
+                        : 'No carrier is currently available for this checkout, so the backend fallback keeps shipping at $0.'}
+                  </p>
+                  <p>
+                    The order is created immediately after placement and moved into the archive.
+                    {isPaypalCheckout ? ' PayPal orders redirect to provider approval immediately after order creation.' : ''}
+                  </p>
+                </div>
+              }
+              totals={summaryTotals}
+              valueOverrides={previewValueOverrides}
             />
           ) : null}
         </div>
       </Container>
-      {submitStage ? <LoadingOverlay label="Đang tạo đơn hàng..." /> : null}
+      {submitStage ? <LoadingOverlay label="Creating order..." /> : null}
     </>
   );
 };

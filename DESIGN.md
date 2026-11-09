@@ -411,7 +411,7 @@ Constraints:
 
 ## 16. API-Aware Design Notes
 
-- Product detail UX is slug-based, but current backend docs expose only `GET /products/{id}`
+- Product detail UX is slug-based and uses `GET /products/slug/{slug}`; `GET /products/{id}` remains available for ID-based lookups
 - Register UX must support separate email and phone conflict states
 - Review UX must support ineligible, duplicate, and moderation states
 - Notification UI must use `referenceType` and `referenceId`

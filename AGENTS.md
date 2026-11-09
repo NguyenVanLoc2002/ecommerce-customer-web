@@ -260,6 +260,16 @@ A task is done only when all applicable checks pass:
 
 ## 16. Codex Working Rules
 
+## 17. Shared workflow and quality gate
+
+Follow `../GIT_CONVENTIONS.md` for new Git work. Before coding, read the GitHub Issue and acceptance criteria, then run `git status --short --branch` and preserve unrelated WIP. Do not run `git reset --hard`, `git clean`, rebase, force-push, commit, push, merge, or change Git author identity unless explicitly requested. Do not access production resources, log secrets, or conceal failed checks.
+
+Keep the documented feature boundaries and API flow `page/component -> custom hook -> service -> shared Axios client`. Components own rendering and UI events; services are typed API functions and must not import React or Zustand. Use TanStack Query for server state, React Hook Form plus Zod for form state, URL search params for catalog filters, and Zustand only for documented auth/UI state. Preserve `API.md` contracts rather than inventing endpoints or client-side semantics.
+
+Changed screens and mutations must provide relevant loading, error, empty, pending, and success states, including accessible form errors and safe duplicate-submit handling. Keep TypeScript strict; do not use `any`.
+
+Before proposing completion, run applicable `npm run lint`, `npm run typecheck`, and `npm run build`. This repository currently has no `test` script, so add/run targeted tests only when the project test setup exists or the task introduces it; always report that limitation rather than claiming test coverage.
+
 - Do not implement admin or staff flows
 - Do not invent API endpoints
 - Do not let archived docs override the consolidated root docs

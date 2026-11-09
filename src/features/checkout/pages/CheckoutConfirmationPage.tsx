@@ -52,7 +52,12 @@ export const CheckoutConfirmationPage = () => {
 
   const paymentProviderLabel =
     confirmationOrder.paymentMethod === PAYMENT_METHODS.ONLINE ? getPaymentProviderLabel(paymentProvider) : getPaymentMethodLabel(confirmationOrder.paymentMethod);
-  const paymentActionLabel = paymentProvider === PAYMENT_PROVIDERS.PAYPAL ? 'Pay with PayPal' : 'Pay with MoMo';
+  const paymentActionLabel =
+    paymentProvider === PAYMENT_PROVIDERS.PAYPAL
+      ? 'Pay with PayPal'
+      : paymentProvider === PAYMENT_PROVIDERS.MOCK
+        ? 'Continue to Mock payment'
+        : 'Pay with MoMo';
 
   return (
     <>
@@ -151,6 +156,16 @@ export const CheckoutConfirmationPage = () => {
             </div>
 
             <section className="border border-border bg-surface px-5 py-5 md:px-6">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Shipping carrier</p>
+              <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{confirmationOrder.carrierName ?? 'Carrier not selected'}</h2>
+              <p className="mt-4 text-sm leading-7 text-text-secondary">
+                {confirmationOrder.carrierName
+                  ? `${confirmationOrder.carrierCode ?? confirmationOrder.carrierName}${confirmationOrder.carrierProviderType ? ` / ${confirmationOrder.carrierProviderType}` : ''}.`
+                  : 'This order was created without a selected carrier, so the backend fallback kept shipping at $0.'}
+              </p>
+            </section>
+
+            <section className="border border-border bg-surface px-5 py-5 md:px-6">
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Your selection</p>
               <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {confirmationOrder.items.map((item) => (
@@ -168,7 +183,12 @@ export const CheckoutConfirmationPage = () => {
             </section>
           </section>
           <OrderSummaryPanel
-            supplementary={<p className="text-sm leading-7 text-text-secondary">Order code {confirmationOrder.code} is now active in your archive.</p>}
+            supplementary={
+              <div className="space-y-3 text-sm leading-7 text-text-secondary">
+                <p>Order code {confirmationOrder.code} is now active in your archive.</p>
+                <p>{confirmationOrder.carrierName ? `Persisted carrier: ${confirmationOrder.carrierName}.` : 'Persisted carrier: not selected.'}</p>
+              </div>
+            }
             totals={confirmationOrder}
           />
         </div>

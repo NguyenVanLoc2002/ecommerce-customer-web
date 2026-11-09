@@ -1,9 +1,9 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-import { routes } from '@/constants/routes';
+import { routePaths, routes } from '@/constants/routes';
 import { useCart } from '@/features/cart/hooks/useCart';
 import { VoucherForm } from '@/features/checkout/components/VoucherForm';
-import { useValidateVoucher } from '@/features/checkout/hooks/useCheckout';
+import { useCheckoutPricing, useValidateVoucher } from '@/features/checkout/hooks/useCheckout';
 import { useCheckoutStore } from '@/features/checkout/stores/checkoutStore';
 import { CartSummary } from '@/shared/components/commerce/CartSummary';
 import { CheckoutStepper } from '@/shared/components/commerce/CheckoutStepper';
@@ -13,6 +13,7 @@ import { Container } from '@/shared/components/layout/Container';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
+import { isAuthenticationError } from '@/shared/lib/authErrors';
 import { useUiStore } from '@/shared/stores/uiStore';
 import { formatMoney } from '@/shared/utils/formatMoney';
 
@@ -23,16 +24,28 @@ const sampleOffers = [
 ] as const;
 
 export const CheckoutVoucherPage = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const addToast = useUiStore((state) => state.addToast);
   const cartQuery = useCart();
+  const cart = cartQuery.data;
+  const {
+    carrierSelectionError,
+    carrierSelectionRequired,
+    carriersQuery,
+    previewError,
+    previewLoading,
+    previewValueOverrides,
+    selectedCarrier,
+    summaryTotals,
+  } = useCheckoutPricing(cart);
   const validateVoucher = useValidateVoucher();
   const voucherCode = useCheckoutStore((state) => state.voucherCode);
   const voucherPreview = useCheckoutStore((state) => state.voucherPreview);
+  const orderPreview = useCheckoutStore((state) => state.orderPreview);
+  const selectedCarrierId = useCheckoutStore((state) => state.selectedCarrierId);
   const setVoucherCode = useCheckoutStore((state) => state.setVoucherCode);
   const setVoucherPreview = useCheckoutStore((state) => state.setVoucherPreview);
-
-  const cart = cartQuery.data;
 
   if (cart?.items.length === 0) {
     return (
@@ -91,6 +104,16 @@ export const CheckoutVoucherPage = () => {
                     },
                     onError: (error) => {
                       setVoucherPreview(null);
+                      if (isAuthenticationError(error)) {
+                        addToast({
+                          tone: 'info',
+                          title: 'Please sign in to continue',
+                          description: 'Sign in again to keep your checkout progress.',
+                        });
+                        navigate(routePaths.loginRedirect(location.pathname + location.search));
+                        return;
+                      }
+
                       addToast({
                         tone: 'danger',
                         title: 'Voucher lookup failed',
@@ -127,9 +150,19 @@ export const CheckoutVoucherPage = () => {
               </div>
             ) : null}
           </section>
-          {cart ? (
+          {cart && summaryTotals ? (
             <CartSummary
-              description="The current backend stores the selected voucher code but does not apply the discount to totals yet."
+              description={
+                carriersQuery.isError
+                  ? 'Carrier options failed to load. Retry the shipping quote before relying on checkout totals.'
+                  : carrierSelectionError
+                    ? carrierSelectionError
+                    : carrierSelectionRequired && !selectedCarrierId
+                      ? 'Select a carrier before the backend can confirm shipping totals for this voucher preview.'
+                      : previewError
+                        ? 'The live shipping quote failed. Retry the quote before placing the order.'
+                        : 'The current backend stores the selected voucher code but may not apply the discount to totals yet.'
+              }
               eyebrow="Order value"
               footer={
                 <div className="space-y-3">
@@ -144,9 +177,22 @@ export const CheckoutVoucherPage = () => {
                   </Button>
                 </div>
               }
-              supplementary={<p className="text-sm leading-7 text-text-secondary">Use any preview code above to validate eligibility before you place the order.</p>}
+              isTotalsUpdating={previewLoading}
+              supplementary={
+                <div className="space-y-3 text-sm leading-7 text-text-secondary">
+                  <p>Use any preview code above to validate eligibility before you place the order.</p>
+                  <p>
+                    {selectedCarrier
+                      ? `${selectedCarrier.name}${orderPreview?.shippingServiceName ? ` / ${orderPreview.shippingServiceName}` : ''}.`
+                      : carrierSelectionRequired
+                        ? 'Carrier selection is still missing.'
+                        : 'No active carrier is available, so backend preview keeps shipping at 0.'}
+                  </p>
+                </div>
+              }
               title="Summary"
-              totals={cart}
+              totals={summaryTotals}
+              valueOverrides={previewValueOverrides}
               variant="checkout"
             />
           ) : null}

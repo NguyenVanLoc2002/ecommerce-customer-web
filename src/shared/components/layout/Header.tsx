@@ -1,9 +1,11 @@
+import { motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Bell, ChevronDown, Menu, ShoppingBag, User2 } from 'lucide-react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 
-import { routes } from '@/constants/routes';
+import { routePaths, routes } from '@/constants/routes';
 import { useLogout } from '@/features/auth/hooks/useLogout';
+import { useCartItemCount } from '@/features/cart/hooks/useCart';
 import { getAccountNavItems, isAccountNavItemActive } from '@/shared/components/layout/accountNavigation';
 import { Drawer } from '@/shared/components/overlays/Drawer';
 import { useUnreadNotificationCount } from '@/shared/hooks/useNotifications';
@@ -11,17 +13,10 @@ import { useAuthStore } from '@/shared/stores/authStore';
 import { useUiStore } from '@/shared/stores/uiStore';
 import { cn } from '@/shared/utils/cn';
 
-const homeLinks = [
-  { label: 'Womenswear', to: `${routes.products}?category=womenswear` },
-  { label: 'Menswear', to: `${routes.products}?category=menswear` },
-  { label: 'Accessories', to: `${routes.products}?category=accessories` },
-];
-
 const collectionLinks = [
   { label: 'Womenswear', to: `${routes.products}?category=womenswear` },
   { label: 'Menswear', to: `${routes.products}?category=menswear` },
   { label: 'Accessories', to: `${routes.products}?category=accessories` },
-  { label: 'Bag', to: routes.cart },
 ];
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -32,6 +27,8 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 
 const headerIconButtonClassName =
   'relative inline-flex h-10 shrink-0 items-center justify-center rounded-full text-text-primary transition-colors hover:bg-surface-muted hover:text-brand-primary focus-visible:bg-surface-muted';
+const headerBadgeClassName =
+  'pointer-events-none absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-text-primary px-1 text-[10px] font-bold text-white';
 
 export const Header = () => {
   const { pathname } = useLocation();
@@ -40,16 +37,23 @@ export const Header = () => {
   const openMobileNav = useUiStore((state) => state.openMobileNav);
   const logout = useLogout();
   const user = useAuthStore((state) => state.user);
+  const accessToken = useAuthStore((state) => state.accessToken);
   const accountMenuId = useId();
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const accountMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const reducedMotion = useReducedMotion();
   const unreadNotificationCountQuery = useUnreadNotificationCount();
+  const cartItemCountQuery = useCartItemCount(Boolean(user && accessToken));
   const unreadNotificationCount = unreadNotificationCountQuery.data ?? 0;
+  const cartItemCount = cartItemCountQuery.data ?? 0;
   const productSurface = pathname.startsWith(routes.products);
-  const navLinks = pathname === routes.home ? homeLinks : collectionLinks;
+  const cartTarget = user ? routes.cart : routePaths.loginRedirect(routes.cart);
+  const navLinks = collectionLinks;
   const logo = pathname === routes.home ? 'AURA EDITORIAL' : 'AURA';
   const accountNavItems = getAccountNavItems({ includeNotifications: false });
+  const cartBadgeText = cartItemCount > 99 ? '99+' : String(cartItemCount);
+  const cartAriaLabel = cartItemCount > 0 ? `Shopping bag, ${cartItemCount} item${cartItemCount === 1 ? '' : 's'}` : 'Shopping bag';
 
   useEffect(() => {
     setIsAccountMenuOpen(false);
@@ -137,18 +141,30 @@ export const Header = () => {
             >
               <Bell className="h-5 w-5" strokeWidth={1.7} />
               {unreadNotificationCount > 0 ? (
-                <span className="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-text-primary px-1 text-[10px] font-bold text-white">
+                <span aria-hidden="true" className={headerBadgeClassName}>
                   {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
                 </span>
               ) : null}
             </Link>
           ) : null}
           <Link
-            aria-label="Open cart"
+            aria-label={cartAriaLabel}
             className={cn(headerIconButtonClassName, 'w-10')}
-            to={routes.cart}
+            to={cartTarget}
           >
             <ShoppingBag className="h-5 w-5" strokeWidth={1.7} />
+            {cartItemCount > 0 ? (
+              <motion.span
+                animate={reducedMotion ? undefined : { opacity: 1, scale: 1 }}
+                aria-hidden="true"
+                className={headerBadgeClassName}
+                initial={reducedMotion ? false : { opacity: 0.6, scale: 0.8 }}
+                key={cartBadgeText}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {cartBadgeText}
+              </motion.span>
+            ) : null}
           </Link>
           {user ? (
             <div className="relative">
