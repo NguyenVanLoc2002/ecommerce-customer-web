@@ -2,11 +2,13 @@
 
 Single source of truth for customer frontend API integration.
 
-Generated from:
+Originally generated from:
 - `docs/original/api-common.md`
 - `docs/original/customer-api-contract.md`
 
 Applies only to customer/public API usage. Do not use `/api/v1/admin/**` from the customer web app.
+
+Customer contracts rechecked against Backend source and Backend/Admin documentation on 2026-11-22. See [Phase 2 contract readiness](docs/planning/phase-2-contract-readiness.md) for source revisions, coverage, documentation conflicts and remaining integration gaps. Archived documents are historical references, not newer behavior. Current executable source resolves conflicting upstream prose; a documentation correction does not authorize runtime changes.
 
 ## 1. Base URL and Auth Rules
 
@@ -21,20 +23,17 @@ Authorization: Bearer <accessToken>
 
 - Access token transport is Bearer JWT.
 - Refresh token transport is `HttpOnly` cookie only. The customer frontend must never store or send `refreshToken` in JavaScript.
-- Login/register return:
-  - `user`
-  - `accessToken`
-  - `tokenType`
-  - `expiresIn`
-- Refresh returns token data only:
+- Login/register return `ApiResponse<AuthResponse>` with `data.user` and `data.tokens` containing `accessToken`, `tokenType`, `expiresIn`. The tokens are not siblings of `user`.
+- Refresh returns `ApiResponse<TokenResponse>` with token data directly under `data`:
   - `accessToken`
   - `tokenType`
   - `expiresIn`
 - `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh-token`, and `POST /auth/logout` must be called with `withCredentials: true`
 - `POST /auth/password/forgot`, `POST /auth/password/forgot/verify`, and `POST /auth/password/reset` should also keep `withCredentials: true` so cookie-backed security stays compatible
-- Current CSRF note:
-  - backend docs still treat double-submit CSRF as optional / future-facing
-  - when an `XSRF-TOKEN` cookie is present, the frontend should echo it as `X-XSRF-TOKEN`
+- CSRF double-submit is implemented and gated by `app.security.csrf-double-submit-enabled`:
+  - when enabled, the filter issues a readable `XSRF-TOKEN` cookie and checks matching `X-XSRF-TOKEN` on mutations to `/auth/refresh-token` and `/auth/logout`
+  - missing/mismatched headers return `403 CSRF_TOKEN_INVALID`; environment enablement and initial cookie bootstrap need live verification
+  - this does not make the refresh-token cookie JavaScript-readable; only the separate CSRF cookie is readable
 - Public routes used by customer frontend:
   - `POST /auth/register`
   - `POST /auth/login`
@@ -47,6 +46,7 @@ Authorization: Bearer <accessToken>
   - `GET /categories/**`
   - `GET /brands/**`
 - All other customer endpoints require authentication
+- In particular, `GET /reviews/product/{productId}` is not in the current public whitelist, despite being called public in older docs/comments. Plan for authentication until an explicitly approved backend change makes it public.
 
 ## 2. Response Envelope
 
@@ -65,8 +65,8 @@ Successful responses use `ApiResponse<T>`.
 Notes:
 - `success` is always `true`
 - `code` is always `SUCCESS`
-- `data` may be an object, list, paged payload, or `null`
-- most delete/mark-all endpoints still return HTTP `200` with `data: null`
+- `data` may be an object, list or paged payload. For void responses it is null internally and can be omitted from JSON by `@JsonInclude(NON_NULL)`; accept both absent and null.
+- Most delete/mark-all endpoints return HTTP `200` with the success envelope, not an empty `204`. `ApiResponse.created()` changes the message only; controller annotations determine HTTP status.
 
 ## 3. Error Response Format
 
@@ -186,6 +186,7 @@ Rules:
   - `email`
   - `otp` as a 6-digit string
 - Response: `ApiResponse<ResetTokenResponse>`
+- Data fields: `resetToken`, `expiresAt` (ISO instant).
 - Frontend behavior:
   - keep `resetToken` in memory/router state only
   - never persist it and never place it in the URL
@@ -197,6 +198,7 @@ Rules:
   - `newPassword`
   - `confirmPassword`
 - Response: `ApiResponse<Void>`
+- `newPassword` is 8-128 characters in the request DTO; server requires uppercase, lowercase and digit, matching confirmation and a password different from the current one. Register retains its separate 8-64 limit.
 
 ### `POST /account/password/change`
 - Access: authenticated
@@ -205,6 +207,7 @@ Rules:
   - `newPassword`
   - `confirmPassword`
 - Response: `ApiResponse<Void>`
+- `newPassword` uses the same 8-128 DTO limit and server policy as password reset; `currentPassword` and confirmation are required.
 - Frontend behavior:
   - send Bearer access token
   - on success, clear auth state and redirect the user to sign in again because the backend revokes refresh sessions
@@ -224,6 +227,7 @@ Rules:
 - Access: authenticated
 - Partial request fields:
   - `firstName`, `lastName`, `phoneNumber`, `gender`, `birthDate`
+- Names have max 100 characters; phone uses backend `@PhoneNumber`; gender is `MALE`, `FEMALE` or `OTHER`; birth date uses `yyyy-MM-dd`.
 - Response: `ApiResponse<UserProfileResponse>`
 
 ## 8. Address Endpoints
@@ -249,6 +253,7 @@ Address shape:
 - Request:
   - `receiverName`, `phoneNumber`, `streetAddress`, `ward`, `district`, `city`, `addressType` required
   - `postalCode`, `isDefault`, `label` optional
+- Maximum lengths: receiver name 100, street 255, ward/district/city 100, postal code 20, label 50. Phone uses `@PhoneNumber`. Address type is `SHIPPING`, `BILLING` or `BOTH`.
 - Response: `ApiResponse<AddressResponse>`
 
 ### `PATCH /addresses/{id}`
@@ -332,10 +337,11 @@ List item fields used by frontend:
 ### `GET /products/{id}`
 - Access: public
 - Response: `ApiResponse<ProductDetailResponse>`
-- Important: current backend contract is by product ID, not slug
+- This is the ID lookup; storefront slug lookup is also supported below.
 - Product detail includes:
   - `id`, `name`, `slug`, `shortDescription`, `description`
   - `status`, `featured`
+  - `minPrice`, `maxPrice` (nullable/omitted when no eligible variants)
   - `brand`, `categories`, `variants`, `media`
   - `createdAt`, `updatedAt`
 
@@ -345,9 +351,17 @@ List item fields used by frontend:
 - Resolve storefront PDPs by this exact slug endpoint. Do not page through `GET /products` to find a slug.
 
 Variant fields:
-- `id`, `sku`, `barcode`, `variantName`
+- `id`, `productId`, `sku`, `barcode`, `variantName`
 - `basePrice`, `salePrice`, `compareAtPrice`
 - `weightGram`, `status`, `attributes`
+
+Variant and inventory semantics:
+- One product may have multiple variants. `variants[]` is supplied by both detail lookups, not by the paginated product list.
+- Attribute entries are `{ attributeId, attributeName, attributeCode, valueId, value, displayValue }`. They are catalog-backed and not limited to color/size. Preserve IDs to distinguish combinations; do not infer identity from a formatted label.
+- Effective price is `salePrice` when non-null, otherwise `basePrice`. `compareAtPrice` is a display reference, not the amount charged.
+- Detail min/max prices span non-deleted variants. The current detail service excludes deleted variants, but does not filter the array to `ACTIVE`; the cart rejects inactive variants.
+- Neither `VariantResponse` nor the public list DTO exposes stock quantities. Missing inventory is unknown, not zero. Cart responses expose `availableStock`; checkout reserves inventory and can still reject insufficient stock.
+- Admin reads inventory through `/admin/inventories` with product/variant context. Customer Web must not call it. Exact stock on PDP would require an approved customer-safe contract extension.
 
 Media fields:
 - `id`, `mediaUrl`, `mediaType`, `sortOrder`, `primary`, `variantId`
@@ -395,6 +409,7 @@ Cart item shape:
 
 Create order request:
 - `shippingAddressId` required
+- `carrierId` optional; backend resolves the selected carrier and calculates shipping
 - `paymentMethod` optional
 - `customerNote` optional, max `500`
 - `voucherCode` optional
@@ -405,15 +420,33 @@ Order list item fields:
 
 Order detail fields:
 - `id`, `orderCode`, `customerId`
+- `customerNameSnapshot`, `customerEmailSnapshot`, `customerSnapshotAvailable` (legacy snapshots may be absent)
+- `carrierId`, `carrierCode`, `carrierName`, `carrierProviderType`
 - `status`, `paymentMethod`, `paymentStatus`
 - shipping receiver and address snapshot fields
+- Exact address keys: `receiverName`, `receiverPhone`, `shippingStreet`, `shippingWard`, `shippingDistrict`, `shippingCity`, `shippingPostalCode`.
 - `subTotal`, `discountAmount`, `shippingFee`, `totalAmount`
 - `voucherCode`, `customerNote`
 - `items`, `createdAt`
 
 Order item fields:
 - `id`, `variantId`, `productId`, `productSlug`, `productName`, `brandName`
-- `variantName`, `sku`, `productImageUrl`, `unitPrice`, `salePrice`, `effectivePrice`, `quantity`, `lineTotal`
+- `variantName`, `sku`, `productImageUrl`, `unitPrice`, `salePrice`, `quantity`, `lineTotal`
+- `OrderItemResponse` does not expose `effectivePrice`; that field exists on invoice items. Use server `lineTotal`; a displayed per-unit price uses non-null `salePrice`, otherwise `unitPrice`.
+
+### `GET /carriers/checkout-options`
+- Access: authenticated customer
+- Response: `ApiResponse<List<CheckoutCarrierOptionResponse>>`
+- Fields: `id`, `code`, `name`, `providerType`, `logoUrl`, `description`
+- Lists active eligible carriers with registered providers and required configuration enabled. Does not expose secrets or quote fees.
+
+### `POST /orders/preview`
+- Access: authenticated customer
+- Request: the create-order fields above; uses the current customer's active cart and validates address ownership.
+- Response: `ApiResponse<OrderPreviewResponse>` with `carrierId`, `carrierCode`, `carrierName`, `carrierProviderType`, `shippingServiceName`, `paymentMethod`, `subTotal`, `discountAmount`, `shippingFee`, `totalAmount`, `voucherCode`, `customerNote`.
+- Validates vouchers using actual cart product/category/brand context. Preview does not redeem the voucher or reserve stock.
+- Calculates shipping server-side. Omitted `carrierId` produces zero shipping fee. Total is subtotal minus discount plus shipping.
+- Creation revalidates/recalculates; preview is not a price or stock reservation. Do not send client-calculated price fields or add an idempotency header to preview.
 
 ### `POST /orders`
 - Access: authenticated
@@ -432,7 +465,9 @@ Order item fields:
   - `COD` starts as `PENDING`
   - `ONLINE` starts as `AWAITING_PAYMENT`
   - stock is reserved during order creation
-  - `voucherCode` is stored but not applied to totals in current service logic
+  - supplied `voucherCode` is validated and atomically redeemed against the active cart; validated code and discount are saved on the order
+  - selected carrier and shipping quote are recalculated and snapshotted; absent carrier means zero shipping fee
+  - total includes the persisted discount and shipping; never replace it with client arithmetic
 
 ### `GET /orders`
 - Access: authenticated
@@ -453,6 +488,7 @@ Order item fields:
 - Current behavior:
   - cancel is only allowed while order can move to `CANCELLED`
   - service explicitly blocks `CONFIRMED`
+  - paid ONLINE orders are rejected with `ORDER_CANNOT_CANCEL`; cancellation is not an automatic refund
 
 ## 14. Payment Endpoints
 
@@ -460,6 +496,8 @@ Payment shape:
 - `id`, `orderId`, `orderCode`, `paymentCode`
 - `method`, `status`, `amount`, `paidAt`, `createdAt`
 - `transactions`
+- `paymentUrl` for provider redirect, optional `deeplink`, optional `qrCodeUrl` (raw QR payload, not an image URL)
+- Customer order/payment amounts are VND. PayPal provider conversion is performed and snapshotted by the backend; the UI must not relabel order amounts as USD.
 
 Transaction shape:
 - `id`, `transactionCode`, `status`, `amount`
@@ -493,19 +531,17 @@ Transaction shape:
   - existing `FAILED` payment is retried
   - terminal processed states are rejected
 
-### `POST /payments/callback`
-- Not a customer UI endpoint
-- Controller intent: payment gateway callback
-- Access: public server-to-server callback, not a customer frontend route
-- Request:
-  - `orderCode` required
-  - `status` required string
-  - `providerTxnId`, `provider`, `payload` optional
-- Response: `ApiResponse<PaymentResponse>`
-- Current behavior:
-  - `status=SUCCESS` marks payment paid
-  - any other status is treated as failed
-  - duplicate `providerTxnId` is idempotent
+### `POST /payments/order/{orderId}/capture`
+- Authenticated owner; body `{ provider, providerToken }`. PayPal return supplies the provider token; the backend verifies it against the stored provider order.
+- Response: `ApiResponse<PaymentResponse>`; already-paid capture returns the existing payment. Keep existing provider return/cancel flows and subsequent server status checks.
+- A browser return URL is not proof of successful payment.
+- Both body fields are non-blank; provider max 50 characters and providerToken max 200.
+
+### Provider webhooks and development payment
+- `POST /webhooks/payment/{provider}` is server-to-server and signature-verified. Never call it from the customer UI.
+- The current `PaymentController` has no `/payments/callback` route; older references to it are obsolete.
+- MOMO and PAYPAL require configured/enabled backend providers. MOCK is development/test only, gated by backend configuration and the Customer Web E2E flag; it must not appear as a normal production payment option.
+- When enabled, `GET /payments/mock/complete` accepts `orderCode`, `providerTxnId`, and optional `status` (default `SUCCESS`). This development callback is not a general customer mutation endpoint.
 
 ## 15. Voucher Endpoint
 
@@ -524,15 +560,20 @@ Validate response:
 - Note:
   - previews discount only
   - does not record voucher usage
+  - this restriction applies only to this validation endpoint. `POST /orders` redeems the voucher atomically and persists discount totals.
+  - validation accepts product/category/brand context; a subtotal-only validation call cannot substitute for cart-aware order preview.
 
 ## 16. Shipment Endpoint
 
 Shipment shape:
 - `id`, `orderId`, `orderCode`, `shipmentCode`
+- `carrierId`, `carrierCode`, `carrierProviderType`, `carrierShipmentId`, `providerStatus`, `providerTrackingUrl`
 - `carrier`, `trackingNumber`, `status`
 - `estimatedDeliveryDate`, `deliveredAt`
 - `shippingFee`, `note`
 - `events`, `createdAt`, `updatedAt`
+- Optional derived `attention`: `RETURNED_HANDLING`, `CARRIER_CANCELLED` or `DELIVERY_FAILED`.
+- Customer mapping omits carrier costs, booking attempt/status and carrier override audit fields even though the shared Admin DTO declares them. Do not add these to customer UI based on Admin docs.
 
 Shipment event shape:
 - `id`, `status`, `location`, `description`, `eventTime`
@@ -560,6 +601,9 @@ Invoice item shape:
 ### `GET /invoices/order/{orderId}`
 - Access: authenticated
 - Response: `ApiResponse<InvoiceResponse>`
+- `INVOICE_NOT_FOUND` means the owned order does not yet have an invoice; do not manufacture invoice data from the order.
+- Status: `ISSUED`, `PAID`, `PARTIALLY_REFUNDED`, `REFUNDED`, `VOIDED`. Payment/refund events synchronize invoice status.
+- Returns data for browser printing, not a PDF download endpoint.
 
 ## 18. Review Endpoints
 
@@ -596,7 +640,7 @@ Review fields:
 - Response: `ApiResponse<PagedResponse<ReviewResponse>>`
 
 ### `GET /reviews/product/{productId}`
-- Access: public
+- Access: authenticated under current `SecurityConfig`; the controller has no method role restriction, but the filter chain does not whitelist this path. Older docs calling it public disagree with source.
 - Filters:
   - `minRating`, `maxRating`
   - service forces `productId` from path and `status=APPROVED`
@@ -605,11 +649,7 @@ Review fields:
   - controller default `size=20`
 - Response: `ApiResponse<PagedResponse<ReviewResponse>>`
 
-Excluded non-customer review routes:
-- `GET /reviews/pending`
-- `GET /reviews/{id}`
-- `PATCH /reviews/{id}/moderate`
-- `DELETE /reviews/{id}`
+Review moderation belongs under `/admin/reviews/**`. Old references to pending/read/moderate/delete routes directly under `/reviews/**` are not customer routes and are not present in the current customer controller.
 
 ## 19. Notification Endpoints
 
@@ -640,7 +680,7 @@ Unread count fields:
 ### `PATCH /notifications/read-all`
 - Access: `CUSTOMER`
 - Response: `ApiResponse<Void>`
-- `data` is `null`
+- Void data is null internally and may be omitted from JSON.
 
 ## 20. Error Codes Relevant to Customer Frontend
 
@@ -716,6 +756,10 @@ Payment:
 - `PAYMENT_FAILED`
 - `PAYMENT_ALREADY_PROCESSED`
 - `PAYMENT_CALLBACK_INVALID`
+- `PAYMENT_PROVIDER_NOT_SUPPORTED`
+- `PAYMENT_CONFIG_MISSING`
+- `PAYMENT_CONFIG_DISABLED`
+- `PAYMENT_CURRENCY_UNSUPPORTED`
 
 Voucher:
 - `VOUCHER_NOT_FOUND`
@@ -729,6 +773,11 @@ Voucher:
 - `PROMOTION_RULE_NOT_FOUND`
 
 Shipment and invoice:
+- `CARRIER_NOT_FOUND`
+- `CARRIER_CONFIG_MISSING`
+- `CARRIER_CONFIG_DISABLED`
+- `CARRIER_REQUEST_FAILED`
+- `CARRIER_PROVIDER_NOT_SUPPORTED`
 - `SHIPMENT_NOT_FOUND`
 - `SHIPMENT_ALREADY_EXISTS`
 - `SHIPMENT_STATUS_INVALID`
@@ -745,6 +794,17 @@ Review and notification:
 
 ## 21. Frontend Integration Notes
 
+Lifecycle values verified from backend enums (keep distinct domains, not one shared status union):
+
+| Field | Values |
+| --- | --- |
+| Order `status` | `PENDING`, `AWAITING_PAYMENT`, `CONFIRMED`, `PROCESSING`, `SHIPPED`, `DELIVERED`, `COMPLETED`, `CANCELLED`, `REFUNDED` |
+| Order `paymentStatus` | `PENDING`, `PAID`, `PARTIALLY_REFUNDED`, `FAILED`, `REFUNDED`, `CANCELLED` |
+| Payment record `status` | `PENDING`, `INITIATED`, `PAID`, `FAILED`, `REFUNDED`, `PARTIALLY_REFUNDED`, `CANCELLED` |
+| Shipment `status` | `PENDING`, `PICKING`, `IN_TRANSIT`, `OUT_FOR_DELIVERY`, `DELIVERED`, `FAILED`, `RETURNED` |
+
+Customer cancellation is limited to `PENDING`/`AWAITING_PAYMENT` by the current transition/service guards and also rejects paid ONLINE orders. These values do not authorize client-side state changes.
+
 - Axios must unwrap `ApiResponse.data`
 - Protected endpoints require Bearer token
 - Access tokens live in memory only
@@ -760,7 +820,7 @@ Review and notification:
 - Customer Web sends `Idempotency-Key` only for `POST /orders` and `POST /payments/order/{orderId}/initiate`
 - Generate one UUID-like key per user action and keep the same key for same-action retry after timeout or `5xx`
 - Do not reuse an idempotency key for a different checkout payload, order, or payment-initiate payload
-- Do not add `Idempotency-Key` to `POST /payments/callback`
+- Customer Web must not call provider webhooks or the obsolete `/payments/callback` path.
 - Do not use admin endpoints
 - Never store `refreshToken`, `resetToken`, OTP values, or passwords in `localStorage` or `sessionStorage`
 - Never send `refreshToken` in the customer `POST /auth/refresh-token` body
@@ -771,5 +831,5 @@ Review and notification:
 ## Current Risk Notes
 
 - Storefront product slugs resolve through `GET /products/slug/{slug}`.
-- Voucher validation is preview-only. Current order creation stores `voucherCode` but does not apply discount totals in service logic.
+- Voucher validation alone is preview-only. Order preview calculates the cart-aware discount; order creation atomically redeems the voucher and persists discount and shipping totals.
 - Review creation requires the parent order to be `COMPLETED`, not merely delivered.

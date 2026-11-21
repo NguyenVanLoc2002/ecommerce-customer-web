@@ -2,19 +2,18 @@
 
 Frontend API integration currently follows `API.md`, with the following explicit gaps or adapter notes:
 
-## 1. Product Detail Route Uses `slug`, API Uses `id`
+Rechecked 2026-11-22 against Backend source and Backend/Admin docs. See [Phase 2 contract readiness](planning/phase-2-contract-readiness.md) for current integration gaps, source evidence and upstream contradictions.
+
+## 1. Product Detail Has a Direct Slug Lookup
 
 - UI route: `/products/:slug`
-- API contract: `GET /products/{id}`
-- Current adapter:
-  - scan `GET /products` pages until the matching `slug` is found
-  - call `GET /products/{id}` with the resolved UUID
-- Constraint:
-  - the frontend does **not** call `/products/{slug}`
+- API contract: `GET /products/slug/{slug}`; ID lookup remains available separately.
+- `catalogLookupService.getProductDetailBySlug` uses the direct endpoint. Do not restore the obsolete paginated catalog scan or call `/products/{slug}`.
 
 ## 2. Refresh Token Bootstrap Needs Two Calls
 
 - API contract: `POST /auth/refresh-token` returns tokens only
+- Login/register instead return `data.user` and nested `data.tokens`; do not confuse these two response shapes.
 - Frontend session bootstrap also needs the current customer profile
 - Current adapter:
   - call `POST /auth/refresh-token`
@@ -30,29 +29,33 @@ Frontend API integration currently follows `API.md`, with the following explicit
   - `name,asc`
 - Unsupported storefront-only sorts such as price or rating must not be sent to the customer API.
 
-## 4. Cart / Order / Review UI Needs Product Enrichment
+## 4. Cart / Order / Review Responses Carry Product Context
 
 - Several customer-facing screens need product display fields such as:
   - slug-backed product links
   - brand name
   - media for thumbnails
   - variant color/size display
-- Those fields are not fully available in every protected DTO documented in `API.md`
-- Current adapter:
-  - enrich protected DTOs with public product lookups using documented product endpoints only
+- Current response contracts include product context, including slug, brand and image; `apiMappers.ts` maps these directly.
+- Preserve response snapshots and missing-image fallbacks. Do not reintroduce per-item catalog lookups merely to render these fields.
 
-## 5. Review -> Order Backlink Is Derived
+## 5. Review -> Order Backlink Is Returned Directly
 
-- `GET /reviews/my` documents review DTO fields but does not document `orderId`
-- The profile review UI needs an order detail link
-- Current adapter:
-  - load customer orders
-  - map `orderItemId` back to its parent order
-- Risk:
-  - if the backend later exposes `orderId` directly on review responses, this adapter should be simplified
+- Current review DTO includes `orderId`; `apiMappers.ts` uses it directly.
+- Do not scan order history to reconstruct this relationship. Preserve an unavailable-link state if legacy data lacks the ID.
 
 ## 6. Product FULLTEXT Search Is Backend-Owned
 
 - Customer FE still sends `keyword`; it must not send or expose `searchText` / `search_text`.
 - The frontend trims outer whitespace only and does not normalize Vietnamese accents.
 - Backend FULLTEXT relevance owns product result membership and ordering whenever `keyword` is present.
+
+## 7. Product Reviews Currently Require Authentication
+
+- `GET /reviews/product/{productId}` is described as public in older Backend docs, but current `SecurityConfig` does not whitelist it.
+- Do not turn a guest 401 into an empty-review claim or silently change auth behavior during styling work. Agree the access-state design or backend correction before Phase 2.
+
+## 8. Void Data and Configuration-Gated CSRF
+
+- Success responses for void operations may omit `data` because the wrapper excludes null JSON properties.
+- CSRF double-submit is implemented and gated by backend configuration, protecting refresh/logout. Verify cookie bootstrap and matching header in the target environment; the older claim that this is only future work is obsolete.
