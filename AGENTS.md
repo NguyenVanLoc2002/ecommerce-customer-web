@@ -31,7 +31,7 @@ Rule of thumb:
 - Visual, UX, tokens, component patterns, screen mapping: `DESIGN.md`
 - Build order and milestones: `DELIVERY_PLAN.md`
 - Setup and runtime basics: `README.md`
-- Exception: customer auth cookie/refresh semantics currently follow `docs/original/api-common.md` and `docs/original/customer-api-contract.md` until the consolidated API docs are refreshed
+- Auth cookie/refresh semantics now follow the reconciled `API.md` (2026-11-22). Archived auth docs may contain obsolete payload, password-reset and CSRF statements and must not override it.
 
 ## 3. Tech Stack
 
@@ -192,8 +192,10 @@ Critical contract notes:
 - Current backend contract exposes `EMAIL_ALREADY_EXISTS` and `PHONE_ALREADY_EXISTS`
 - `REVIEW_NOT_ELIGIBLE` is `422` in current backend docs
 - Notifications use `referenceType` and `referenceId`
-- Public PDP lookup is currently documented as `GET /products/{id}`, not slug
-- `voucherCode` on order creation is stored but not yet applied to totals
+- Public PDP lookup uses `GET /products/slug/{slug}`; `GET /products/{id}` also exists.
+- Product detail includes multiple variants with catalog-backed attributes. Public list/detail responses do not expose variant inventory quantities; Admin inventory endpoints are not customer endpoints.
+- `POST /orders/preview` calculates voucher discount and shipping from the active cart. `POST /orders` revalidates and atomically redeems the voucher; displayed totals must follow server responses.
+- Before Phase 2 UI work, review `docs/planning/phase-2-contract-readiness.md` for verified contracts, existing customer integration gaps, and required live checks.
 - Product keyword search remains `keyword`; do not add or expose `searchText` / `search_text`
 - Customer FE must send the user's raw trimmed keyword only; do not lowercase or strip Vietnamese accents
 - Customer FE must trust backend FULLTEXT relevance ordering when `keyword` is present and must not client-filter returned product results

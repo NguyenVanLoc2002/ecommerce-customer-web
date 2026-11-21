@@ -48,7 +48,8 @@ Detailed implementation, design, API, and planning docs live in the root-level s
 - Reuse the same key only when retrying the same action with the same payload after a timeout, network failure, or `5xx`.
 - Generate a new key when the checkout payload changes or when payment is initiated for a different order or payload.
 - Do not add `Idempotency-Key` to auth, catalog, cart, or payment callback requests.
-- `POST /api/v1/payments/callback` is server-to-server only. The customer frontend must never call it directly.
+- Provider webhooks under `/api/v1/webhooks/payment/**` are server-to-server only. The old `/api/v1/payments/callback` path is absent from the current payment controller.
+- See [Phase 2 contract readiness](docs/planning/phase-2-contract-readiness.md) for the 2026-11-21 Backend/Admin reconciliation and existing Customer Web gaps.
 
 ## Prerequisites
 

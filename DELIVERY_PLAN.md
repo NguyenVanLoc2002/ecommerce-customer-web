@@ -265,6 +265,8 @@ Parallelism guidance after Phase 7:
 
 ## 5. Current Recommended Planning Baseline
 
+Review [Phase 2 contract readiness](docs/planning/phase-2-contract-readiness.md) before the redesign. The 2026-11-21 review confirms Backend/Admin multi-variant support and voucher redemption but identifies existing Customer Web mapping/selection/currency gaps. Integration corrections require agreed scope beyond styling. Documentation reconciliation does not approve Phase 2.
+
 The repository has progressed beyond a documentation-first scaffold: the route shell and customer flows for checkout, orders, payment, reviews, and notifications are present in source. This roadmap remains a feature inventory and sequencing guide, not proof that every phase is complete or production-validated.
 
 Before starting a new feature, use the current GitHub Issue, `AGENTS.md`, and `API.md` to verify the applicable code path and acceptance criteria. Run the relevant scoped checks and record any unverified runtime, provider, or browser evidence.

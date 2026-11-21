@@ -411,11 +411,16 @@ Constraints:
 
 ## 16. API-Aware Design Notes
 
+Before Phase 2, review [contract readiness](docs/planning/phase-2-contract-readiness.md). Prototype inventory, USD pricing, wishlist, subscription success and delivery promises are illustrative, not API requirements.
+
 - Product detail UX is slug-based and uses `GET /products/slug/{slug}`; `GET /products/{id}` remains available for ID-based lookups
 - Register UX must support separate email and phone conflict states
+- Guest product reviews need an explicit access state: current backend security requires authentication for product-review reads despite older documentation calling them public.
 - Review UX must support ineligible, duplicate, and moderation states
 - Notification UI must use `referenceType` and `referenceId`
 - Totals, discounts, and line totals are server truth; do not design flows that require client-side recomputation
+- Products support catalog-backed attributes beyond color/size. Resolve exact variant IDs and status; public detail has no inventory quantity. Unknown availability must not become zero stock.
+- Order preview calculates voucher discount and shipping; creation redeems vouchers and persists totals. Customer monetary amounts remain VND, including PayPal orders.
 - Payment, voucher, stock, and session-expiry states need explicit banners and retry-safe CTAs
 - Order, shipment, invoice, and SKU codes should use monospace with click-to-copy
 
