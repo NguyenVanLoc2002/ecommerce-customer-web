@@ -34,7 +34,7 @@ export interface InvoiceItem {
 export interface Invoice {
   id: string;
   invoiceCode: string;
-  status?: string;
+  status: 'ISSUED' | 'PAID' | 'PARTIALLY_REFUNDED' | 'REFUNDED' | 'VOIDED';
   orderId: string;
   orderCode: string;
   issuedAt: string;
@@ -73,7 +73,7 @@ export interface InvoiceItemResponse {
 export interface InvoiceResponse {
   id: string;
   invoiceCode: string;
-  status: string;
+  status: 'ISSUED' | 'PAID' | 'PARTIALLY_REFUNDED' | 'REFUNDED' | 'VOIDED';
   issuedAt: string;
   dueDate: string | null;
   notes: string | null;
