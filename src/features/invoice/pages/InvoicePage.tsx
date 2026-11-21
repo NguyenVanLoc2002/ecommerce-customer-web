@@ -16,15 +16,6 @@ import { formatAddress } from '@/shared/utils/formatAddress';
 import { formatDate } from '@/shared/utils/formatDate';
 import { formatMoney } from '@/shared/utils/formatMoney';
 
-const paymentStatusToneClasses: Record<string, string> = {
-  PAID: 'border-success/20 bg-success/10 text-success',
-  INITIATED: 'border-info/20 bg-info/10 text-info',
-  PENDING: 'border-warning/20 bg-warning/10 text-warning',
-  FAILED: 'border-danger/20 bg-danger/10 text-danger',
-  REFUNDED: 'border-border bg-surface-muted text-text-primary',
-  PARTIALLY_REFUNDED: 'border-border bg-surface-muted text-text-primary',
-};
-
 export const InvoicePage = () => {
   const { orderId = '' } = useParams();
   const addToast = useUiStore((state) => state.addToast);
@@ -80,7 +71,19 @@ export const InvoicePage = () => {
         </div>
 
         {invoiceQuery.isLoading ? <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Loading invoice..." /> : null}
-        {invoiceQuery.isError && errorCode !== 'ORDER_NOT_FOUND' ? (
+        {invoiceQuery.isError && errorCode === 'INVOICE_NOT_FOUND' ? (
+          <EmptyState
+            action={
+              <Link className={buttonStyles({})} to={routePaths.orderDetail(orderId)}>
+                Return to order
+              </Link>
+            }
+            className="border-border bg-surface px-6 py-16"
+            description="An invoice has not been issued for this order yet. Check again after payment has been collected."
+            title="Invoice not issued yet"
+          />
+        ) : null}
+        {invoiceQuery.isError && errorCode !== 'ORDER_NOT_FOUND' && errorCode !== 'INVOICE_NOT_FOUND' ? (
           <ErrorCard
             action={<Button onClick={() => void invoiceQuery.refetch()}>Retry</Button>}
             className="border-border bg-surface"
@@ -112,8 +115,8 @@ export const InvoicePage = () => {
                     Issued {formatDate(invoice.issuedAt)} for order {invoice.orderCode}. Use this document for customer billing and fulfillment reference.
                   </p>
                 </div>
-                <div className={`inline-flex items-center border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] ${paymentStatusToneClasses[invoice.paymentStatus] ?? 'border-border bg-surface text-text-primary'}`}>
-                  {invoice.paymentStatus.replace(/_/g, ' ')}
+                <div className="inline-flex items-center border border-border bg-surface px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary">
+                  Invoice: {invoice.status.replace(/_/g, ' ')}
                 </div>
               </div>
 

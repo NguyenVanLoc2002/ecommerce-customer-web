@@ -88,7 +88,7 @@ export const OrderDetailPage = () => {
                 </div>
                 <h1 className="mt-4 font-display text-[3.5rem] leading-none text-text-primary md:text-[4.5rem]">Order #{order.code}</h1>
                 <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">
-                  Updated {formatDate(order.updatedAt)}. Review the shipment rhythm, download the invoice, or track the fulfillment handoff.
+                  Updated {formatDate(order.updatedAt)}. Review the shipment rhythm, print the invoice, or track the fulfillment handoff.
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -108,7 +108,7 @@ export const OrderDetailPage = () => {
                   </Link>
                 ) : null}
                 <Link className={buttonStyles({ variant: 'ghost' })} to={routePaths.orderInvoice(order.id)}>
-                  Download invoice
+                  Print invoice
                 </Link>
                 {order.canCancel ? (
                   <Button onClick={() => setConfirmOpen(true)} variant="secondary">
@@ -169,7 +169,7 @@ export const OrderDetailPage = () => {
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Payment method</p>
                       <Link className={actionLinkClassName} to={routePaths.orderInvoice(order.id)}>
-                        Download invoice
+                        Print invoice
                       </Link>
                     </div>
                     <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{getPaymentMethodLabel(order.paymentMethod)}</h2>

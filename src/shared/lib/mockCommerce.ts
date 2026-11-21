@@ -721,6 +721,11 @@ export const mockCommerce = {
     const invoice: Invoice = {
       id: `invoice-${order.id}`,
       invoiceCode: `INV-${order.code.replace('FS-', '')}`,
+      status: payment?.status === 'REFUNDED'
+        ? 'REFUNDED'
+        : payment?.status === 'PARTIALLY_REFUNDED'
+          ? 'PARTIALLY_REFUNDED'
+          : payment?.status === 'PAID' ? 'PAID' : 'ISSUED',
       orderId: order.id,
       orderCode: order.code,
       issuedAt: order.createdAt,
