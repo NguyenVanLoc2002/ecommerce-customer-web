@@ -52,8 +52,8 @@ export const CartPage = () => {
   return (
     <>
       <PageSEO description="Xem lại sản phẩm và biến thể trong giỏ hàng trước khi tiếp tục thanh toán." noIndex path={routes.cart} title="Giỏ hàng" />
-      <Container className="space-y-8 pb-16 pt-28 md:space-y-10 md:pb-20 md:pt-32">
-        <header className="border-b border-border pb-6 md:pb-8">
+      <Container className="space-y-3 pb-16 pt-24 md:space-y-10 md:pb-20 md:pt-32">
+        <header className="border-b-0 pb-0 md:border-b md:border-border md:pb-8">
           <div>
             <nav aria-label="Breadcrumb" className="mb-2 text-sm text-text-secondary">
               <Link className="underline decoration-border underline-offset-4 hover:text-text-primary" to={routes.home}>Trang chủ</Link>
@@ -61,7 +61,7 @@ export const CartPage = () => {
               <span aria-current="page" className="text-text-primary">Giỏ hàng</span>
             </nav>
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-              <h1 className="text-3xl font-normal leading-tight text-text-primary md:text-4xl">Túi đồ của bạn</h1>
+              <h1 className="text-xl font-normal leading-tight text-text-primary md:text-3xl">Túi đồ của bạn</h1>
               {cart || cartQuery.isLoading ? (
                 <p aria-live="polite" className="text-base text-text-secondary md:text-lg">
                   ({cart ? `${cart.totalItems} sản phẩm` : 'Đang tải…'})
@@ -94,10 +94,10 @@ export const CartPage = () => {
         ) : null}
 
         {cart && cart.items.length > 0 ? (
-          <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-12">
+          <div className="grid items-start gap-3 md:gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-12">
             <section aria-label="Sản phẩm trong giỏ hàng" className="min-w-0 lg:col-start-1 lg:row-start-1">
               {cart.staleItemCount > 0 ? <StaleCartBanner count={cart.staleItemCount} /> : null}
-              <div className="mt-6 space-y-6 md:space-y-8">
+              <div className="mt-0 space-y-3 md:mt-6 md:space-y-8">
                 {cart.items.map((item) => (
                   <CartItemCard
                     item={item}
@@ -143,7 +143,6 @@ export const CartPage = () => {
             <CartSummary
               className="lg:col-start-2 lg:row-span-2 lg:row-start-1"
               description="Phí vận chuyển và ưu đãi (nếu có) sẽ được tính ở bước thanh toán."
-              eyebrow="Giỏ hàng"
               footer={
                 <div className="space-y-3">
                   <Button

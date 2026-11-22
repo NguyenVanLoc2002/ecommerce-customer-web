@@ -17,7 +17,7 @@ export const CartItemCard = ({ item, onQuantityChange, onRemove, updating = fals
   const variantLabel = item.variantName || (item.sku ? `SKU ${item.sku}` : item.variantId);
 
   return (
-    <article aria-busy={updating} className="grid grid-cols-[96px_minmax(0,1fr)] gap-4 rounded-feature border border-border/70 bg-surface px-3 py-3 shadow-subtle sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-5 sm:px-4 sm:py-4 md:grid-cols-[144px_minmax(0,1fr)] md:gap-6 md:px-6 md:py-6">
+    <article aria-busy={updating} className="relative grid min-h-[180px] grid-cols-[96px_minmax(0,1fr)] gap-4 rounded-feature border border-border/70 bg-surface px-3 py-3 shadow-subtle sm:min-h-0 sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-5 sm:px-4 sm:py-4 md:grid-cols-[144px_minmax(0,1fr)] md:gap-6 md:px-6 md:py-6">
       <Link
         aria-label={`Xem ${item.productName}`}
         className="block h-fit overflow-hidden bg-surface-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-brand-primary"
@@ -33,7 +33,7 @@ export const CartItemCard = ({ item, onQuantityChange, onRemove, updating = fals
         />
       </Link>
 
-      <div className="flex min-w-0 flex-col justify-between gap-4 md:gap-5">
+      <div className="flex min-w-0 flex-col justify-between gap-3 sm:gap-4 md:gap-5">
         <div className="flex min-w-0 items-start justify-between gap-3 sm:gap-5">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-secondary sm:text-sm">{item.brandName}</p>
@@ -43,7 +43,7 @@ export const CartItemCard = ({ item, onQuantityChange, onRemove, updating = fals
               </Link>
             </h2>
             <p className="mt-2 break-words text-sm leading-6 text-text-secondary sm:text-base">
-              <span className="font-medium text-text-primary">Biến thể:</span> {variantLabel}
+              <span className="hidden font-medium text-text-primary sm:inline">Biến thể: </span>{variantLabel}
             </p>
             {item.isStale ? (
               <p className="mt-3 inline-flex min-h-11 items-center border border-danger/30 bg-danger/5 px-3 py-2 text-sm leading-5 text-danger" role="status">
@@ -58,7 +58,7 @@ export const CartItemCard = ({ item, onQuantityChange, onRemove, updating = fals
             </div>
             <button
               aria-label={`Xóa ${item.productName} khỏi giỏ hàng`}
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center text-text-secondary transition-colors hover:text-danger disabled:cursor-not-allowed disabled:opacity-50 sm:hidden"
+              className="absolute right-3 top-3 inline-flex h-11 w-11 shrink-0 items-center justify-center text-text-secondary transition-colors hover:text-danger disabled:cursor-not-allowed disabled:opacity-50 sm:hidden"
               disabled={updating}
               onClick={onRemove}
               type="button"
@@ -68,19 +68,25 @@ export const CartItemCard = ({ item, onQuantityChange, onRemove, updating = fals
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 border-t border-border pt-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex items-center justify-between gap-2 sm:hidden">
+          <p className="min-w-0 text-base font-semibold text-text-primary">{formatVnd(item.unitPrice)}</p>
+          <QuantitySelector
+            compact
+            disabled={updating}
+            label={`quantity for ${item.productName}`}
+            onChange={onQuantityChange}
+            value={item.quantity}
+          />
+        </div>
+
+        <div className="hidden border-t border-border pt-4 sm:flex sm:items-end sm:justify-between">
           <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 sm:justify-start">
-            <div className="sm:hidden">
-              <p className="text-xs text-text-secondary">Đơn giá</p>
-              <p className="mt-1 whitespace-nowrap font-semibold text-text-primary">{formatVnd(item.unitPrice)}</p>
-            </div>
             <QuantitySelector
               disabled={updating}
               label={`quantity for ${item.productName}`}
               onChange={onQuantityChange}
               value={item.quantity}
             />
-            {updating ? <span className="text-sm text-text-secondary" role="status">Đang cập nhật…</span> : null}
             <button
               aria-label={`Xóa ${item.productName} khỏi giỏ hàng`}
               className="hidden min-h-11 items-center gap-2 text-sm text-text-secondary underline decoration-border underline-offset-4 transition-colors hover:text-danger sm:inline-flex disabled:cursor-not-allowed disabled:opacity-50"
@@ -92,11 +98,12 @@ export const CartItemCard = ({ item, onQuantityChange, onRemove, updating = fals
               Xóa
             </button>
           </div>
-          <div className="text-right">
+          <div className="hidden text-right sm:block">
             <p className="text-xs text-text-secondary">Thành tiền</p>
             <p className="mt-1 font-semibold text-text-primary">{formatVnd(item.subtotal)}</p>
           </div>
         </div>
+        {updating ? <span className="sr-only" role="status">Đang cập nhật số lượng</span> : null}
       </div>
     </article>
   );

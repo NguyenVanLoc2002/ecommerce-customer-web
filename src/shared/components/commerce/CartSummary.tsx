@@ -52,7 +52,10 @@ export const CartSummary = ({
     <aside className={cn('lg:sticky lg:top-28', summaryShellClasses[variant], className)}>
     {eyebrow ? <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">{eyebrow}</p> : null}
     <div className="mt-2 flex items-center justify-between gap-4">
-      <h2 className="font-display text-[2rem] leading-none text-text-primary">{title}</h2>
+      <h2 className={cn(
+        'leading-tight text-text-primary',
+        isCartSummary ? 'text-base font-semibold uppercase tracking-[0.08em] md:text-lg' : 'font-display text-[2rem] leading-none',
+      )}>{title}</h2>
       {variant !== 'cart' ? (
         <button
           aria-expanded={!collapsed}

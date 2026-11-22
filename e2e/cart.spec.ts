@@ -201,6 +201,10 @@ test.describe('Customer cart', () => {
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
     expect(overflow).toBe(false);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    await expect(page.getByText('FASHION SHOP').first()).toBeInViewport();
+    await expect(page.locator('nav.fixed')).toBeInViewport();
     await page.screenshot({ path: 'artifacts/issue-34/cart-mobile.png' });
   });
 
