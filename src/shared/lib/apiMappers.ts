@@ -220,6 +220,7 @@ const toCartItem = (item: CartResponse['items'][number]): CartItem => {
     productName: item.productName,
     brandName: item.brandName ?? 'Fashion Shop',
     variantId: item.variantId,
+    variantName: item.variantName ?? undefined,
     sku: item.sku ?? '',
     color: color || 'Default',
     size: size || 'One Size',

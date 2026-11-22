@@ -51,7 +51,7 @@ describe('cartService', () => {
     expect(cart).toMatchObject({
       id: 'cart-1',
       grandTotal: 300000,
-      items: [{ variantId: 'variant-1', unitPrice: 150000, stockAvailable: 4 }],
+      items: [{ variantId: 'variant-1', variantName: 'Black / M', unitPrice: 150000, stockAvailable: 4 }],
     });
   });
 
