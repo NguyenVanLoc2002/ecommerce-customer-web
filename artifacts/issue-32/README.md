@@ -17,6 +17,14 @@ The primary Home reference is the original approved Stitch implementation preser
 | `/products` keyword, category/brand/price chips, sort and pagination | Products desktop/mobile frames establish geometry; query semantics remain the existing URL/API contract. | Browser smoke verifies trimmed `q`; other controls use existing hooks and URL parameters. |
 | `/products` mobile filter drawer open | No separate production Stitch frame. Responsive interaction reference: `artifacts/stitch-review/index.html` at 390 CSS px. | `screenshots/products-mobile-filter-open.jpg` |
 
+## Wide desktop comparison
+
+The approved HTML sets the hero to `max-width: 1440px; margin-inline: auto` and applies a subtle bottom border. At a 1600 CSS px viewport, both the reference and implementation therefore have an 80px centered margin and the same divider. These are part of the design, not additional layout added by the implementation. At 1280 CSS px the hero fills the viewport. The 1600px pair below uses the same viewport for both images.
+
+| Approved Stitch at 1600 × 900 CSS px | Implementation at 1600 × 900 CSS px |
+| --- | --- |
+| ![Stitch Home wide desktop](screenshots/design-home-desktop-wide.jpg) | ![Home implementation wide desktop](screenshots/home-desktop-wide.jpg) |
+
 ## Visual alignment and remaining differences
 
 - Home now follows the original reference's 8/4 desktop hero split, restrained right-hand copy area, approved hero image, 3:4 category imagery, compact section headings, four-column featured grid, and the “Góc nhìn sáng tạo” editorial section with its approved image.
