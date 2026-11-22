@@ -25,7 +25,7 @@ export const CategoryGrid = ({ categories }: CategoryGridProps) => {
 
   if (categoryItems.length === 0) {
     return (
-      <section className="mx-auto max-w-[1440px] border-b border-border px-5 py-16 md:px-8 md:py-20">
+      <section className="mx-auto max-w-[1440px] border-b border-border px-5 py-8 md:px-8 md:py-12">
         <Container>
           <EmptyState
             action={<Link className="underline underline-offset-4" to={routes.products}>Xem sản phẩm</Link>}
@@ -38,8 +38,8 @@ export const CategoryGrid = ({ categories }: CategoryGridProps) => {
   }
 
   return (
-    <section className="mx-auto max-w-[1440px] border-b border-border px-5 py-16 md:px-8 md:py-20">
-      <div className="mb-10">
+    <section className="mx-auto max-w-[1440px] border-b border-border px-5 py-8 md:px-8 md:py-12">
+      <div className="mb-8">
         <h2 className="text-2xl font-light tracking-tight text-text-primary">Tìm theo phong cách của bạn</h2>
       </div>
       <motion.div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-6" {...motionPresets.staggerContainer(Boolean(reducedMotion), 0.06)}>

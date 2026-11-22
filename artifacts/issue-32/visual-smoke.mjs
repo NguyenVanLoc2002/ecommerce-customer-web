@@ -67,6 +67,27 @@ for (const viewport of [
     await page.getByRole('heading', { level: 1 }).waitFor();
     if (await page.getByRole('heading', { level: 1 }).count() !== 1) failures.push(`${viewport.name} ${route}: page must have one h1`);
 
+    if (route === '/') {
+      const heroBounds = await page.locator('main section').first().evaluate((section) => {
+        const { left, width } = section.getBoundingClientRect();
+        return { left, width };
+      });
+      if (heroBounds.left !== 0 || heroBounds.width !== viewport.width) {
+        failures.push(`${viewport.name} Home hero must reach both viewport edges: ${JSON.stringify(heroBounds)}`);
+      }
+
+      const sectionPadding = await page.locator('main section').evaluateAll((sections) =>
+        sections.slice(1, 5).map((section) => ({
+          top: Number.parseFloat(getComputedStyle(section).paddingTop),
+          bottom: Number.parseFloat(getComputedStyle(section).paddingBottom),
+        })),
+      );
+      const maxPadding = viewport.width >= 768 ? 48 : 32;
+      if (sectionPadding.some(({ top, bottom }) => top > maxPadding || bottom > maxPadding)) {
+        failures.push(`${viewport.name} Home sections have excessive vertical padding: ${JSON.stringify(sectionPadding)}`);
+      }
+    }
+
     const overflow = await page.evaluate(() => ({
       width: document.documentElement.scrollWidth,
       elements: Array.from(document.querySelectorAll('body *')).filter((element) => element.getBoundingClientRect().right > innerWidth + 2)
@@ -118,23 +139,14 @@ for (const viewport of [
 
       if (viewport.name === 'desktop') {
         await page.setViewportSize({ width: 1600, height: 900 });
-        await page.goto(referenceFor(route, viewport), { waitUntil: 'domcontentloaded' });
-        await revealImages(page);
-        await page.screenshot({
-          path: `${root}/screenshots/design-home-desktop-wide.jpg`,
-          type: 'jpeg',
-          quality: 90,
-          fullPage: true,
-        });
-
         await page.goto('http://127.0.0.1:4176/', { waitUntil: 'domcontentloaded' });
         await page.getByRole('heading', { level: 1 }).waitFor();
         const heroBounds = await page.locator('main section').first().evaluate((section) => {
           const { left, width } = section.getBoundingClientRect();
           return { left, width };
         });
-        if (heroBounds.left !== 80 || heroBounds.width !== 1440) {
-          failures.push(`desktop-wide Home hero must match the centered 1440px Stitch frame: ${JSON.stringify(heroBounds)}`);
+        if (heroBounds.left !== 0 || heroBounds.width !== 1600) {
+          failures.push(`desktop-wide Home hero must reach both viewport edges: ${JSON.stringify(heroBounds)}`);
         }
         await revealImages(page);
         await page.screenshot({
@@ -159,5 +171,5 @@ if (failures.length) {
   console.error(failures.join('\n'));
   process.exitCode = 1;
 } else {
-  console.log('Visual smoke passed: Home/PLP captures at 1280/390 CSS px, centered 1440px Home hero and paired captures at 1600px, Home editorial section, one h1, no overflow, q keyword behavior, and mobile filter drawer.');
+  console.log('Visual smoke passed: Home hero reaches the viewport edges at 1280/390/1600px, Home section spacing is compact at desktop/mobile widths, Home/PLP captures, editorial section, one h1, no overflow, q keyword behavior, and mobile filter drawer.');
 }

@@ -10,7 +10,7 @@ export const CreativePerspectiveSection = () => {
   const reducedMotion = useReducedMotion();
 
   return (
-    <section className="py-16 md:py-24">
+    <section className="py-8 md:py-12">
       <Container>
         <motion.div
           className="grid items-center gap-8 lg:grid-cols-12 lg:gap-12"
