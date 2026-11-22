@@ -18,20 +18,21 @@ export const ActiveFilterChips = ({ chips, onClear, onRemove }: ActiveFilterChip
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary">Active Filters:</span>
+      <span className="text-sm font-medium text-text-secondary">Đang chọn:</span>
       {chips.map((chip) => (
         <button
-          className="inline-flex items-center gap-2 border border-border bg-surface-muted px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-text-primary"
+          className="inline-flex min-h-11 items-center gap-2 border border-border bg-surface px-3 text-sm font-medium text-text-primary"
+          aria-label={`Xóa bộ lọc ${chip.label}`}
           key={chip.key}
           onClick={() => onRemove(chip.key)}
           type="button"
         >
           {chip.label}
-          <X className="h-4 w-4" />
+          <X aria-hidden="true" className="h-4 w-4" />
         </button>
       ))}
-      <button className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary underline-offset-4 hover:underline" onClick={onClear} type="button">
-        Clear all
+      <button className="min-h-11 text-sm font-medium text-text-secondary underline-offset-4 hover:underline" onClick={onClear} type="button">
+        Xóa tất cả
       </button>
     </div>
   );

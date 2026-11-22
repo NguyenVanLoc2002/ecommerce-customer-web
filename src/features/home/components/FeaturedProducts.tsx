@@ -12,19 +12,18 @@ type FeaturedProductsProps = {
 };
 
 export const FeaturedProducts = ({ products }: FeaturedProductsProps) => (
-  <section className="py-section">
+  <section className="py-12 md:py-section">
     <Container className="space-y-8">
       <SectionHeader
         action={
-          <Link className={buttonStyles({ variant: 'secondary' })} to={routes.products}>
-            View all products
+          <Link className={`${buttonStyles({ variant: 'secondary' })} min-h-11`} to={routes.products}>
+            Xem tất cả
           </Link>
         }
-        description="A high-impact selection that mirrors the strongest editorial moments from the Stitch home screen."
-        eyebrow="Featured"
-        title="Current lead pieces"
+        eyebrow="Tuyển tập"
+        title="Những lựa chọn nổi bật"
       />
-      <ProductGrid products={products} />
+      <ProductGrid desktopColumns={4} products={products} />
     </Container>
   </section>
 );

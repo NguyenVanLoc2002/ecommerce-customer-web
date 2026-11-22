@@ -1,5 +1,8 @@
 import { ProductGrid } from '@/shared/components/catalog/ProductGrid';
 import { Container } from '@/shared/components/layout/Container';
+import { SectionHeader } from '@/shared/components/layout/SectionHeader';
+import { Link } from 'react-router-dom';
+import { routes } from '@/constants/routes';
 import type { ProductSummary } from '@/shared/types/catalog.types';
 
 type NewArrivalsProps = {
@@ -7,16 +10,14 @@ type NewArrivalsProps = {
 };
 
 export const NewArrivals = ({ products }: NewArrivalsProps) => (
-  <section className="py-section">
-    <Container>
-      <div className="mb-20 text-center">
-        <h2 className="font-display text-[2rem] font-semibold leading-tight text-text-primary md:text-[2.5rem]">Sản phẩm mới</h2>
-        <div className="mx-auto mt-5 h-px w-20 bg-border" />
-        <p className="mt-5 text-[11px] font-bold uppercase tracking-[0.22em] text-text-secondary">
-          Những thiết kế mới nhất vừa có mặt tại Fashion Shop
-        </p>
-      </div>
-      <ProductGrid products={products} />
+  <section className="py-12 md:py-section">
+    <Container className="space-y-8">
+      <SectionHeader
+        action={<Link className="border-b border-text-primary pb-1 text-sm font-medium text-text-primary" to={routes.products}>Xem tất cả</Link>}
+        eyebrow="Vừa cập nhật"
+        title="Sản phẩm mới"
+      />
+      <ProductGrid desktopColumns={4} products={products} />
     </Container>
   </section>
 );
