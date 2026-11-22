@@ -36,19 +36,19 @@ const renderLinkGroup = (title: string, links: Array<{ label: string; href: stri
 );
 
 export const Footer = () => (
-  <footer className="border-t border-border bg-canvas pt-20 print:hidden md:pt-24">
-    <Container className="grid gap-14 pb-20 md:grid-cols-12 md:gap-x-12">
+  <footer className="border-t border-border bg-canvas pt-12 print:hidden md:pt-16">
+    <Container className="grid gap-10 pb-12 sm:grid-cols-2 md:grid-cols-12 md:gap-x-12 md:pb-16">
       <div className="md:col-span-4">
         <span className="block font-display text-2xl font-semibold tracking-[0.12em] text-text-primary">FASHION SHOP</span>
-        <p className="mt-8 max-w-xs text-sm leading-7 text-text-secondary">
+        <p className="mt-5 max-w-xs text-sm leading-7 text-text-secondary">
           Khám phá những thiết kế được tuyển chọn, cùng trải nghiệm mua sắm rõ ràng và thuận tiện.
         </p>
       </div>
       <div className="md:col-span-2">{renderLinkGroup('Mua sắm', shopLinks)}</div>
-      <div className="md:col-span-2">{renderLinkGroup('Tài khoản', accountLinks)}</div>
-      <div className="md:col-span-4 md:text-right">
-        <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">Tài khoản</h4>
-        <div className="mt-5 space-y-4 md:ml-auto md:max-w-[180px]">
+      <div className="md:col-span-3">{renderLinkGroup('Tài khoản', accountLinks)}</div>
+      <div className="md:col-span-3">
+        <h4 className="text-sm font-medium text-text-primary">Truy cập</h4>
+        <div className="mt-5 space-y-4">
           {accessLinks.map((link) => (
             <Link className="block text-sm text-text-secondary transition-colors hover:text-text-primary" key={link.label} to={link.href}>
               {link.label}
@@ -59,10 +59,7 @@ export const Footer = () => (
     </Container>
     <Container className="flex flex-col gap-5 border-t border-border py-8 text-xs uppercase tracking-[0.18em] text-outline md:flex-row md:items-center md:justify-between">
       <p>© {new Date().getFullYear()} Fashion Shop</p>
-      <div className="flex gap-10">
-        <span>VI</span>
-        <span>VND</span>
-      </div>
+      <p>Thời trang dành cho mỗi ngày</p>
     </Container>
   </footer>
 );

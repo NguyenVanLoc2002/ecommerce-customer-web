@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
@@ -17,6 +17,7 @@ type ModalProps = {
 
 export const Modal = ({ children, onClose, open, overlayClassName, panelClassName, title }: ModalProps) => {
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const titleId = useId();
   const reducedMotion = useReducedMotion();
 
   useEffect(() => {
@@ -25,6 +26,7 @@ export const Modal = ({ children, onClose, open, overlayClassName, panelClassNam
     }
 
     const previousOverflow = document.body.style.overflow;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     document.body.style.overflow = 'hidden';
     panelRef.current?.focus();
 
@@ -65,6 +67,7 @@ export const Modal = ({ children, onClose, open, overlayClassName, panelClassNam
 
     return () => {
       document.body.style.overflow = previousOverflow;
+      previouslyFocused?.focus();
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [onClose, open]);
@@ -90,15 +93,16 @@ export const Modal = ({ children, onClose, open, overlayClassName, panelClassNam
             initial={reducedMotion ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 16, scale: 0.98 }}
             ref={panelRef}
             aria-modal="true"
+            aria-labelledby={titleId}
             role="dialog"
             tabIndex={-1}
             transition={reducedMotion ? { duration: 0 } : { duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="flex items-center justify-between gap-4">
-              <h2 className="font-display text-2xl">{title}</h2>
+              <h2 className="text-xl font-semibold" id={titleId}>{title}</h2>
               <button
                 aria-label="Close dialog"
-                className="rounded-full p-2 transition-colors hover:bg-brand-subtle hover:text-brand-primary"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-button transition-colors hover:bg-brand-subtle hover:text-brand-primary"
                 onClick={onClose}
                 type="button"
               >

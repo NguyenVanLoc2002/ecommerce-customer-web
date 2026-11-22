@@ -28,7 +28,7 @@ module.exports = {
         sans: ['"Be Vietnam Pro"', 'sans-serif']
       },
       maxWidth: {
-        layout: '1440px'
+        layout: '1280px'
       },
       borderRadius: {
         chip: 'var(--radius-chip)',

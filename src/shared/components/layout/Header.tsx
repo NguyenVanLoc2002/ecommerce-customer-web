@@ -1,6 +1,6 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { Bell, ChevronDown, Menu, ShoppingBag, User2 } from 'lucide-react';
+import { Bell, ChevronDown, Menu, Search, ShoppingBag, User2 } from 'lucide-react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
@@ -22,12 +22,12 @@ const collectionLinks = [
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    'border-b border-transparent pb-1 font-display text-sm uppercase tracking-[0.2em] text-text-secondary transition-colors duration-300 hover:text-text-primary',
+    'min-h-11 border-b border-transparent px-1 py-3 text-sm text-text-secondary transition-colors duration-200 hover:text-text-primary',
     isActive && 'border-text-primary text-text-primary',
   );
 
 const headerIconButtonClassName =
-  'relative inline-flex h-10 shrink-0 items-center justify-center rounded-full text-text-primary transition-colors hover:bg-surface-muted hover:text-brand-primary focus-visible:bg-surface-muted';
+  'relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-button text-text-primary transition-colors hover:bg-surface-muted hover:text-brand-primary focus-visible:bg-surface-muted';
 const headerBadgeClassName =
   'pointer-events-none absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-text-primary px-1 text-[10px] font-bold text-white';
 
@@ -105,12 +105,13 @@ export const Header = () => {
   };
 
   return (
-    <header className="glass-header fixed inset-x-0 top-0 z-50 border-b border-border/70 print:hidden">
-      <div className="mx-auto flex h-20 max-w-layout items-center justify-between gap-4 px-page">
-        <div className="flex items-center gap-4 md:gap-8">
+    <header className="glass-header fixed inset-x-0 top-0 z-50 border-b border-border print:hidden">
+      <div className="mx-auto flex min-h-[72px] max-w-layout items-center justify-between gap-2 px-page md:min-h-20 md:gap-4">
+        <div className="flex min-w-0 items-center gap-2 md:gap-8">
           <button
-            aria-label="Open menu"
-            className="inline-flex h-10 w-10 items-center justify-center text-text-primary transition-colors hover:text-brand-primary md:hidden"
+            aria-expanded={isMobileNavOpen}
+            aria-label="Mở danh mục"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center text-text-primary transition-colors hover:text-brand-primary md:hidden"
             onClick={openMobileNav}
             type="button"
           >
@@ -118,15 +119,15 @@ export const Header = () => {
           </button>
           <Link
             className={cn(
-              'font-display text-xl uppercase tracking-[0.28em] text-text-primary transition-opacity hover:opacity-70',
-              productSurface ? 'md:text-2xl' : 'md:text-[1.65rem]',
+              'whitespace-nowrap text-xs font-semibold tracking-[0.08em] text-text-primary transition-opacity hover:opacity-70 sm:text-sm md:text-lg',
+              productSurface && 'md:text-lg',
             )}
             to={routes.home}
           >
             {logo}
           </Link>
         </div>
-        <nav className="hidden items-center gap-10 md:flex">
+        <nav aria-label="Danh mục sản phẩm" className="hidden items-center gap-5 lg:flex">
           {navLinks.map((link) => (
             <NavLink className={navLinkClass} key={link.label} to={link.to}>
               {link.label}
@@ -134,10 +135,13 @@ export const Header = () => {
           ))}
         </nav>
         <div className="flex items-center gap-2 md:gap-3">
+          <Link aria-label="Tìm kiếm sản phẩm" className={headerIconButtonClassName} to={routes.products}>
+            <Search aria-hidden="true" className="h-5 w-5" strokeWidth={1.7} />
+          </Link>
           {user ? (
             <Link
-              aria-label="Open notifications"
-              className={cn(headerIconButtonClassName, 'w-10')}
+              aria-label="Thông báo"
+              className={cn(headerIconButtonClassName, 'hidden md:inline-flex')}
               to={routes.notifications}
             >
               <Bell className="h-5 w-5" strokeWidth={1.7} />
@@ -150,7 +154,7 @@ export const Header = () => {
           ) : null}
           <Link
             aria-label={cartAriaLabel}
-            className={cn(headerIconButtonClassName, 'w-10')}
+            className={headerIconButtonClassName}
             to={cartTarget}
           >
             <ShoppingBag className="h-5 w-5" strokeWidth={1.7} />
@@ -174,7 +178,7 @@ export const Header = () => {
                 aria-expanded={isAccountMenuOpen}
                 aria-haspopup="menu"
                 aria-label="Open account menu"
-                className={cn(headerIconButtonClassName, 'w-auto gap-1 px-3', isAccountMenuOpen && 'bg-surface-muted')}
+                className={cn(headerIconButtonClassName, isAccountMenuOpen && 'bg-surface-muted')}
                 onClick={() => setIsAccountMenuOpen((open) => !open)}
                 onKeyDown={handleAccountMenuButtonKeyDown}
                 ref={accountMenuButtonRef}
@@ -186,7 +190,7 @@ export const Header = () => {
               {isAccountMenuOpen ? (
                 <div
                   aria-label="Account menu"
-                  className="absolute right-0 top-full z-50 mt-3 w-[min(18rem,calc(100vw-2rem))] border border-border bg-surface p-2 shadow-card"
+                  className="absolute right-0 top-full z-50 mt-3 w-[min(18rem,calc(100vw-2rem))] border border-border bg-surface p-2 shadow-subtle"
                   id={accountMenuId}
                   ref={accountMenuRef}
                   role="menu"
@@ -237,7 +241,7 @@ export const Header = () => {
           ) : (
             <Link
               aria-label="Đăng nhập"
-              className={cn(headerIconButtonClassName, 'w-10')}
+              className={headerIconButtonClassName}
               to={routes.login}
             >
               <User2 className="h-5 w-5" strokeWidth={1.7} />
@@ -251,7 +255,7 @@ export const Header = () => {
             {navLinks.map((link) => (
               <li key={link.label}>
                 <NavLink
-                  className="block border-b border-border pb-3 font-display text-base uppercase tracking-[0.18em] text-text-primary transition-colors hover:text-brand-primary"
+                  className="flex min-h-11 items-center border-b border-border py-3 text-base text-text-primary transition-colors hover:text-brand-primary"
                   onClick={closeMobileNav}
                   to={link.to}
                 >
@@ -262,7 +266,7 @@ export const Header = () => {
             {user ? (
               <li>
                 <NavLink
-                  className="block border-b border-border pb-3 font-display text-base uppercase tracking-[0.18em] text-text-primary transition-colors hover:text-brand-primary"
+                  className="flex min-h-11 items-center border-b border-border py-3 text-base text-text-primary transition-colors hover:text-brand-primary"
                   onClick={closeMobileNav}
                   to={routes.notifications}
                 >
@@ -272,7 +276,7 @@ export const Header = () => {
             ) : null}
             <li>
               <NavLink
-                className="block border-b border-border pb-3 font-display text-base uppercase tracking-[0.18em] text-text-primary transition-colors hover:text-brand-primary"
+                className="flex min-h-11 items-center border-b border-border py-3 text-base text-text-primary transition-colors hover:text-brand-primary"
                 onClick={closeMobileNav}
                 to={user ? routes.profile : routes.login}
               >
@@ -282,7 +286,7 @@ export const Header = () => {
             {user ? (
               <li>
                 <button
-                  className="block w-full border-b border-border pb-3 text-left font-display text-base uppercase tracking-[0.18em] text-text-primary transition-colors hover:text-brand-primary disabled:opacity-50"
+                  className="block min-h-11 w-full border-b border-border py-3 text-left text-base text-text-primary transition-colors hover:text-brand-primary disabled:opacity-50"
                   disabled={logout.isPending}
                   onClick={() => {
                     closeMobileNav();
