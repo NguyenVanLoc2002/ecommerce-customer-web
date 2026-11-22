@@ -171,8 +171,8 @@ export const AddressFormPage = () => {
               </Button>
             ) : undefined
           }
-          description={returnTo === RETURN_TO_CHECKOUT ? 'Save a delivery destination and return directly to the active checkout draft.' : 'Create or refine a saved destination for upcoming orders and future checkout handoffs.'}
-          eyebrow={returnTo === RETURN_TO_CHECKOUT ? 'Checkout destination' : 'Saved destination'}
+          description={returnTo === RETURN_TO_CHECKOUT ? 'Lưu địa chỉ nhận hàng để quay lại bước thanh toán.' : 'Thêm hoặc cập nhật địa chỉ nhận hàng cho các đơn tiếp theo.'}
+          eyebrow={returnTo === RETURN_TO_CHECKOUT ? 'Thanh toán / Địa chỉ' : 'Tài khoản / Địa chỉ'}
           title={pageTitle}
         >
           <Link className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary" to={backTarget}>
@@ -198,7 +198,7 @@ export const AddressFormPage = () => {
           ) : null}
 
           {(!isEditMode || addressQuery.data) && !addressQuery.isLoading ? (
-            <form className="space-y-8 border border-border bg-surface px-5 py-6 md:px-7" onSubmit={onSubmit}>
+            <form className="space-y-7 border border-border bg-surface p-5 md:p-7" onSubmit={onSubmit}>
               <div className="grid gap-6 md:grid-cols-2">
                 <Input error={errors.receiverName?.message} id="receiverName" label="Receiver name" {...register('receiverName')} />
                 <Input error={errors.phoneNumber?.message} id="phoneNumber" label="Phone number" {...register('phoneNumber')} />

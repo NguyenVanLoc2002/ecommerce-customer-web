@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+import { config } from '@/constants/config';
 import { routes } from '@/constants/routes';
 import { useCart } from '@/features/cart/hooks/useCart';
+import { useCheckoutPricing } from '@/features/checkout/hooks/useCheckout';
 import { useCheckoutStore } from '@/features/checkout/stores/checkoutStore';
 import { CartSummary } from '@/shared/components/commerce/CartSummary';
 import { CheckoutStepper } from '@/shared/components/commerce/CheckoutStepper';
@@ -43,24 +45,42 @@ const providerOptions = [
   },
 ] as const;
 
+const mockProviderOption = {
+  value: PAYMENT_PROVIDERS.MOCK,
+  title: 'Mock payment',
+  description: 'Development-only gateway used by the automated end-to-end purchase journey.',
+} as const;
+
 export const CheckoutPaymentPage = () => {
   const navigate = useNavigate();
   const cartQuery = useCart();
+  const cart = cartQuery.data;
+  const {
+    carrierSelectionError,
+    carrierSelectionRequired,
+    carriersQuery,
+    previewError,
+    previewLoading,
+    previewValueOverrides,
+    selectedCarrier,
+    summaryTotals,
+  } = useCheckoutPricing(cart);
   const customerNote = useCheckoutStore((state) => state.customerNote);
+  const orderPreview = useCheckoutStore((state) => state.orderPreview);
   const paymentMethod = useCheckoutStore((state) => state.paymentMethod);
   const paymentProvider = useCheckoutStore((state) => state.paymentProvider);
+  const selectedCarrierId = useCheckoutStore((state) => state.selectedCarrierId);
   const setCustomerNote = useCheckoutStore((state) => state.setCustomerNote);
   const setPaymentMethod = useCheckoutStore((state) => state.setPaymentMethod);
   const setPaymentProvider = useCheckoutStore((state) => state.setPaymentProvider);
   const shippingAddressId = useCheckoutStore((state) => state.shippingAddressId);
+  const visibleProviderOptions = config.e2eMode ? [...providerOptions, mockProviderOption] : providerOptions;
 
   useEffect(() => {
     if (!shippingAddressId) {
       navigate(routes.checkoutAddress, { replace: true });
     }
   }, [navigate, shippingAddressId]);
-
-  const cart = cartQuery.data;
 
   if (cart?.items.length === 0) {
     return (
@@ -132,7 +152,7 @@ export const CheckoutPaymentPage = () => {
                   Chọn cổng thanh toán online trước khi tiếp tục đặt đơn.
                 </p>
                 <div className="mt-6 grid gap-4">
-                  {providerOptions.map((option) => {
+                  {visibleProviderOptions.map((option) => {
                     const selected = paymentProvider === option.value;
 
                     return (
@@ -171,12 +191,20 @@ export const CheckoutPaymentPage = () => {
               />
             </div>
           </section>
-          {cart ? (
+          {cart && summaryTotals ? (
             <CartSummary
               description={
-                paymentMethod === PAYMENT_METHODS.ONLINE
-                  ? `${getPaymentMethodNote(paymentMethod)} Provider: ${getPaymentProviderLabel(paymentProvider)}.`
-                  : getPaymentMethodNote(paymentMethod)
+                carriersQuery.isError
+                  ? 'Carrier options failed to load. Retry the shipping quote before relying on order totals.'
+                  : carrierSelectionError
+                    ? carrierSelectionError
+                    : carrierSelectionRequired && !selectedCarrierId
+                      ? 'Return to the shipping step to choose a carrier before the backend can confirm shipping totals.'
+                      : previewError
+                        ? 'The live shipping quote failed. Retry it before placing the order.'
+                        : paymentMethod === PAYMENT_METHODS.ONLINE
+                          ? `${getPaymentMethodNote(paymentMethod)} Provider: ${getPaymentProviderLabel(paymentProvider)}.`
+                          : getPaymentMethodNote(paymentMethod)
               }
               eyebrow="Selected payment"
               footer={
@@ -189,14 +217,25 @@ export const CheckoutPaymentPage = () => {
                   </Button>
                 </div>
               }
+              isTotalsUpdating={previewLoading}
               supplementary={
-                <p className="text-sm uppercase tracking-[0.08em] text-text-primary">
-                  {getPaymentMethodLabel(paymentMethod)}
-                  {paymentMethod === PAYMENT_METHODS.ONLINE ? ` / ${getPaymentProviderLabel(paymentProvider)}` : ''}
-                </p>
+                <div className="space-y-3">
+                  <p className="text-sm uppercase tracking-[0.08em] text-text-primary">
+                    {getPaymentMethodLabel(paymentMethod)}
+                    {paymentMethod === PAYMENT_METHODS.ONLINE ? ` / ${getPaymentProviderLabel(paymentProvider)}` : ''}
+                  </p>
+                  <p className="text-sm leading-7 text-text-secondary">
+                    {selectedCarrier
+                      ? `${selectedCarrier.name}${orderPreview?.shippingServiceName ? ` / ${orderPreview.shippingServiceName}` : ''}.`
+                      : carrierSelectionRequired
+                        ? 'No carrier quote selected yet.'
+                        : 'No active carrier is available, so backend preview keeps shipping at 0.'}
+                  </p>
+                </div>
               }
               title="Order value"
-              totals={cart}
+              totals={summaryTotals}
+              valueOverrides={previewValueOverrides}
               variant="checkout"
             />
           ) : null}

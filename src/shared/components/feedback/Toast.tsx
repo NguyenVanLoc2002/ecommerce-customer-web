@@ -21,9 +21,10 @@ type ToastProps = {
 
 export const Toast = ({ onDismiss, toast }: ToastProps) => {
   const Icon = iconMap[toast.tone];
+  const liveRole = toast.tone === 'danger' ? 'alert' : 'status';
 
   return (
-    <div aria-live="assertive" className={`w-full rounded-card border px-4 py-4 shadow-card ${toneMap[toast.tone]}`} role="alert">
+    <div aria-live={toast.tone === 'danger' ? 'assertive' : 'polite'} className={`w-full rounded-card border px-4 py-4 shadow-subtle ${toneMap[toast.tone]}`} role={liveRole}>
       <div className="flex items-start gap-3">
         <Icon className="mt-0.5 h-5 w-5 text-brand-primary" />
         <div className="min-w-0 flex-1">

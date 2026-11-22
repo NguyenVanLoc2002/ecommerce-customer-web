@@ -22,6 +22,8 @@ export const queryKeys = {
     detail: ['cart', 'detail'] as const,
   },
   checkout: {
+    carriers: ['checkout', 'carriers'] as const,
+    preview: (payloadSignature: string) => ['checkout', 'preview', payloadSignature] as const,
     voucher: (code: string, amount: number) => ['checkout', 'voucher', code, amount] as const,
     confirmation: ['checkout', 'confirmation'] as const,
   },

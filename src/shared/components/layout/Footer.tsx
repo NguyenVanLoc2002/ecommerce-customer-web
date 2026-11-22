@@ -5,21 +5,21 @@ import { Container } from '@/shared/components/layout/Container';
 import { SORT_OPTIONS } from '@/shared/types/enums';
 
 const shopLinks = [
-  { label: 'New Arrivals', href: `${routes.products}?sort=${SORT_OPTIONS.NEWEST}` },
-  { label: 'Womenswear', href: `${routes.products}?category=womenswear` },
-  { label: 'Accessories', href: `${routes.products}?category=accessories` },
+  { label: 'Sản phẩm mới', href: `${routes.products}?sort=${SORT_OPTIONS.NEWEST}` },
+  { label: 'Tất cả sản phẩm', href: routes.products },
+  { label: 'Nổi bật', href: `${routes.products}?sort=${SORT_OPTIONS.FEATURED}` },
 ];
 
 const accountLinks = [
-  { label: 'Orders', href: routes.orders },
-  { label: 'Address Book', href: routes.profileAddresses },
-  { label: 'Notifications', href: routes.notifications },
+  { label: 'Đơn hàng', href: routes.orders },
+  { label: 'Sổ địa chỉ', href: routes.profileAddresses },
+  { label: 'Thông báo', href: routes.notifications },
 ];
 
 const accessLinks = [
-  { label: 'Login', href: routes.login },
-  { label: 'Register', href: routes.register },
-  { label: 'Profile', href: routes.profile },
+  { label: 'Đăng nhập', href: routes.login },
+  { label: 'Tạo tài khoản', href: routes.register },
+  { label: 'Hồ sơ', href: routes.profile },
 ];
 
 const renderLinkGroup = (title: string, links: Array<{ label: string; href: string }>) => (
@@ -36,19 +36,19 @@ const renderLinkGroup = (title: string, links: Array<{ label: string; href: stri
 );
 
 export const Footer = () => (
-  <footer className="border-t border-border bg-canvas pt-20 print:hidden md:pt-24">
-    <Container className="grid gap-14 pb-20 md:grid-cols-12 md:gap-x-12">
+  <footer className="border-t border-border bg-canvas pt-12 print:hidden md:pt-16">
+    <Container className="grid gap-10 pb-12 sm:grid-cols-2 md:grid-cols-12 md:gap-x-12 md:pb-16">
       <div className="md:col-span-4">
-        <span className="block font-display text-3xl uppercase tracking-[0.2em] text-text-primary">AURA EDITORIAL</span>
-        <p className="mt-8 max-w-xs text-sm leading-7 text-text-secondary">
-          Redefining luxury through the lens of quiet elegance and architectural precision. Based in Milan, available globally.
+        <span className="block font-display text-2xl font-semibold tracking-[0.12em] text-text-primary">FASHION SHOP</span>
+        <p className="mt-5 max-w-xs text-sm leading-7 text-text-secondary">
+          Khám phá những thiết kế được tuyển chọn, cùng trải nghiệm mua sắm rõ ràng và thuận tiện.
         </p>
       </div>
-      <div className="md:col-span-2">{renderLinkGroup('Shop', shopLinks)}</div>
-      <div className="md:col-span-2">{renderLinkGroup('Account', accountLinks)}</div>
-      <div className="md:col-span-4 md:text-right">
-        <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">Access</h4>
-        <div className="mt-5 space-y-4 md:ml-auto md:max-w-[180px]">
+      <div className="md:col-span-2">{renderLinkGroup('Mua sắm', shopLinks)}</div>
+      <div className="md:col-span-3">{renderLinkGroup('Tài khoản', accountLinks)}</div>
+      <div className="md:col-span-3">
+        <h4 className="text-sm font-medium text-text-primary">Truy cập</h4>
+        <div className="mt-5 space-y-4">
           {accessLinks.map((link) => (
             <Link className="block text-sm text-text-secondary transition-colors hover:text-text-primary" key={link.label} to={link.href}>
               {link.label}
@@ -58,11 +58,8 @@ export const Footer = () => (
       </div>
     </Container>
     <Container className="flex flex-col gap-5 border-t border-border py-8 text-xs uppercase tracking-[0.18em] text-outline md:flex-row md:items-center md:justify-between">
-      <p>(c) {new Date().getFullYear()} Aura Editorial. All rights reserved.</p>
-      <div className="flex gap-10">
-        <span>ENG</span>
-        <span>EUR</span>
-      </div>
+      <p>© {new Date().getFullYear()} Fashion Shop</p>
+      <p>Thời trang dành cho mỗi ngày</p>
     </Container>
   </footer>
 );

@@ -60,29 +60,7 @@ export const catalogLookupService = {
     if (!productDetailBySlugCache.has(slug)) {
       productDetailBySlugCache.set(
         slug,
-        (async () => {
-          let page = 0;
-          const size = 100;
-          let hasNext = true;
-
-          while (hasNext) {
-            const response = await this.listProducts({
-              page,
-              size,
-              sort: 'createdAt,desc',
-            });
-
-            const match = response.items.find((item) => item.slug === slug);
-            if (match) {
-              return this.getProductDetailById(match.id);
-            }
-
-            hasNext = response.hasNext;
-            page += 1;
-          }
-
-          return null;
-        })(),
+        apiClient.get<ApiResponse<ProductDetailResponse>, ProductDetailResponse>(`/products/slug/${encodeURIComponent(slug)}`),
       );
     }
 

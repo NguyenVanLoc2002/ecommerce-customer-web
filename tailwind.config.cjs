@@ -24,11 +24,11 @@ module.exports = {
         info: 'rgb(var(--color-info) / <alpha-value>)'
       },
       fontFamily: {
-        display: ['"Playfair Display"', 'serif'],
-        sans: ['"DM Sans"', 'sans-serif']
+        display: ['"Be Vietnam Pro"', 'sans-serif'],
+        sans: ['"Be Vietnam Pro"', 'sans-serif']
       },
       maxWidth: {
-        layout: '1440px'
+        layout: '1280px'
       },
       borderRadius: {
         chip: 'var(--radius-chip)',

@@ -21,13 +21,13 @@ export const ProfileSecurityPage = () => {
               {logout.isPending ? 'Signing out...' : 'Sign out'}
             </Button>
           }
-          description="Manage your password and end the current customer session from one controlled surface."
-          eyebrow="Protection"
-          title="Security"
+          description="Cập nhật mật khẩu và quản lý phiên đăng nhập của bạn."
+          eyebrow="Tài khoản / Bảo mật"
+          title="Bảo mật"
         >
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
             <section className="border border-border bg-surface px-5 py-6 md:px-7">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Change password</p>
+              <p className="text-sm font-semibold text-text-primary">Đổi mật khẩu</p>
               <div className="mt-8">
                 <ChangePasswordForm />
               </div>
@@ -37,7 +37,7 @@ export const ProfileSecurityPage = () => {
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-surface-soft text-text-primary">
                 <ShieldCheck className="h-5 w-5" strokeWidth={1.7} />
               </div>
-              <h2 className="mt-5 font-display text-[2rem] leading-none text-text-primary">Session policy</h2>
+              <h2 className="mt-5 text-lg font-semibold leading-snug text-text-primary">Bảo vệ phiên đăng nhập</h2>
               <p className="mt-4 text-sm leading-7 text-text-secondary">
                 Password changes revoke the active refresh sessions on the backend. The storefront clears your in-memory
                 access token, account caches, and checkout draft before returning you to sign-in.

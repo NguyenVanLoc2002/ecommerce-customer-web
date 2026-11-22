@@ -18,7 +18,7 @@ const toneClasses: Record<BadgeTone, string> = {
 export const Badge = ({ children, className, tone = 'brand' }: BadgeProps) => (
   <span
     className={cn(
-      'inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em]',
+      'inline-flex min-h-6 items-center rounded-chip border border-border px-2 text-xs font-medium leading-tight',
       toneClasses[tone],
       className,
     )}

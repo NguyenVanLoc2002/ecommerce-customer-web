@@ -30,7 +30,7 @@ export const buttonStyles = ({
   fullWidth?: boolean;
 }) =>
   cn(
-    'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-button font-medium uppercase leading-none transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60',
+    'inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-button font-medium leading-none transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-brand-primary disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60',
     variantClasses[variant],
     sizeClasses[size],
     fullWidth && 'w-full',

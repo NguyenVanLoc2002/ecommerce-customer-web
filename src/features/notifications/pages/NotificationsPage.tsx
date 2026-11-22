@@ -16,10 +16,10 @@ import { formatDate } from '@/shared/utils/formatDate';
 type NotificationFilter = 'ALL' | 'ORDERS' | 'PROMOTIONS' | 'SECURITY';
 
 const filterItems: Array<{ key: NotificationFilter; label: string }> = [
-  { key: 'ALL', label: 'All Activity' },
-  { key: 'ORDERS', label: 'Orders' },
-  { key: 'PROMOTIONS', label: 'Promotions' },
-  { key: 'SECURITY', label: 'Security' },
+  { key: 'ALL', label: 'Tất cả' },
+  { key: 'ORDERS', label: 'Đơn hàng' },
+  { key: 'PROMOTIONS', label: 'Ưu đãi' },
+  { key: 'SECURITY', label: 'Bảo mật' },
 ];
 
 const iconMap: Record<NotificationType, typeof Bell> = {
@@ -104,9 +104,9 @@ export const NotificationsPage = () => {
               {markAllRead.isPending ? 'Marking...' : 'Mark all as read'}
             </Button>
           }
-          description="Review order, payment, shipment, promotion, and security updates from one customer-facing archive."
-          eyebrow="Your activity"
-          title="Notifications"
+          description="Cập nhật về đơn hàng, thanh toán, vận chuyển và tài khoản của bạn."
+          eyebrow="Tài khoản / Cập nhật"
+          title="Thông báo"
         >
           {notificationsQuery.isLoading ? (
             <div className="space-y-6">
@@ -142,11 +142,12 @@ export const NotificationsPage = () => {
 
           {!notificationsQuery.isLoading && !notificationsQuery.isError && notifications.length > 0 ? (
             <section className="space-y-6">
-              <div className="sticky top-20 z-20 overflow-x-auto border-y border-border bg-canvas/95 py-4 backdrop-blur">
-                <div className="flex gap-3">
+              <div aria-label="Lọc thông báo" className="sticky top-20 z-20 -mx-4 overflow-x-auto border-y border-border bg-canvas/95 px-4 py-3 md:mx-0 md:px-0">
+                <div className="flex min-w-max gap-2" role="group">
                   {filterItems.map((item) => (
                     <button
-                      className={`shrink-0 border px-4 py-3 text-[11px] font-bold uppercase tracking-[0.16em] transition-colors ${activeFilter === item.key ? 'border-text-primary bg-surface text-text-primary' : 'border-border bg-surface text-text-secondary hover:border-text-primary hover:text-text-primary'}`}
+                      aria-pressed={activeFilter === item.key}
+                      className={`min-h-11 shrink-0 border px-4 py-2 text-sm font-medium transition-colors ${activeFilter === item.key ? 'border-brand-primary bg-brand-subtle text-text-primary' : 'border-border bg-surface text-text-secondary hover:border-brand-primary hover:text-text-primary'}`}
                       key={item.key}
                       onClick={() => setActiveFilter(item.key)}
                       type="button"
@@ -169,7 +170,7 @@ export const NotificationsPage = () => {
                     const Icon = iconMap[notification.type];
 
                     return (
-                      <article className={`group relative border px-5 py-5 transition-colors duration-300 md:px-8 md:py-8 ${notification.read ? 'border-border bg-surface' : 'border-text-primary/20 bg-surface'}`} key={notification.id}>
+                      <article className={`group relative border p-5 transition-colors duration-200 md:p-7 ${notification.read ? 'border-border bg-surface' : 'border-brand-primary/40 bg-surface'}`} key={notification.id}>
                         {!notification.read ? <span className="absolute right-5 top-5 h-2.5 w-2.5 rounded-full bg-text-primary" /> : null}
                         <div className="flex flex-col gap-6 md:flex-row">
                           {notification.previewImage ? (

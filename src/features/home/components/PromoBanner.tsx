@@ -19,14 +19,14 @@ export const PromoBanner = ({ products }: PromoBannerProps) => {
       <Container>
         <div className="grid items-center gap-14 lg:grid-cols-12 lg:gap-16">
           <div className="relative z-10 lg:col-span-5">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-text-secondary">The Archive</p>
-            <h2 className="mt-4 font-display text-[3rem] italic leading-none text-text-primary md:text-[3.5rem]">L&apos;Artiste No. 4</h2>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-text-secondary">BỘ SƯU TẬP TUYỂN CHỌN</p>
+            <h2 className="mt-4 font-display text-[2rem] font-semibold leading-tight text-text-primary md:text-[2.5rem]">Dấu ấn tối giản</h2>
             <p className="mt-8 max-w-lg text-lg leading-8 text-text-secondary">
-              A limited exploration of texture and form. Each piece is meticulously numbered and hand-finished in our atelier.
+              Những phom dáng tinh gọn và chất liệu dễ ứng dụng, được tuyển chọn để đồng hành cùng phong cách riêng của bạn.
             </p>
             <div className="mt-10">
               <Link className={buttonStyles({ size: 'lg' })} to={`${routes.products}?sort=${SORT_OPTIONS.FEATURED}`}>
-                View Collection
+                Khám phá bộ sưu tập
               </Link>
             </div>
           </div>

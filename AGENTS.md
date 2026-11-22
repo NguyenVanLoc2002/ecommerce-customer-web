@@ -31,7 +31,7 @@ Rule of thumb:
 - Visual, UX, tokens, component patterns, screen mapping: `DESIGN.md`
 - Build order and milestones: `DELIVERY_PLAN.md`
 - Setup and runtime basics: `README.md`
-- Exception: customer auth cookie/refresh semantics currently follow `docs/original/api-common.md` and `docs/original/customer-api-contract.md` until the consolidated API docs are refreshed
+- Auth cookie/refresh semantics now follow the reconciled `API.md` (2026-11-22). Archived auth docs may contain obsolete payload, password-reset and CSRF statements and must not override it.
 
 ## 3. Tech Stack
 
@@ -192,8 +192,10 @@ Critical contract notes:
 - Current backend contract exposes `EMAIL_ALREADY_EXISTS` and `PHONE_ALREADY_EXISTS`
 - `REVIEW_NOT_ELIGIBLE` is `422` in current backend docs
 - Notifications use `referenceType` and `referenceId`
-- Public PDP lookup is currently documented as `GET /products/{id}`, not slug
-- `voucherCode` on order creation is stored but not yet applied to totals
+- Public PDP lookup uses `GET /products/slug/{slug}`; `GET /products/{id}` also exists.
+- Product detail includes multiple variants with catalog-backed attributes. Public list/detail responses do not expose variant inventory quantities; Admin inventory endpoints are not customer endpoints.
+- `POST /orders/preview` calculates voucher discount and shipping from the active cart. `POST /orders` revalidates and atomically redeems the voucher; displayed totals must follow server responses.
+- Before Phase 2 UI work, review `docs/planning/phase-2-contract-readiness.md` for verified contracts, existing customer integration gaps, and required live checks.
 - Product keyword search remains `keyword`; do not add or expose `searchText` / `search_text`
 - Customer FE must send the user's raw trimmed keyword only; do not lowercase or strip Vietnamese accents
 - Customer FE must trust backend FULLTEXT relevance ordering when `keyword` is present and must not client-filter returned product results
@@ -259,6 +261,16 @@ A task is done only when all applicable checks pass:
 - Any unavoidable contract assumption is documented
 
 ## 16. Codex Working Rules
+
+## 17. Shared workflow and quality gate
+
+Follow `../GIT_CONVENTIONS.md` for new Git work. Before coding, read the GitHub Issue and acceptance criteria, then run `git status --short --branch` and preserve unrelated WIP. Do not run `git reset --hard`, `git clean`, rebase, force-push, commit, push, merge, or change Git author identity unless explicitly requested. Do not access production resources, log secrets, or conceal failed checks.
+
+Keep the documented feature boundaries and API flow `page/component -> custom hook -> service -> shared Axios client`. Components own rendering and UI events; services are typed API functions and must not import React or Zustand. Use TanStack Query for server state, React Hook Form plus Zod for form state, URL search params for catalog filters, and Zustand only for documented auth/UI state. Preserve `API.md` contracts rather than inventing endpoints or client-side semantics.
+
+Changed screens and mutations must provide relevant loading, error, empty, pending, and success states, including accessible form errors and safe duplicate-submit handling. Keep TypeScript strict; do not use `any`.
+
+Before proposing completion, run applicable `npm run lint`, `npm run typecheck`, and `npm run build`. This repository currently has no `test` script, so add/run targeted tests only when the project test setup exists or the task introduces it; always report that limitation rather than claiming test coverage.
 
 - Do not implement admin or staff flows
 - Do not invent API endpoints

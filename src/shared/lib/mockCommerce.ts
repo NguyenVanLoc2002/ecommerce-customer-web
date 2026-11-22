@@ -489,7 +489,7 @@ const hydrateCartItem = (item: StoredCartItem, storage: CommerceStorage): CartIt
   }
 
   const reservedQuantity = getReservedQuantity(storage, item.variantId);
-  const stockAvailable = Math.max(lookup.variant.stock - reservedQuantity, 0);
+  const stockAvailable = Math.max((lookup.variant.stock ?? 0) - reservedQuantity, 0);
 
   return {
     id: item.id,
@@ -721,6 +721,11 @@ export const mockCommerce = {
     const invoice: Invoice = {
       id: `invoice-${order.id}`,
       invoiceCode: `INV-${order.code.replace('FS-', '')}`,
+      status: payment?.status === 'REFUNDED'
+        ? 'REFUNDED'
+        : payment?.status === 'PARTIALLY_REFUNDED'
+          ? 'PARTIALLY_REFUNDED'
+          : payment?.status === 'PAID' ? 'PAID' : 'ISSUED',
       orderId: order.id,
       orderCode: order.code,
       issuedAt: order.createdAt,

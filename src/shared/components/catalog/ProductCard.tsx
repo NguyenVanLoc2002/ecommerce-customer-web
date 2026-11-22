@@ -36,7 +36,7 @@ export const ProductCard = ({ product, showBadge = true }: ProductCardProps) => 
         </div>
         <div className="flex items-start justify-between gap-4 px-1 pt-5">
           <div>
-            <h3 className="font-display text-xl leading-tight text-text-primary md:text-[1.4rem]">
+            <h3 className="text-base font-semibold leading-snug text-text-primary md:text-lg">
               {product.name}
             </h3>
             <p className="mt-2 max-w-[18rem] text-sm leading-6 text-text-secondary">{product.subtitle}</p>

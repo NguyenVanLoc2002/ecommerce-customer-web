@@ -25,12 +25,14 @@ const titleCaseToken = (value: string) =>
 const getFiniteNumber = (value: number | null | undefined) =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;
 
-const createProductImage = (src: string | null | undefined, alt: string): ProductImage => ({
+const createProductImage = (src: string | null | undefined, alt: string, metadata?: { variantId?: string | null; mediaType?: string | null }): ProductImage => ({
   id: src ?? alt,
   src: src && src.length > 0 ? src : PLACEHOLDER_IMAGE,
   alt,
   width: FALLBACK_IMAGE_SIZE.width,
   height: FALLBACK_IMAGE_SIZE.height,
+  variantId: metadata?.variantId,
+  mediaType: metadata?.mediaType,
 });
 
 const getVariantAttributeValue = (variant: ProductVariantResponse, attributeCode: string) => {
@@ -49,12 +51,6 @@ const getVariantAttributeValue = (variant: ProductVariantResponse, attributeCode
   return null;
 };
 
-const deriveVariantToken = (variantName: string, index: number) =>
-  variantName
-    .split(/[/-]/)
-    .map((part) => part.trim())
-    .filter(Boolean)[index] ?? '';
-
 const sortMedia = (left: ProductMediaResponse, right: ProductMediaResponse) => {
   const primaryDelta = Number(Boolean(right.primary)) - Number(Boolean(left.primary));
   if (primaryDelta !== 0) {
@@ -68,26 +64,26 @@ const sortMedia = (left: ProductMediaResponse, right: ProductMediaResponse) => {
 
 const getVariantMediaImage = (product: ProductDetailResponse, variantId: string | null, alt: string) => {
   const matchingMedia = (product.media ?? [])
-    .filter((media) => media.variantId === variantId && Boolean(media.mediaUrl))
+    .filter((media) => media.variantId === variantId && media.mediaType?.toUpperCase() === 'IMAGE' && Boolean(media.mediaUrl))
     .sort(sortMedia)[0];
 
   if (matchingMedia) {
-    return createProductImage(matchingMedia.mediaUrl, alt);
+    return createProductImage(matchingMedia.mediaUrl, alt, matchingMedia);
   }
 
   return null;
 };
 
 const getPrimaryMediaImage = (product: ProductDetailResponse, alt: string) => {
-  const media = [...(product.media ?? [])].filter((item) => Boolean(item.mediaUrl)).sort(sortMedia);
+  const media = [...(product.media ?? [])].filter((item) => item.mediaType?.toUpperCase() === 'IMAGE' && Boolean(item.mediaUrl)).sort(sortMedia);
   const primaryMedia = media[0];
 
   return createProductImage(primaryMedia?.mediaUrl, alt);
 };
 
 const toProductVariant = (product: ProductDetailResponse, variant: ProductVariantResponse): ProductVariant => {
-  const color = getVariantAttributeValue(variant, 'COLOR') ?? deriveVariantToken(variant.variantName ?? '', 0) ?? 'Default';
-  const size = getVariantAttributeValue(variant, 'SIZE') ?? deriveVariantToken(variant.variantName ?? '', 1) ?? 'One Size';
+  const color = getVariantAttributeValue(variant, 'COLOR') ?? 'Tùy chọn';
+  const size = getVariantAttributeValue(variant, 'SIZE') ?? 'Mặc định';
   const imageAlt = `${product.name} ${color} ${size}`;
   const image = getVariantMediaImage(product, variant.id, imageAlt) ?? getPrimaryMediaImage(product, imageAlt);
   const basePrice = getFiniteNumber(variant.basePrice) ?? 0;
@@ -100,7 +96,15 @@ const toProductVariant = (product: ProductDetailResponse, variant: ProductVarian
     sku: variant.sku ?? '',
     color: titleCaseToken(color || 'Default'),
     size: titleCaseToken(size || 'One Size'),
-    stock: 0,
+    status: variant.status,
+    attributes: (variant.attributes ?? []).map((attribute) => ({
+      attributeId: attribute.attributeId ?? '',
+      attributeName: attribute.attributeName ?? attribute.name ?? '',
+      attributeCode: attribute.attributeCode ?? '',
+      valueId: attribute.valueId ?? '',
+      value: attribute.value ?? '',
+      displayValue: attribute.displayValue ?? attribute.value ?? '',
+    })),
     price,
     compareAtPrice: compareAtPrice !== null && compareAtPrice > price ? compareAtPrice : undefined,
     swatch: image.src,
@@ -110,9 +114,9 @@ const toProductVariant = (product: ProductDetailResponse, variant: ProductVarian
 
 export const mapProductDetailResponse = (product: ProductDetailResponse): ProductDetail => {
   const media = [...(product.media ?? [])]
-    .filter((item) => Boolean(item.mediaUrl))
+    .filter((item) => item.mediaType?.toUpperCase() === 'IMAGE' && Boolean(item.mediaUrl))
     .sort(sortMedia)
-    .map((item, index) => createProductImage(item.mediaUrl, `${product.name} image ${index + 1}`));
+    .map((item, index) => createProductImage(item.mediaUrl, `${product.name} image ${index + 1}`, item));
   const primaryImage = media[0] ?? createProductImage(null, `${product.name} product image`);
   const variants = (product.variants ?? []).map((variant) => toProductVariant(product, variant));
   const firstVariant = variants[0];

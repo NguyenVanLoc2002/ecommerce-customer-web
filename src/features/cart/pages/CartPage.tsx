@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-import { routes } from '@/constants/routes';
+import { routePaths, routes } from '@/constants/routes';
 import { StaleCartBanner } from '@/features/cart/components/StaleCartBanner';
 import { useCart, useClearCart, useRemoveCartItem, useUpdateCartItemQuantity } from '@/features/cart/hooks/useCart';
 import { CartItemCard } from '@/shared/components/commerce/CartItemCard';
@@ -14,9 +14,11 @@ import { ConfirmDialog } from '@/shared/components/overlays/ConfirmDialog';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
+import { isAuthenticationError } from '@/shared/lib/authErrors';
 import { useUiStore } from '@/shared/stores/uiStore';
 
 export const CartPage = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const addToast = useUiStore((state) => state.addToast);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -33,10 +35,10 @@ export const CartPage = () => {
       <Container className="space-y-8 pb-16 pt-28 md:space-y-10 md:pb-20 md:pt-32">
         <div className="flex flex-col gap-4 border-b border-border pb-8 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Maison cart</p>
-            <h1 className="mt-3 font-display text-[3.5rem] leading-none text-text-primary md:text-[4.5rem]">Bag</h1>
-            <p className="mt-3 text-sm uppercase tracking-[0.12em] text-text-secondary">
-              {cart?.totalItems ?? 0} item{cart?.totalItems === 1 ? '' : 's'} selected
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">Your selection</p>
+            <h1 className="mt-3 text-3xl font-semibold leading-tight text-text-primary md:text-4xl">Shopping bag</h1>
+            <p aria-live="polite" className="mt-3 text-sm text-text-secondary">
+              {cart?.totalItems ?? 0} {cart?.totalItems === 1 ? 'item' : 'items'}
             </p>
           </div>
           {cart && cart.items.length > 0 ? (
@@ -55,7 +57,7 @@ export const CartPage = () => {
           <ErrorCard
             action={<Button onClick={() => void cartQuery.refetch()}>Try again</Button>}
             className="border-border bg-surface"
-            description="The current cart could not be loaded from the mock commerce state."
+            description="The current cart could not be loaded from the storefront service."
             title="Bag loading failed"
           />
         ) : null}
@@ -85,6 +87,16 @@ export const CartPage = () => {
                         { itemId: item.id, quantity },
                         {
                           onError: (error) => {
+                            if (isAuthenticationError(error)) {
+                              addToast({
+                                tone: 'info',
+                                title: 'Please sign in to continue',
+                                description: 'Sign in again to keep editing your bag.',
+                              });
+                              navigate(routePaths.loginRedirect(location.pathname + location.search));
+                              return;
+                            }
+
                             addToast({
                               tone: 'danger',
                               title: 'Quantity update failed',
@@ -121,16 +133,7 @@ export const CartPage = () => {
                     onClick={() => navigate(routes.checkoutAddress)}
                     size="lg"
                   >
-                    Proceed to payment
-                  </Button>
-                  <Button
-                    className="border-border text-text-primary hover:border-text-primary hover:bg-surface-soft"
-                    fullWidth
-                    onClick={() => navigate(routes.checkoutAddress)}
-                    size="lg"
-                    variant="secondary"
-                  >
-                    Pay with Apple Pay
+                    Continue to checkout
                   </Button>
                   <Link className={buttonStyles({ fullWidth: true, variant: 'ghost' })} to={routes.products}>
                     Continue exploring
@@ -140,8 +143,8 @@ export const CartPage = () => {
               supplementary={
                 <div className="space-y-4 text-sm text-text-secondary">
                   <div className="flex items-start justify-between gap-4">
-                    <span className="uppercase tracking-[0.12em]">Signature packaging</span>
-                    <span className="text-text-primary">Included</span>
+                    <span className="uppercase tracking-[0.12em]">Items</span>
+                    <span className="text-text-primary">{cart.totalItems}</span>
                   </div>
                   <div className="flex items-start justify-between gap-4">
                     <span className="uppercase tracking-[0.12em]">Voucher preview</span>

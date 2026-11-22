@@ -6,6 +6,12 @@ import { cn } from '@/shared/utils/cn';
 import type { CartTotals } from '@/shared/types/commerce.types';
 import { formatMoney } from '@/shared/utils/formatMoney';
 
+export type CartSummaryValueOverrides = Partial<{
+  shippingFee: ReactNode;
+  discountTotal: ReactNode;
+  grandTotal: ReactNode;
+}>;
+
 type CartSummaryProps = {
   title?: string;
   description?: string;
@@ -15,6 +21,8 @@ type CartSummaryProps = {
   supplementary?: ReactNode;
   variant?: 'cart' | 'checkout' | 'order';
   className?: string;
+  isTotalsUpdating?: boolean;
+  valueOverrides?: CartSummaryValueOverrides;
 };
 
 const summaryShellClasses: Record<NonNullable<CartSummaryProps['variant']>, string> = {
@@ -32,6 +40,8 @@ export const CartSummary = ({
   title = 'Order summary',
   totals,
   variant = 'cart',
+  isTotalsUpdating = false,
+  valueOverrides,
 }: CartSummaryProps) => {
   const [collapsed, setCollapsed] = useState(variant !== 'cart');
 
@@ -55,7 +65,7 @@ export const CartSummary = ({
     <div className={cn(collapsed && variant !== 'cart' ? 'hidden md:block' : 'block')}>
       {description ? <p className="mt-3 text-sm leading-7 text-text-secondary">{description}</p> : null}
       {supplementary ? <div className="mt-6 border-y border-border py-4">{supplementary}</div> : null}
-      <dl className="mt-6 space-y-4">
+      <dl aria-busy={isTotalsUpdating} aria-live={variant === 'cart' ? undefined : 'polite'} className="mt-6 space-y-4">
       <div className="flex items-center justify-between gap-4 text-sm">
         <dt className="uppercase tracking-[0.12em] text-text-secondary">Items</dt>
         <dd className="font-medium text-text-primary">{totals.totalItems}</dd>
@@ -66,15 +76,15 @@ export const CartSummary = ({
       </div>
       <div className="flex items-center justify-between gap-4 text-sm">
         <dt className="uppercase tracking-[0.12em] text-text-secondary">Shipping</dt>
-        <dd className="font-medium text-text-primary">{totals.shippingFee === 0 ? 'Included' : formatMoney(totals.shippingFee)}</dd>
+        <dd className="font-medium text-text-primary">{valueOverrides?.shippingFee ?? (totals.shippingFee === 0 ? 'Included' : formatMoney(totals.shippingFee))}</dd>
       </div>
       <div className="flex items-center justify-between gap-4 text-sm">
         <dt className="uppercase tracking-[0.12em] text-text-secondary">Discount</dt>
-        <dd className="font-medium text-text-primary">{totals.discountTotal === 0 ? '$0' : `-${formatMoney(totals.discountTotal)}`}</dd>
+        <dd className="font-medium text-text-primary">{valueOverrides?.discountTotal ?? (totals.discountTotal === 0 ? '$0' : `-${formatMoney(totals.discountTotal)}`)}</dd>
       </div>
       <div className="flex items-end justify-between gap-4 border-t border-border pt-5">
         <dt className="text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary">Total</dt>
-        <dd className="font-display text-[2rem] leading-none text-text-primary">{formatMoney(totals.grandTotal)}</dd>
+        <dd className="font-display text-[2rem] leading-none text-text-primary">{valueOverrides?.grandTotal ?? formatMoney(totals.grandTotal)}</dd>
       </div>
       </dl>
       {footer ? <div className="mt-7">{footer}</div> : null}

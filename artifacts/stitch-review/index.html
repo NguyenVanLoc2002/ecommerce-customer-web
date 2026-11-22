@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Fashion Shop · Bản duyệt 01</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="preview.css">
+  <script src="fixtures.js" defer></script>
+  <script src="preview.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Bỏ qua điều hướng</a>
+  <aside class="review-bar" aria-label="Điều khiển bản duyệt">
+    <span><b>Bản duyệt 01</b> · Dữ liệu minh họa</span>
+    <nav aria-label="Màn hình duyệt"><a href="#/">Trang chủ</a><a href="#/products">Sản phẩm</a><a href="#/design-system">Design system</a><a href="journeys.html">Giỏ hàng và các màn khác</a></nav>
+    <label>Trạng thái <select id="scenario"><option value="normal">Bình thường</option><option value="loading">Đang tải</option><option value="error">Lỗi tải dữ liệu</option><option value="empty">Không có dữ liệu</option><option value="stock">Lỗi thiếu hàng khi thêm</option></select></label>
+    <label class="session"><input id="signed-in" type="checkbox" checked> Đã đăng nhập (mẫu)</label>
+  </aside>
+  <header class="site-header">
+    <button class="icon mobile" id="menu-toggle" aria-label="Mở danh mục" aria-expanded="false">☰</button>
+    <a class="wordmark" href="#/">Fashion Shop</a>
+    <nav class="desktop-nav" aria-label="Danh mục"><a href="#/products?category=Nữ">Nữ</a><a href="#/products?category=Nam">Nam</a><a href="#/products?category=Phụ%20kiện">Phụ kiện</a></nav>
+    <div class="header-actions"><a class="search-link" href="#/products" aria-label="Tìm sản phẩm"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span>Tìm kiếm</span></a><button class="text-button account" id="account">Tài khoản</button><button class="text-button" id="bag">Giỏ <span id="bag-count">(0)</span></button></div>
+  </header>
+  <nav class="mobile-menu" id="mobile-menu" aria-label="Danh mục mobile" hidden><a href="#/products?category=Nữ">Nữ</a><a href="#/products?category=Nam">Nam</a><a href="#/products?category=Phụ%20kiện">Phụ kiện</a></nav>
+  <main id="main" tabindex="-1"></main>
+  <footer><a class="wordmark" href="#/">Fashion Shop</a><p>Những lựa chọn giản dị, dành cho mỗi ngày.</p><nav aria-label="Điều hướng cuối trang"><a href="#/products">Khám phá sản phẩm</a><a href="#/design-system">Xem hệ thống thiết kế</a></nav><small>Bản duyệt thiết kế · Dữ liệu và hình ảnh minh họa · Chưa kết nối API</small></footer>
+  <div id="feedback" role="status" aria-live="polite"></div>
+  <dialog id="bag-dialog" aria-labelledby="bag-title"><div class="dialog-top"><h2 id="bag-title">Giỏ hàng mẫu</h2><button class="icon" id="close-bag" aria-label="Đóng giỏ hàng">×</button></div><div id="bag-content"></div><p class="muted">Chỉ mô phỏng thêm vào giỏ. Checkout và đặt hàng thuộc đợt duyệt sau.</p></dialog>
+</body></html>

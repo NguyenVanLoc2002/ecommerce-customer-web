@@ -107,9 +107,9 @@ export const ProfilePage = () => {
       <PageSEO description="Manage your personal details, contact information, and loyalty status." noIndex path={routes.profile} title="Profile" />
       <Container className="pb-16 pt-28 md:pb-20 md:pt-32">
         <AccountShell
-          description="Refine your customer identity, contact details, and profile metadata without leaving the storefront."
-          eyebrow="Identity"
-          title="Personal Details"
+          description="Quản lý thông tin liên hệ và hồ sơ khách hàng của bạn."
+          eyebrow="Tài khoản / Hồ sơ"
+          title="Thông tin cá nhân"
         >
           {profileQuery.isLoading ? <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Loading profile..." /> : null}
           {profileQuery.isError ? (
@@ -130,7 +130,7 @@ export const ProfilePage = () => {
           {profile ? (
             <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
               <section className="space-y-8">
-                <div className="border border-border bg-surface px-5 py-6 md:px-7">
+                <div className="border border-border bg-surface p-5 md:p-7">
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Identity</p>
                   <form className="mt-8 space-y-8" onSubmit={onSubmit}>
                     <div className="grid gap-6 md:grid-cols-2">
@@ -172,7 +172,7 @@ export const ProfilePage = () => {
                   <div className="mt-6 flex items-center gap-4">
                     <Avatar name={fullName} size="xl" src={profile.avatarUrl} />
                     <div className="min-w-0 flex-1">
-                      <h2 className="font-display text-[2rem] leading-none text-text-primary">{fullName}</h2>
+                      <h2 className="text-xl font-semibold leading-snug text-text-primary">{fullName}</h2>
                       <p className="mt-3 max-w-full text-sm uppercase tracking-[0.08em] text-text-secondary [overflow-wrap:anywhere] break-words">
                         {profile.email}
                       </p>
