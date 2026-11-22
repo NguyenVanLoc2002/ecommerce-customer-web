@@ -13,10 +13,10 @@ export const SortDropdown = ({ onChange, value }: SortDropdownProps) => {
   };
 
   return (
-    <label className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary">
-      <span>Sort By</span>
+    <label className="flex items-center gap-2 text-sm text-text-secondary">
+      <span>Sắp xếp</span>
       <select
-        className="h-11 border-0 bg-transparent px-0 text-[10px] font-bold uppercase tracking-[0.18em] text-text-primary focus:outline-none focus:ring-0"
+        className="min-h-11 max-w-[180px] border border-border bg-surface px-3 text-sm font-medium text-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
         onChange={handleChange}
         value={value}
       >

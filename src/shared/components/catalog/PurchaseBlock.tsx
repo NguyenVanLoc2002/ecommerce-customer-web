@@ -50,7 +50,7 @@ export const PurchaseBlock = ({
         {currentPrice !== undefined ? (
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             {selection.status !== 'active' && selection.status !== 'inactive' ? <span className="text-sm text-text-secondary">Giá từ</span> : null}
-            <PriceDisplay align="left" compareAtPrice={compareAtPrice} price={currentPrice} size="lg" />
+            <PriceDisplay align="left" appearance="catalog" compareAtPrice={compareAtPrice} price={currentPrice} size="lg" />
           </div>
         ) : <p className="text-sm text-text-secondary">Chọn phân loại để xem giá.</p>}
         {product.subtitle ? <p className="max-w-prose pt-1 text-base leading-7 text-text-secondary">{product.subtitle}</p> : null}
@@ -69,7 +69,7 @@ export const PurchaseBlock = ({
       <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(128px,auto)_1fr] md:items-end">
         <div className="flex items-center justify-between md:block">
           <p className="mb-0 text-sm font-medium text-text-primary md:mb-3" id="product-quantity-label">Số lượng</p>
-          <QuantitySelector labelledBy="product-quantity-label" onChange={onQuantityChange} value={quantity} />
+          <QuantitySelector label="số lượng" labelledBy="product-quantity-label" onChange={onQuantityChange} value={quantity} />
         </div>
         <div ref={purchaseActionRef}>
         <Button

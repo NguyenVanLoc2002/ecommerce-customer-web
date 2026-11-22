@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
+import { isCartStockConflict } from '@/features/cart/lib/cartErrors';
 import { StaleCartBanner } from '@/features/cart/components/StaleCartBanner';
 import { useCart, useClearCart, useRemoveCartItem, useUpdateCartItemQuantity } from '@/features/cart/hooks/useCart';
 import { CartItemCard } from '@/shared/components/commerce/CartItemCard';
@@ -28,56 +29,75 @@ export const CartPage = () => {
   const clearCart = useClearCart();
 
   const cart = cartQuery.data;
+  const mutationPending = updateQuantity.isPending || removeItem.isPending || clearCart.isPending;
+
+  const handleMutationError = (error: unknown, title: string) => {
+    if (isAuthenticationError(error)) {
+      addToast({
+        tone: 'info',
+        title: 'Phiên đăng nhập đã hết hạn',
+        description: 'Đăng nhập lại để tiếp tục cập nhật giỏ hàng.',
+      });
+      navigate(routePaths.loginRedirect(location.pathname + location.search));
+      return;
+    }
+
+    addToast({
+      tone: 'danger',
+      title,
+      description: error instanceof Error ? error.message : 'Vui lòng thử lại.',
+    });
+  };
 
   return (
     <>
-      <PageSEO description="Review items, resolve stock changes, and continue into the checkout flow." noIndex path={routes.cart} title="Cart" />
-      <Container className="space-y-8 pb-16 pt-28 md:space-y-10 md:pb-20 md:pt-32">
-        <div className="flex flex-col gap-4 border-b border-border pb-8 md:flex-row md:items-end md:justify-between">
+      <PageSEO description="Xem lại sản phẩm và biến thể trong giỏ hàng trước khi tiếp tục thanh toán." noIndex path={routes.cart} title="Giỏ hàng" />
+      <Container className="space-y-3 pb-16 pt-24 md:space-y-10 md:pb-20 md:pt-32">
+        <header className="border-b-0 pb-0 md:border-b md:border-border md:pb-8">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">Your selection</p>
-            <h1 className="mt-3 text-3xl font-semibold leading-tight text-text-primary md:text-4xl">Shopping bag</h1>
-            <p aria-live="polite" className="mt-3 text-sm text-text-secondary">
-              {cart?.totalItems ?? 0} {cart?.totalItems === 1 ? 'item' : 'items'}
-            </p>
+            <nav aria-label="Breadcrumb" className="mb-2 text-sm text-text-secondary">
+              <Link className="underline decoration-border underline-offset-4 hover:text-text-primary" to={routes.home}>Trang chủ</Link>
+              <span aria-hidden="true" className="mx-2">/</span>
+              <span aria-current="page" className="text-text-primary">Giỏ hàng</span>
+            </nav>
+            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+              <h1 className="text-xl font-normal leading-tight text-text-primary md:text-3xl">Túi đồ của bạn</h1>
+              {cart || cartQuery.isLoading ? (
+                <p aria-live="polite" className="text-base text-text-secondary md:text-lg">
+                  ({cart ? `${cart.totalItems} sản phẩm` : 'Đang tải…'})
+                </p>
+              ) : null}
+            </div>
           </div>
-          {cart && cart.items.length > 0 ? (
-            <button
-              className="text-left text-[11px] font-bold uppercase tracking-[0.18em] text-text-secondary underline decoration-border underline-offset-4 transition-colors hover:text-text-primary hover:decoration-text-primary"
-              onClick={() => setConfirmOpen(true)}
-              type="button"
-            >
-              Clear bag
-            </button>
-          ) : null}
-        </div>
+        </header>
 
-        {cartQuery.isLoading ? <LoadingOverlay className="min-h-[320px] border-border bg-surface-muted/55" inline label="Loading your bag..." /> : null}
+        {cartQuery.isLoading ? <LoadingOverlay className="min-h-[240px] border-border bg-surface" inline label="Đang tải giỏ hàng…" /> : null}
         {cartQuery.isError ? (
           <ErrorCard
-            action={<Button onClick={() => void cartQuery.refetch()}>Try again</Button>}
+            action={<Button onClick={() => void cartQuery.refetch()}>Thử tải lại</Button>}
             className="border-border bg-surface"
-            description="The current cart could not be loaded from the storefront service."
-            title="Bag loading failed"
+            description="Không thể tải giỏ hàng lúc này. Vui lòng thử lại."
+            title="Tải giỏ hàng không thành công"
           />
         ) : null}
         {cart && cart.items.length === 0 ? (
           <EmptyState
             action={
               <Link className={buttonStyles({})} to={routes.products}>
-                Continue exploring
+                Tiếp tục mua sắm
               </Link>
             }
             className="border-border bg-surface px-6 py-16"
-            description="Curate your next edit from the collection and return here when you're ready to review it."
-            title="Your bag is empty."
+            description="Sản phẩm bạn thêm vào sẽ xuất hiện tại đây."
+            title="Giỏ hàng đang trống"
           />
         ) : null}
+
         {cart && cart.items.length > 0 ? (
-          <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_380px]">
-            <section className="space-y-6">
+          <div className="grid items-start gap-3 md:gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-12">
+            <section aria-label="Sản phẩm trong giỏ hàng" className="min-w-0 lg:col-start-1 lg:row-start-1">
               {cart.staleItemCount > 0 ? <StaleCartBanner count={cart.staleItemCount} /> : null}
-              <div className="space-y-6">
+              <div className="mt-0 space-y-3 md:mt-6 md:space-y-8">
                 {cart.items.map((item) => (
                   <CartItemCard
                     item={item}
@@ -86,22 +106,18 @@ export const CartPage = () => {
                       updateQuantity.mutate(
                         { itemId: item.id, quantity },
                         {
-                          onError: (error) => {
-                            if (isAuthenticationError(error)) {
-                              addToast({
-                                tone: 'info',
-                                title: 'Please sign in to continue',
-                                description: 'Sign in again to keep editing your bag.',
-                              });
-                              navigate(routePaths.loginRedirect(location.pathname + location.search));
-                              return;
-                            }
-
+                          onSuccess: () => {
                             addToast({
-                              tone: 'danger',
-                              title: 'Quantity update failed',
-                              description: error instanceof Error ? error.message : 'Try again.',
+                              tone: 'success',
+                              title: 'Đã cập nhật số lượng',
+                              description: item.productName,
                             });
+                          },
+                          onError: (error) => {
+                            if (isCartStockConflict(error)) {
+                              void cartQuery.refetch();
+                            }
+                            handleMutationError(error, 'Không thể cập nhật số lượng');
                           },
                         },
                       );
@@ -111,58 +127,65 @@ export const CartPage = () => {
                         onSuccess: () => {
                           addToast({
                             tone: 'success',
-                            title: 'Item removed',
-                            description: `${item.productName} was removed from the bag.`,
+                            title: 'Đã xóa sản phẩm',
+                            description: item.productName,
                           });
                         },
+                        onError: (error) => handleMutationError(error, 'Không thể xóa sản phẩm'),
                       })
                     }
-                    updating={updateQuantity.isPending || removeItem.isPending}
+                    updating={mutationPending}
                   />
                 ))}
               </div>
             </section>
+
             <CartSummary
-              description="Shipping and taxes are finalized during checkout review."
-              eyebrow="Summary"
+              className="lg:col-start-2 lg:row-span-2 lg:row-start-1"
+              description="Phí vận chuyển và ưu đãi (nếu có) sẽ được tính ở bước thanh toán."
               footer={
                 <div className="space-y-3">
                   <Button
-                    disabled={cart.staleItemCount > 0}
+                    disabled={cart.staleItemCount > 0 || mutationPending}
                     fullWidth
                     onClick={() => navigate(routes.checkoutAddress)}
                     size="lg"
                   >
-                    Continue to checkout
+                    Tiếp tục thanh toán
                   </Button>
-                  <Link className={buttonStyles({ fullWidth: true, variant: 'ghost' })} to={routes.products}>
-                    Continue exploring
-                  </Link>
+                  {cart.staleItemCount > 0 ? (
+                    <p className="text-sm leading-6 text-danger" role="status">Hãy cập nhật số lượng tồn kho trước khi thanh toán.</p>
+                  ) : null}
                 </div>
               }
-              supplementary={
-                <div className="space-y-4 text-sm text-text-secondary">
-                  <div className="flex items-start justify-between gap-4">
-                    <span className="uppercase tracking-[0.12em]">Items</span>
-                    <span className="text-text-primary">{cart.totalItems}</span>
-                  </div>
-                  <div className="flex items-start justify-between gap-4">
-                    <span className="uppercase tracking-[0.12em]">Voucher preview</span>
-                    <span className="text-text-primary">Apply in checkout</span>
-                  </div>
-                </div>
-              }
-              title="Order value"
+              isTotalsUpdating={mutationPending}
+              title="Tóm tắt đơn hàng"
               totals={cart}
               variant="cart"
             />
+            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5 md:mt-0 md:pt-5 lg:col-start-1 lg:row-start-2">
+              <Link className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-text-primary underline decoration-border underline-offset-4 hover:decoration-text-primary" to={routes.products}>
+                <span aria-hidden="true">←</span>
+                Tiếp tục xem sản phẩm
+              </Link>
+              <button
+                className="inline-flex min-h-11 items-center text-sm text-text-secondary underline decoration-border underline-offset-4 transition-colors hover:text-text-primary hover:decoration-text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={mutationPending}
+                onClick={() => setConfirmOpen(true)}
+                type="button"
+              >
+                Xóa toàn bộ túi đồ
+              </button>
+            </div>
           </div>
         ) : null}
       </Container>
+
       <ConfirmDialog
-        cancelLabel="Keep bag"
-        confirmLabel={clearCart.isPending ? 'Clearing...' : 'Clear bag'}
-        description="This removes every item from the current cart snapshot."
+        cancelLabel="Giữ lại"
+        confirmLabel={clearCart.isPending ? 'Đang xóa…' : 'Xóa giỏ hàng'}
+        confirmLoading={clearCart.isPending}
+        description="Thao tác này sẽ xóa tất cả sản phẩm khỏi giỏ hàng."
         onClose={() => setConfirmOpen(false)}
         onConfirm={() =>
           clearCart.mutate(undefined, {
@@ -170,14 +193,15 @@ export const CartPage = () => {
               setConfirmOpen(false);
               addToast({
                 tone: 'success',
-                title: 'Bag cleared',
-                description: 'Your bag is ready for a new edit.',
+                title: 'Đã xóa giỏ hàng',
+                description: 'Bạn có thể tiếp tục chọn sản phẩm.',
               });
             },
+            onError: (error) => handleMutationError(error, 'Không thể xóa giỏ hàng'),
           })
         }
         open={confirmOpen}
-        title="Clear this bag?"
+        title="Xóa toàn bộ giỏ hàng?"
       />
     </>
   );

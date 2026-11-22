@@ -26,7 +26,7 @@ export const StickyCartBar = ({ compareAtPrice, disabled = false, label = 'Add t
       <div className="mx-auto flex max-w-layout items-center justify-between gap-3">
         <div className="min-w-0">
           {variantSummary ? <p className="truncate text-xs text-text-secondary">{variantSummary}</p> : null}
-          {price !== undefined ? <PriceDisplay align="left" compareAtPrice={compareAtPrice} price={price} /> : <span className="text-sm text-text-secondary">Chọn phân loại</span>}
+          {price !== undefined ? <PriceDisplay align="left" appearance="catalog" compareAtPrice={compareAtPrice} price={price} /> : <span className="text-sm text-text-secondary">Chọn phân loại</span>}
         </div>
         <Button className="min-h-11 w-[48%] shrink-0 rounded px-3 text-xs sm:text-sm" disabled={disabled} loading={loading} onClick={onAddToCart}>
           {label}

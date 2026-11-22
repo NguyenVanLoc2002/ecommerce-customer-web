@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { Search, SlidersHorizontal } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
 import { useBrands, useCategories, useProductList } from '@/features/products/hooks/useProductDiscovery';
@@ -22,10 +22,14 @@ import {
   getProductListQueryFromSearchParams,
   trimProductKeyword,
 } from '@/shared/lib/productSearch';
-import type { ProductFilters } from '@/shared/types/catalog.types';
-import { buttonStyles } from '@/shared/components/ui/buttonStyles';
+import type { Brand, Category, ProductFilters } from '@/shared/types/catalog.types';
 import { Button } from '@/shared/components/ui/Button';
+import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { createCanonicalUrl } from '@/shared/utils/seo';
+
+const priceFormatter = new Intl.NumberFormat('vi-VN');
+const EMPTY_CATEGORIES: Category[] = [];
+const EMPTY_BRANDS: Brand[] = [];
 
 export const ProductListPage = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -41,16 +45,11 @@ export const ProductListPage = () => {
   useEffect(() => {
     const trimmedKeyword = trimProductKeyword(debouncedKeyword);
 
-    if (trimmedKeyword === filters.keyword) {
-      return;
-    }
+    if (trimmedKeyword === filters.keyword) return;
 
     const next = new URLSearchParams(searchParams);
-    if (trimmedKeyword) {
-      next.set('q', trimmedKeyword);
-    } else {
-      next.delete('q');
-    }
+    if (trimmedKeyword) next.set('q', trimmedKeyword);
+    else next.delete('q');
     next.delete('page');
     setSearchParams(next, { replace: true });
   }, [debouncedKeyword, filters.keyword, searchParams, setSearchParams]);
@@ -58,69 +57,68 @@ export const ProductListPage = () => {
   const categoriesQuery = useCategories();
   const brandsQuery = useBrands();
   const productsQuery = useProductList(filters);
+  const categories = categoriesQuery.data ?? EMPTY_CATEGORIES;
+  const brands = brandsQuery.data ?? EMPTY_BRANDS;
 
   const updateFilter = (key: keyof ProductFilters, value: string) => {
     const next = new URLSearchParams(searchParams);
     const nextValue = key === 'keyword' ? trimProductKeyword(value) : value;
 
-    if (nextValue) {
-      next.set(key === 'keyword' ? 'q' : key, nextValue);
-    } else {
-      next.delete(key === 'keyword' ? 'q' : key);
-    }
+    if (nextValue) next.set(key === 'keyword' ? 'q' : key, nextValue);
+    else next.delete(key === 'keyword' ? 'q' : key);
     next.delete('page');
     setSearchParams(next, { replace: true });
   };
 
   const updatePage = (nextPage: number) => {
     const next = new URLSearchParams(searchParams);
-
-    if (nextPage <= DEFAULT_PRODUCT_PAGE) {
-      next.delete('page');
-    } else {
-      next.set('page', String(nextPage));
-    }
-
+    if (nextPage <= DEFAULT_PRODUCT_PAGE) next.delete('page');
+    else next.set('page', String(nextPage));
     setSearchParams(next);
   };
 
   const clearFilters = () => {
-    setSearchParams(new URLSearchParams(), { replace: true });
+    setKeywordDraft('');
+    const next = new URLSearchParams(searchParams);
+    ['q', 'category', 'brand', 'minPrice', 'maxPrice', 'page'].forEach((key) => next.delete(key));
+    setSearchParams(next, { replace: true });
+  };
+
+  const retryFilterOptions = () => {
+    void categoriesQuery.refetch();
+    void brandsQuery.refetch();
   };
 
   const activeChips = useMemo(() => {
-    const chips = [];
-    if (filters.category) {
-      chips.push({ key: 'category', label: filters.category });
-    }
-    if (filters.brand) {
-      chips.push({ key: 'brand', label: filters.brand });
-    }
-    if (filters.minPrice) {
-      chips.push({ key: 'minPrice', label: `Min ${filters.minPrice}` });
-    }
-    if (filters.maxPrice) {
-      chips.push({ key: 'maxPrice', label: `Max ${filters.maxPrice}` });
-    }
-    if (filters.keyword) {
-      chips.push({ key: 'keyword', label: filters.keyword });
-    }
+    const chips: Array<{ key: keyof ProductFilters; label: string }> = [];
+    const selectedCategory = categories.find((category) => category.slug === filters.category);
+    const selectedBrand = brands.find((brand) => brand.slug === filters.brand);
+    if (selectedCategory) chips.push({ key: 'category', label: selectedCategory.name });
+    if (selectedBrand) chips.push({ key: 'brand', label: selectedBrand.name });
+    if (filters.minPrice) chips.push({ key: 'minPrice', label: `Từ ${priceFormatter.format(Number(filters.minPrice))} ₫` });
+    if (filters.maxPrice) chips.push({ key: 'maxPrice', label: `Đến ${priceFormatter.format(Number(filters.maxPrice))} ₫` });
+    if (filters.keyword) chips.push({ key: 'keyword', label: `Từ khóa: ${filters.keyword}` });
     return chips;
-  }, [filters]);
+  }, [brands, categories, filters]);
 
-  const onRemoveChip = (key: string) => {
-    if (key === 'keyword') {
-      setKeywordDraft('');
+  const removeChip = (key: string) => {
+    if (key === 'keyword') setKeywordDraft('');
+    if (key === 'category' || key === 'brand' || key === 'minPrice' || key === 'maxPrice' || key === 'keyword') {
+      updateFilter(key, '');
     }
-    updateFilter(key as keyof ProductFilters, '');
   };
+
+  const selectedCategory = categories.find((category) => category.slug === filters.category);
+  const pageCount = productsQuery.data?.totalPages ?? 0;
+  const firstVisiblePage = Math.max(0, Math.min(filters.page - 2, pageCount - 5));
+  const visiblePages = Array.from({ length: Math.min(5, pageCount) }, (_, index) => firstVisiblePage + index);
 
   return (
     <>
       <PageSEO
-        description="Browse womenswear, menswear, and accessories with URL-synced filters and editorial product cards."
+        description="Khám phá trang phục và phụ kiện, lọc danh mục và thương hiệu theo lựa chọn của bạn."
         path={routes.products}
-        title="Products"
+        title="Sản phẩm"
       />
       {productsQuery.data?.items.length ? (
         <JsonLd
@@ -137,128 +135,143 @@ export const ProductListPage = () => {
           }}
         />
       ) : null}
-      <PageWrapper className="pb-24">
-        <Container className="space-y-16">
-          <header className="space-y-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">Fashion Shop · Tuyển chọn</p>
-            <h1 className="text-3xl font-semibold leading-tight text-text-primary md:text-4xl">Khám phá sản phẩm</h1>
-            <p className="max-w-xl text-lg leading-8 text-text-secondary">
-              Tìm thiết kế phù hợp với phong cách của bạn. Lọc theo danh mục, thương hiệu hoặc khoảng giá.
-            </p>
+      <PageWrapper className="pb-20">
+        <Container>
+          <nav aria-label="Điều hướng breadcrumb" className="mb-8 flex items-center gap-2 text-sm text-text-secondary">
+            <Link className="hover:text-text-primary" to={routes.home}>Trang chủ</Link>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page" className="font-medium text-text-primary">Sản phẩm</span>
+          </nav>
+
+          <header className="mb-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.55fr)] lg:items-end">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">Bộ sưu tập chọn lọc</p>
+              <h1 className="max-w-[30ch] text-3xl font-semibold leading-tight text-text-primary lg:text-[2.5rem] lg:leading-[1.25]">
+                {selectedCategory?.name ?? 'Những món đồ bạn sẽ mặc mãi.'}
+              </h1>
+              {selectedCategory?.description ? <p className="mt-3 max-w-2xl text-base leading-7 text-text-secondary">{selectedCategory.description}</p> : null}
+            </div>
+            <form
+              className="flex min-h-12 items-center gap-3 border border-border bg-surface px-4 focus-within:border-brand-primary focus-within:ring-2 focus-within:ring-brand-primary/20"
+              onSubmit={(event) => {
+                event.preventDefault();
+                updateFilter('keyword', keywordDraft);
+              }}
+              role="search"
+            >
+              <Search aria-hidden="true" className="h-5 w-5 shrink-0 text-text-secondary" />
+              <label className="sr-only" htmlFor="catalog-keyword">Tìm theo tên sản phẩm</label>
+              <input
+                autoComplete="off"
+                className="min-w-0 flex-1 bg-transparent py-3 text-base text-text-primary outline-none placeholder:text-text-secondary"
+                id="catalog-keyword"
+                onChange={(event) => setKeywordDraft(event.target.value)}
+                placeholder="Tìm theo tên sản phẩm"
+                type="search"
+                value={keywordDraft}
+              />
+              <button aria-label="Tìm sản phẩm" className="text-sm font-medium text-text-primary underline underline-offset-4" type="submit">Tìm</button>
+            </form>
           </header>
 
-          <div className="flex gap-12 xl:gap-20">
-            <aside className="hidden w-64 shrink-0 lg:block">
-              <div className="sticky top-32">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4 bg-surface-muted px-4 py-4 md:px-6">
+            <ActiveFilterChips chips={activeChips} onClear={clearFilters} onRemove={removeChip} />
+            <div className="ml-auto flex items-center gap-4">
+              <Button aria-expanded={drawerOpen} className="lg:hidden" onClick={() => setDrawerOpen(true)} variant="secondary">
+                <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
+                Bộ lọc{activeChips.length ? ` (${activeChips.length})` : ''}
+              </Button>
+              <SortDropdown onChange={(value) => updateFilter('sort', value)} value={filters.sort} />
+            </div>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-[240px_minmax(0,1fr)] xl:gap-12">
+            <aside className="hidden lg:block">
+              <div className="sticky top-28 border border-border bg-surface p-5">
                 <FilterPanel
-                  brands={brandsQuery.data ?? []}
-                  categories={categoriesQuery.data ?? []}
+                  brands={brands}
+                  categories={categories}
                   filters={{ ...filters, keyword: keywordDraft }}
-                  onChange={(key, value) => {
-                    if (key === 'keyword') {
-                      setKeywordDraft(value);
-                      return;
-                    }
-                    updateFilter(key, value);
-                  }}
+                  hasError={categoriesQuery.isError || brandsQuery.isError}
+                  isLoading={categoriesQuery.isLoading || brandsQuery.isLoading}
+                  onChange={(key, value) => key === 'keyword' ? setKeywordDraft(value) : updateFilter(key, value)}
+                  onRetry={retryFilterOptions}
                   onReset={clearFilters}
                 />
               </div>
             </aside>
 
-            <section className="min-w-0 flex-1 space-y-10">
-              <div className="flex flex-wrap items-center justify-between gap-6">
-                <ActiveFilterChips chips={activeChips} onClear={clearFilters} onRemove={onRemoveChip} />
-                <div className="flex items-center gap-4">
-                  <Button className="lg:hidden" onClick={() => setDrawerOpen(true)} variant="ghost">
-                    <SlidersHorizontal className="h-4 w-4" />
-                    Refine
-                  </Button>
-                  <SortDropdown onChange={(value) => updateFilter('sort', value)} value={filters.sort} />
-                </div>
-              </div>
-
+            <section aria-label="Kết quả sản phẩm" aria-live="polite" className="min-w-0">
               {productsQuery.isLoading ? (
-                <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 xl:gap-x-8 xl:gap-y-14">
-                  {Array.from({ length: 8 }).map((_, index) => (
-                    <SkeletonCard key={index} />
-                  ))}
+                <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-5 md:grid-cols-3">
+                  {Array.from({ length: 6 }).map((_, index) => <SkeletonCard key={index} />)}
                 </div>
               ) : null}
 
               {productsQuery.isError ? (
                 <ErrorCard
-                  action={<Button onClick={() => void productsQuery.refetch()}>Retry</Button>}
-                  description="The product listing could not be assembled from the current catalog source."
-                  title="Product discovery is temporarily unavailable"
+                  action={<Button onClick={() => void productsQuery.refetch()}>Thử lại</Button>}
+                  description="Vui lòng kiểm tra kết nối rồi thử tải danh sách thêm lần nữa."
+                  title="Không thể tải danh sách sản phẩm lúc này"
                 />
               ) : null}
 
               {productsQuery.data && productsQuery.data.items.length === 0 ? (
                 <EmptyState
-                  action={
-                    <button className={buttonStyles({})} onClick={clearFilters} type="button">
-                      Reset Filters
-                    </button>
-                  }
-                  description="Try broadening the query or resetting a few filters."
-                    title="Không tìm thấy sản phẩm phù hợp"
+                  action={<button className={buttonStyles({ variant: 'secondary' })} onClick={clearFilters} type="button">Xóa bộ lọc</button>}
+                  description="Thử bỏ bớt bộ lọc hoặc chọn khoảng giá rộng hơn."
+                  title="Không tìm thấy sản phẩm phù hợp"
                 />
               ) : null}
 
               {productsQuery.data && productsQuery.data.items.length > 0 ? (
                 <div className="space-y-8">
-                  <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-text-secondary">
+                  <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-text-secondary">
                     <p>
-                      Showing {(productsQuery.data.page * productsQuery.data.size) + 1}
-                      {' - '}
-                      {Math.min((productsQuery.data.page + 1) * productsQuery.data.size, productsQuery.data.totalItems)}
-                      {' of '}
-                      {productsQuery.data.totalItems} products
+                      Hiển thị {(productsQuery.data.page * productsQuery.data.size) + 1}–{Math.min((productsQuery.data.page + 1) * productsQuery.data.size, productsQuery.data.totalItems)} trong {productsQuery.data.totalItems} sản phẩm
                     </p>
-                    {productsQuery.isFetching && !productsQuery.isLoading ? <p>Refreshing results...</p> : null}
+                    {productsQuery.isFetching && !productsQuery.isLoading ? <p role="status">Đang cập nhật kết quả…</p> : null}
                   </div>
                   <ProductGrid products={productsQuery.data.items} />
-                  {productsQuery.data.totalPages > 1 ? (
-                    <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6">
-                      <p className="text-sm text-text-secondary">
-                        Page {productsQuery.data.page + 1} of {productsQuery.data.totalPages}
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <Button
-                          disabled={!productsQuery.data.hasPrevious}
-                          onClick={() => updatePage(filters.page - 1)}
-                          variant="ghost"
-                        >
-                          Previous
-                        </Button>
-                        <Button
-                          disabled={!productsQuery.data.hasNext}
-                          onClick={() => updatePage(filters.page + 1)}
-                        >
-                          Next
-                        </Button>
+                  {pageCount > 1 ? (
+                    <nav aria-label="Phân trang sản phẩm" className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5">
+                      <p className="text-sm text-text-secondary">Trang {productsQuery.data.page + 1} / {pageCount}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button disabled={!productsQuery.data.hasPrevious} onClick={() => updatePage(filters.page - 1)} variant="ghost">Trước</Button>
+                        {visiblePages.map((page) => (
+                          <Button
+                            aria-current={page === filters.page ? 'page' : undefined}
+                            aria-label={`Trang ${page + 1}`}
+                            key={page}
+                            onClick={() => updatePage(page)}
+                            variant={page === filters.page ? 'primary' : 'ghost'}
+                          >
+                            {page + 1}
+                          </Button>
+                        ))}
+                        <Button disabled={!productsQuery.data.hasNext} onClick={() => updatePage(filters.page + 1)} variant="ghost">Tiếp</Button>
                       </div>
-                    </div>
+                    </nav>
                   ) : null}
                 </div>
               ) : null}
             </section>
           </div>
         </Container>
+
         <FilterDrawer onClose={() => setDrawerOpen(false)} open={drawerOpen}>
           <FilterPanel
-            brands={brandsQuery.data ?? []}
-            categories={categoriesQuery.data ?? []}
+            brands={brands}
+            categories={categories}
             filters={{ ...filters, keyword: keywordDraft }}
-            onChange={(key, value) => {
-              if (key === 'keyword') {
-                setKeywordDraft(value);
-                return;
-              }
-              updateFilter(key, value);
+            hasError={categoriesQuery.isError || brandsQuery.isError}
+            isLoading={categoriesQuery.isLoading || brandsQuery.isLoading}
+            onChange={(key, value) => key === 'keyword' ? setKeywordDraft(value) : updateFilter(key, value)}
+            onRetry={retryFilterOptions}
+            onReset={() => {
+              clearFilters();
+              setDrawerOpen(false);
             }}
-            onReset={clearFilters}
           />
         </FilterDrawer>
       </PageWrapper>

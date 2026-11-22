@@ -32,7 +32,7 @@ export const RelatedProducts = ({ categorySlug, products }: RelatedProductsProps
           <p className="text-xs uppercase tracking-[0.08em] text-text-secondary">{product.brandName}</p>
           <h3 className="pt-1 text-sm font-medium leading-snug text-text-primary md:text-base">{product.name}</h3>
           <div className="pt-1">
-            <PriceDisplay align="left" compareAtPrice={product.compareAtPrice} price={product.price} />
+            <PriceDisplay align="left" appearance="catalog" compareAtPrice={product.compareAtPrice} price={product.price} />
           </div>
         </div>
       </Link>

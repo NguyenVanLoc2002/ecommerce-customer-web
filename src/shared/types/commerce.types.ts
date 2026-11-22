@@ -12,6 +12,7 @@ export interface CartItem {
   productName: string;
   brandName: string;
   variantId: string;
+  variantName?: string;
   sku: string;
   color: string;
   size: string;

@@ -5,10 +5,10 @@ export const DEFAULT_PRODUCT_PAGE = 0;
 export const DEFAULT_PRODUCT_PAGE_SIZE = 20;
 
 export const PRODUCT_SORT_OPTIONS: Array<{ label: string; value: ProductSort }> = [
-  { value: SORT_OPTIONS.FEATURED, label: 'Featured' },
-  { value: SORT_OPTIONS.NEWEST, label: 'Newest' },
-  { value: SORT_OPTIONS.UPDATED, label: 'Recently Updated' },
-  { value: SORT_OPTIONS.NAME_ASC, label: 'Name: A to Z' },
+  { value: SORT_OPTIONS.FEATURED, label: 'Nổi bật' },
+  { value: SORT_OPTIONS.NEWEST, label: 'Mới nhất' },
+  { value: SORT_OPTIONS.UPDATED, label: 'Vừa cập nhật' },
+  { value: SORT_OPTIONS.NAME_ASC, label: 'Tên A–Z' },
 ];
 
 const supportedProductSorts = new Set<ProductSort>(PRODUCT_SORT_OPTIONS.map((option) => option.value));
