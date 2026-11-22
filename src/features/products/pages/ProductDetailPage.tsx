@@ -256,7 +256,7 @@ export const ProductDetailPage = () => {
         </Container>
         {product.story && product.story !== product.description ? <ProductStorySection description={product.description} images={product.media} story={product.story} /> : null}
         <Container className="space-y-14 md:space-y-20 pt-14 md:pt-20">
-          {relatedQuery.data && relatedQuery.data.length > 0 ? <RelatedProducts products={relatedQuery.data} /> : null}
+          {relatedQuery.data && relatedQuery.data.length > 0 ? <RelatedProducts categorySlug={product.categorySlugs[0]} products={relatedQuery.data} /> : null}
           <ReviewSection productId={product.id} />
         </Container>
         <StickyCartBar

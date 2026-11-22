@@ -6,8 +6,8 @@ The target is the approved PDP in Stitch project [`Fashion Shop · Duyệt thi�
 
 | Route/state | Stitch reference | Implementation behavior |
 |---|---|---|
-| `/products/:slug`, loaded desktop | **05 Product Detail Desktop**, screen `bb73d20b8d804861a019e6afcae99bd5`; design viewport 1280 × 3007 CSS px | API product gallery, purchase panel, details, editorial story, related items, review section and footer. Screenshot uses the same 1280 × 3007 viewport. |
-| `/products/:slug`, loaded mobile | **06 Product Detail Mobile**, screen `ed757c495a284a1091355b9aa22b9855`; design viewport 390 × 3037 CSS px | Responsive gallery, variants, quantity, CTA, accordions, related grid, fixed purchase bar and bottom navigation. Screenshot uses the same 390 × 3037 viewport. |
+| `/products/:slug`, loaded desktop | **05 Product Detail Desktop**, screen `bb73d20b8d804861a019e6afcae99bd5`; design viewport 1280 × 3007 CSS px | API product gallery, purchase panel, details, editorial story, up to four related items, review section and footer. Screenshot uses the same 1280 × 3007 viewport. |
+| `/products/:slug`, loaded mobile | **06 Product Detail Mobile**, screen `ed757c495a284a1091355b9aa22b9855`; design viewport 390 × 3037 CSS px | Responsive gallery, variants, quantity, CTA, accordions, two-column related grid (up to four items), fixed purchase bar and bottom navigation. Screenshot uses the same 390 × 3037 viewport. |
 | Loading | No separate loading frame; use the corresponding desktop/mobile PDP hierarchy | Existing product query skeleton. |
 | Not found | No separate frame; retain the app's existing not-found/empty pattern | Existing not-found state and products link. |
 | Product request error/retry | No separate frame; retain the app's existing error pattern | Existing query error and retry. |
@@ -26,6 +26,12 @@ The approved design source images and implementation captures are in this direct
 |---|---|
 | **Design**<br>![Approved Stitch 05 Product Detail Desktop](pdp-design-desktop.png)<br>**Implementation**<br>![Customer Web desktop PDP](pdp-desktop.png) | **Design**<br>![Approved Stitch 06 Product Detail Mobile](pdp-design-mobile.png)<br>**Implementation**<br>![Customer Web mobile PDP](pdp-mobile.png) |
 
+The following captures focus the related-products section at the same viewport sizes. The full Stitch design remains linked above; these focused captures use the existing local mock response.
+
+| Desktop · related section | Mobile · related section |
+|---|---|
+| ![Related products desktop implementation](pdp-related-desktop.png) | ![Related products mobile implementation](pdp-related-mobile.png) |
+
 ## Mapping and remaining differences
 
 - The page sequence, desktop gallery/purchase split, mobile stacked hierarchy, image ratios, thumbnail arrangement, variant selection controls, quantity/add action, accordion hierarchy, related-product grid, mobile sticky purchase bar, and bottom navigation are mapped to frames 05/06. Gallery selection, thumbnail dimming, image transition, hover treatment, and motion-reduced behavior use the existing UI and shared motion conventions.
@@ -33,6 +39,7 @@ The approved design source images and implementation captures are in this direct
 - The screenshot is the logged-out state: its primary action routes to login and its desktop/mobile header account affordance follows the existing auth behavior. Stitch's sample CTA is shown as add-to-cart, so its label/action differs for a guest under the current authentication contract.
 - Stitch's `THIẾT KẾ KINH ĐIỂN` badge, exact editorial story copy/media, size-guide content, and shipping/return promises have no verified product API fields or dedicated customer endpoint. The page uses only API-backed product fields/media for its story and omits unsupported claims/actions. Public product responses do not expose stock quantities, so no stock count is displayed.
 - The review-state strip visible in the Stitch artboard is a review-only design specimen. It is not customer content and is not rendered. Actual reviews remain integrated through the existing API state handling. The app also keeps its existing semantic breadcrumb, related-product and review sections where they are outside or differ from the artboard's illustrative specimen.
-- The approved mobile frame has four related cards while this local mock response returns two. The UI lays out the returned products in the same two-column grid and does not synthesize extra catalog items.
+- Product service requests up to four related products; desktop renders four columns and mobile renders a two-column grid, so four API results appear as 4-up / 2×2. This local mock response currently contains only two matching products, so the screenshots show two cards. No catalog items are synthesized to fill the grid. “Xem tất cả” opens the existing product listing filtered to the current product's category slug (or the unfiltered listing when the slug is absent).
+- The approved design has a size-guide affordance, but the user has deferred this feature. The current customer API does not provide size-guide measurements/content or a dedicated size-guide route, so no link or fabricated guide is added in this change.
 
 No API, route, validation, authentication, or commerce behavior was changed to match illustrative Stitch content. Live API results were not checked in this visual comparison.
