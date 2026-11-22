@@ -11,12 +11,13 @@ import { Drawer } from '@/shared/components/overlays/Drawer';
 import { useUnreadNotificationCount } from '@/shared/hooks/useNotifications';
 import { useAuthStore } from '@/shared/stores/authStore';
 import { useUiStore } from '@/shared/stores/uiStore';
+import { SORT_OPTIONS } from '@/shared/types/enums';
 import { cn } from '@/shared/utils/cn';
 
 const collectionLinks = [
-  { label: 'Womenswear', to: `${routes.products}?category=womenswear` },
-  { label: 'Menswear', to: `${routes.products}?category=menswear` },
-  { label: 'Accessories', to: `${routes.products}?category=accessories` },
+  { label: 'Sản phẩm', to: routes.products },
+  { label: 'Hàng mới', to: `${routes.products}?sort=${SORT_OPTIONS.NEWEST}` },
+  { label: 'Nổi bật', to: `${routes.products}?sort=${SORT_OPTIONS.FEATURED}` },
 ];
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -50,7 +51,7 @@ export const Header = () => {
   const productSurface = pathname.startsWith(routes.products);
   const cartTarget = user ? routes.cart : routePaths.loginRedirect(routes.cart);
   const navLinks = collectionLinks;
-  const logo = pathname === routes.home ? 'AURA EDITORIAL' : 'AURA';
+  const logo = 'FASHION SHOP';
   const accountNavItems = getAccountNavItems({ includeNotifications: false });
   const cartBadgeText = cartItemCount > 99 ? '99+' : String(cartItemCount);
   const cartAriaLabel = cartItemCount > 0 ? `Shopping bag, ${cartItemCount} item${cartItemCount === 1 ? '' : 's'}` : 'Shopping bag';
@@ -191,7 +192,7 @@ export const Header = () => {
                   role="menu"
                 >
                   <div className="border-b border-border px-3 pb-3 pt-2">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-outline">Account</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-outline">Tài khoản</p>
                     <p className="mt-2 text-sm text-text-secondary [overflow-wrap:anywhere]">{user.email}</p>
                   </div>
                   <div className="py-2">
@@ -227,7 +228,7 @@ export const Header = () => {
                       role="menuitem"
                       type="button"
                     >
-                      {logout.isPending ? 'Signing out...' : 'Sign out'}
+                      {logout.isPending ? 'Đang đăng xuất...' : 'Đăng xuất'}
                     </button>
                   </div>
                 </div>
@@ -235,7 +236,7 @@ export const Header = () => {
             </div>
           ) : (
             <Link
-              aria-label="Go to login"
+              aria-label="Đăng nhập"
               className={cn(headerIconButtonClassName, 'w-10')}
               to={routes.login}
             >
@@ -244,7 +245,7 @@ export const Header = () => {
           )}
         </div>
       </div>
-      <Drawer onClose={closeMobileNav} open={isMobileNavOpen} side="left" title="Aura Editorial">
+      <Drawer onClose={closeMobileNav} open={isMobileNavOpen} side="left" title="Fashion Shop">
         <nav>
           <ul className="space-y-4">
             {navLinks.map((link) => (
@@ -265,7 +266,7 @@ export const Header = () => {
                   onClick={closeMobileNav}
                   to={routes.notifications}
                 >
-                  Notifications
+                  Thông báo
                 </NavLink>
               </li>
             ) : null}
@@ -275,7 +276,7 @@ export const Header = () => {
                 onClick={closeMobileNav}
                 to={user ? routes.profile : routes.login}
               >
-                {user ? 'Profile' : 'Member Access'}
+                {user ? 'Tài khoản' : 'Đăng nhập'}
               </NavLink>
             </li>
             {user ? (
@@ -289,7 +290,7 @@ export const Header = () => {
                   }}
                   type="button"
                 >
-                  {logout.isPending ? 'Signing out...' : 'Sign out'}
+                  {logout.isPending ? 'Đang đăng xuất...' : 'Đăng xuất'}
                 </button>
               </li>
             ) : null}

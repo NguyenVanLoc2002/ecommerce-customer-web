@@ -86,33 +86,33 @@ export const OrderDetailPage = () => {
                   <OrderStatusBadge status={order.status} />
                   <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">{formatDate(order.createdAt)}</span>
                 </div>
-                <h1 className="mt-4 font-display text-[3.5rem] leading-none text-text-primary md:text-[4.5rem]">Order #{order.code}</h1>
+                <h1 className="mt-4 break-words text-2xl font-semibold leading-tight text-text-primary md:text-3xl">Đơn hàng #{order.code}</h1>
                 <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">
-                  Updated {formatDate(order.updatedAt)}. Review the shipment rhythm, print the invoice, or track the fulfillment handoff.
+                  Cập nhật {formatDate(order.updatedAt)}. Xem trạng thái vận chuyển, hóa đơn hoặc chi tiết đơn hàng.
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
                 {shipmentActionVisible ? (
                   <Link className={buttonStyles({ variant: 'ghost' })} to={routePaths.orderTracking(order.id)}>
-                    Track shipment
+                    Theo dõi vận chuyển
                   </Link>
                 ) : null}
                 {reviewActionVisible ? (
                   <Link className={buttonStyles({ variant: 'ghost' })} to={routePaths.orderReview(order.id)}>
-                    Write review
+                    Viết đánh giá
                   </Link>
                 ) : null}
                 {paymentActionVisible ? (
                   <Link className={buttonStyles({ variant: 'ghost' })} to={routePaths.paymentResult(order.id)}>
-                    Pay now
+                    Thanh toán
                   </Link>
                 ) : null}
                 <Link className={buttonStyles({ variant: 'ghost' })} to={routePaths.orderInvoice(order.id)}>
-                  Print invoice
+                  Hóa đơn
                 </Link>
                 {order.canCancel ? (
                   <Button onClick={() => setConfirmOpen(true)} variant="secondary">
-                    Cancel order
+                    Hủy đơn hàng
                   </Button>
                 ) : null}
               </div>

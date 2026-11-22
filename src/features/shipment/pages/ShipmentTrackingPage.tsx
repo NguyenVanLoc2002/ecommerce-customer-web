@@ -65,10 +65,10 @@ export const ShipmentTrackingPage = () => {
         <div className="border-b border-border pb-8">
           <Link className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary" to={routePaths.orderDetail(orderId)}>
             <ArrowLeft className="h-4 w-4" />
-            Back to order
+            Quay lại đơn hàng
           </Link>
-          <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Shipment tracking</p>
-          <h1 className="mt-3 font-display text-[3.5rem] leading-none text-text-primary md:text-[4.5rem]">Track Shipment</h1>
+          <p className="mt-6 text-sm font-medium text-brand-primary">Đơn hàng / Vận chuyển</p>
+          <h1 className="mt-3 text-2xl font-semibold leading-tight text-text-primary md:text-3xl">Theo dõi vận chuyển</h1>
         </div>
 
         {shipmentQuery.isLoading ? <SkeletonTimeline /> : null}

@@ -12,18 +12,18 @@ const getLoginContextCopy = (redirect: string | null) => {
   }
 
   if (redirect.startsWith(routes.cart) || redirect.startsWith('/products/')) {
-    return 'Sign in to add items to your bag and continue shopping.';
+    return 'Đăng nhập để thêm sản phẩm vào giỏ và tiếp tục mua sắm.';
   }
 
   if (redirect.startsWith('/checkout')) {
-    return 'Sign in to continue checkout and keep your order moving.';
+    return 'Đăng nhập để tiếp tục thanh toán.';
   }
 
   if (redirect.startsWith('/orders')) {
-    return 'Sign in to view your order details and account activity.';
+    return 'Đăng nhập để xem đơn hàng và hoạt động tài khoản.';
   }
 
-  return 'Sign in to continue where you left off.';
+  return 'Đăng nhập để tiếp tục.';
 };
 
 export const LoginPage = () => {
@@ -42,14 +42,14 @@ export const LoginPage = () => {
     <>
       <PageSEO description="Sign in to manage orders, addresses, and future checkout flow." noIndex path={routes.login} title="Login" />
       <div className="text-center">
-        <Link className="inline-block font-display text-[2rem] uppercase tracking-[0.3em] text-text-primary" to={routes.home}>
-          AURA
+        <Link className="inline-block text-xl font-semibold tracking-[0.14em] text-text-primary" to={routes.home}>
+          FASHION SHOP
         </Link>
-        <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.22em] text-outline">Member Access</p>
+        <p className="mt-4 text-sm text-text-secondary">Đăng nhập tài khoản của bạn</p>
       </div>
       {loginContextCopy ? (
         <div className="mt-8 border border-border bg-surface-muted px-5 py-4 text-left">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Sign-in required</p>
+          <p className="text-sm font-semibold text-text-primary">Cần đăng nhập</p>
           <p className="mt-2 text-sm leading-7 text-text-secondary">{loginContextCopy}</p>
         </div>
       ) : null}
@@ -61,16 +61,16 @@ export const LoginPage = () => {
           className="inline-block border-b border-text-primary pb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary transition-opacity hover:opacity-70"
           to={routes.forgotPassword}
         >
-          Forgot password?
+          Quên mật khẩu?
         </Link>
       </div>
       <div className="mt-10 border-t border-black/5 pt-8 text-center">
-        <p className="text-base text-text-secondary">Don&apos;t have an account?</p>
+        <p className="text-base text-text-secondary">Bạn chưa có tài khoản?</p>
         <Link
           className="mt-4 inline-block border-b border-text-primary pb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary transition-opacity hover:opacity-70"
           to={withRedirectParam(routePaths.registerRedirect(), redirect)}
         >
-          Create Account
+          Tạo tài khoản
         </Link>
       </div>
     </>

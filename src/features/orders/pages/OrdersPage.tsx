@@ -48,16 +48,17 @@ export const OrdersPage = () => {
       <PageSEO description="Browse customer order history, current statuses, and cancel eligible orders." noIndex path={routes.orders} title="Orders" />
       <Container className="pb-16 pt-28 md:pb-20 md:pt-32">
         <AccountShell
-          description="Review every placed order, narrow the archive by fulfillment stage, and open the full transaction detail when needed."
-          eyebrow="Order archive"
-          title="Order History"
+          description="Theo dõi trạng thái và xem lại chi tiết các đơn hàng của bạn."
+          eyebrow="Tài khoản / Đơn hàng"
+          title="Lịch sử đơn hàng"
         >
-          <div className="sticky top-20 z-20 border-y border-border bg-canvas/95 py-4 backdrop-blur">
-            <div className="flex flex-wrap gap-3">
+          <div aria-label="Lọc đơn hàng theo trạng thái" className="sticky top-20 z-20 -mx-4 overflow-x-auto border-y border-border bg-canvas/95 px-4 py-3 md:mx-0 md:px-0">
+            <div className="flex min-w-max gap-2" role="group">
               {filterOptions.map((option) => (
                 <button
-                  className={`border px-4 py-3 text-[11px] font-bold uppercase tracking-[0.18em] transition-colors ${
-                    activeFilter === option.key ? 'border-text-primary bg-text-primary text-surface' : 'border-border bg-surface text-text-primary hover:border-text-primary'
+                  aria-pressed={activeFilter === option.key}
+                  className={`min-h-11 border px-4 py-2 text-sm font-medium transition-colors ${
+                    activeFilter === option.key ? 'border-brand-primary bg-brand-primary text-surface' : 'border-border bg-surface text-text-secondary hover:border-brand-primary hover:text-text-primary'
                   }`}
                   key={option.key}
                   onClick={() => setActiveFilter(option.key)}
@@ -84,7 +85,7 @@ export const OrdersPage = () => {
               title="No orders match this view."
             />
           ) : null}
-          <div className="space-y-5">
+          <div className="mt-6 space-y-4">
             {filteredOrders.map((order) => (
               <OrderCard key={order.id} order={order} />
             ))}

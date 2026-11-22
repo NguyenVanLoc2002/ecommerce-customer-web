@@ -21,9 +21,9 @@ export const MyReviewsPage = () => {
       <PageSEO description="Review your submitted customer feedback and moderation status." noIndex path={routes.profileReviews} title="My Reviews" />
       <Container className="pb-16 pt-28 md:pb-20 md:pt-32">
         <AccountShell
-          description="Review the status of your submitted product feedback and revisit any completed order notes."
-          eyebrow="Customer archive"
-          title="My Reviews"
+          description="Xem lại nhận xét và trạng thái duyệt cho sản phẩm bạn đã mua."
+          eyebrow="Tài khoản / Đánh giá"
+          title="Đánh giá của tôi"
         >
           {myReviewsQuery.isLoading ? (
             <div className="space-y-6">
@@ -68,7 +68,7 @@ export const MyReviewsPage = () => {
           {!myReviewsQuery.isLoading && !myReviewsQuery.isError && reviews.length > 0 ? (
             <div className="space-y-6">
               {reviews.map((review) => (
-                <article className="grid gap-6 border border-border bg-surface px-5 py-5 md:grid-cols-[112px_minmax(0,1fr)_auto] md:px-6" key={review.id}>
+                <article className="grid gap-5 border border-border bg-surface p-5 md:grid-cols-[112px_minmax(0,1fr)_auto] md:gap-6 md:p-6" key={review.id}>
                   <Link className="overflow-hidden bg-surface-soft" to={review.productSlug ? routePaths.productDetail(review.productSlug) : routes.products}>
                     <img
                       alt={review.productImage.alt}
@@ -81,7 +81,7 @@ export const MyReviewsPage = () => {
                   </Link>
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">{review.brandName}</p>
-                    <Link className="mt-3 inline-block font-display text-[1.7rem] leading-none text-text-primary" to={review.productSlug ? routePaths.productDetail(review.productSlug) : routes.products}>
+                    <Link className="mt-3 inline-block text-lg font-semibold leading-snug text-text-primary" to={review.productSlug ? routePaths.productDetail(review.productSlug) : routes.products}>
                       {review.productName}
                     </Link>
                     <div className="mt-4 flex flex-wrap items-center gap-3">

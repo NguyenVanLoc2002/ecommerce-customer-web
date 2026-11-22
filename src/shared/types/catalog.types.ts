@@ -32,6 +32,8 @@ export interface ProductImage {
   alt: string;
   width: number;
   height: number;
+  variantId?: string | null;
+  mediaType?: string | null;
 }
 
 export interface ProductSummary {
@@ -60,7 +62,10 @@ export interface ProductVariant {
   sku: string;
   color: string;
   size: string;
-  stock: number;
+  /** Present only in local mock commerce fixtures; public catalog responses omit inventory. */
+  stock?: number;
+  status?: string | null;
+  attributes: Array<{ attributeId: string; attributeName: string; attributeCode: string; valueId: string; value: string; displayValue: string }>;
   price: number;
   compareAtPrice?: number;
   swatch: string;
@@ -126,6 +131,9 @@ export interface ProductListItemResponse {
 }
 
 export interface ProductAttributeResponse {
+  attributeId?: string | null;
+  attributeName?: string | null;
+  valueId?: string | null;
   name?: string | null;
   value?: string | null;
   attributeCode?: string | null;

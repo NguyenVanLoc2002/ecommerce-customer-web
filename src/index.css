@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,18 +6,18 @@
 
 :root {
   color-scheme: light;
-  --color-brand-primary: 0 0 0;
-  --color-brand-hover: 28 27 28;
-  --color-brand-active: 55 54 58;
-  --color-brand-subtle: 241 237 237;
-  --color-canvas: 253 248 248;
+  --color-brand-primary: 75 86 61;
+  --color-brand-hover: 62 72 51;
+  --color-brand-active: 49 58 40;
+  --color-brand-subtle: 238 239 232;
+  --color-canvas: 250 249 246;
   --color-surface: 255 255 255;
-  --color-surface-muted: 247 243 242;
-  --color-surface-soft: 241 237 237;
-  --color-border: 200 197 203;
-  --color-outline: 120 118 123;
-  --color-text-primary: 28 27 28;
-  --color-text-secondary: 71 70 75;
+  --color-surface-muted: 246 245 241;
+  --color-surface-soft: 238 237 231;
+  --color-border: 228 224 216;
+  --color-outline: 98 94 87;
+  --color-text-primary: 34 34 31;
+  --color-text-secondary: 98 94 87;
   --color-sale-accent: 225 29 72;
   --color-promo-dark: 15 15 16;
   --color-success: 22 163 74;
@@ -46,6 +46,10 @@
   body {
     @apply bg-canvas font-sans text-text-primary antialiased;
     margin: 0;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: 'Be Vietnam Pro', sans-serif;
   }
 
   * {

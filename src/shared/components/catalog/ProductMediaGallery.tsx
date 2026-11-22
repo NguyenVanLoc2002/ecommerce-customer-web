@@ -6,18 +6,21 @@ import { cn } from '@/shared/utils/cn';
 type ProductMediaGalleryProps = {
   media: ProductImage[];
   productName: string;
+  selectedVariantId?: string;
 };
 
-export const ProductMediaGallery = ({ media, productName }: ProductMediaGalleryProps) => {
-  const [selectedId, setSelectedId] = useState(media[0]?.id ?? '');
-  const selectedImage = media.find((image) => image.id === selectedId) ?? media[0];
+export const ProductMediaGallery = ({ media, productName, selectedVariantId }: ProductMediaGalleryProps) => {
+  const visibleMedia = media.filter((image) => !image.variantId || image.variantId === selectedVariantId);
+  const [selectedId, setSelectedId] = useState('');
+  const selectedImage = visibleMedia.find((image) => image.id === selectedId) ?? visibleMedia[0] ?? media[0];
 
   return (
     <div className="flex flex-col gap-6 md:flex-row">
       <div className="order-2 flex gap-4 md:order-1 md:w-20 md:flex-col">
-        {media.map((image) => (
+        {visibleMedia.map((image) => (
           <button
             aria-label={`Show ${productName} view`}
+            aria-pressed={selectedImage?.id === image.id}
             className={cn(
               'overflow-hidden bg-surface-soft transition-opacity duration-300',
               selectedId === image.id ? 'opacity-100' : 'opacity-50 hover:opacity-100',

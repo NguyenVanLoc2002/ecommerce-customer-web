@@ -75,7 +75,6 @@ export const CheckoutReviewPage = () => {
   const setSelectedCarrierId = useCheckoutStore((state) => state.setSelectedCarrierId);
   const shippingAddressId = useCheckoutStore((state) => state.shippingAddressId);
   const voucherCode = useCheckoutStore((state) => state.voucherCode);
-  const voucherPreview = useCheckoutStore((state) => state.voucherPreview);
   const [pendingAttempt, setPendingAttempt] = useState<PendingCheckoutAttempt | null>(null);
   const [submitStage, setSubmitStage] = useState<'placing-order' | null>(null);
 
@@ -298,7 +297,9 @@ export const CheckoutReviewPage = () => {
                     </button>
                   </div>
                   <p className="mt-4 text-sm leading-7 text-text-secondary">
-                    {voucherPreview ? voucherPreview.message : 'You can continue without a voucher and still place the order.'}
+                    {orderPreview?.voucherCode
+                      ? `The server preview includes a ${formatMoney(orderPreview.discountAmount)} discount. Order placement will revalidate the code and recalculate the final total.`
+                      : 'No voucher is included in the current order preview.'}
                   </p>
                 </section>
 

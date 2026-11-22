@@ -38,9 +38,9 @@ export const AddressBookPage = () => {
               Add new address
             </Link>
           }
-          description="Store frequently used delivery destinations, set a default handoff point, and keep checkout routing friction-free."
-          eyebrow="Curated space"
-          title="Address Book"
+          description="Quản lý địa chỉ nhận hàng và chọn địa chỉ mặc định cho lần thanh toán tiếp theo."
+          eyebrow="Tài khoản / Địa chỉ"
+          title="Sổ địa chỉ"
         >
           {addressesQuery.isLoading ? (
             <div className="grid gap-4 md:grid-cols-2">
@@ -80,7 +80,7 @@ export const AddressBookPage = () => {
           {!addressesQuery.isLoading && !addressesQuery.isError && addresses.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
               {addresses.map((address) => (
-                <article className="border border-border bg-surface px-5 py-6 transition-colors hover:border-text-primary md:px-6" key={address.id}>
+                <article className="border border-border bg-surface p-5 transition-colors hover:border-brand-primary md:p-6" key={address.id}>
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex flex-wrap gap-2">
                       {address.isDefault ? <Badge>Default</Badge> : null}
@@ -100,7 +100,7 @@ export const AddressBookPage = () => {
 
                   <div className="mt-6">
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">{address.label || 'Saved location'}</p>
-                    <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{address.receiverName}</h2>
+                    <h2 className="mt-3 text-xl font-semibold leading-snug text-text-primary">{address.receiverName}</h2>
                     <p className="mt-4 text-sm leading-7 text-text-secondary">{formatAddress(address)}</p>
                   </div>
 
@@ -112,7 +112,7 @@ export const AddressBookPage = () => {
               ))}
 
               <Link
-                className="flex min-h-[260px] flex-col items-center justify-center gap-4 border border-dashed border-border bg-surface-muted px-6 py-8 text-center transition-colors hover:border-text-primary hover:bg-surface"
+                className="flex min-h-[220px] flex-col items-center justify-center gap-4 border border-dashed border-border bg-surface-muted px-6 py-8 text-center transition-colors hover:border-brand-primary hover:bg-surface"
                 to={routePaths.profileAddressNew()}
               >
                 <span className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-border bg-surface">
@@ -120,7 +120,7 @@ export const AddressBookPage = () => {
                 </span>
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Register new</p>
-                  <h2 className="mt-3 font-display text-[1.9rem] leading-none text-text-primary">Delivery location</h2>
+                  <h2 className="mt-3 text-lg font-semibold leading-snug text-text-primary">Thêm địa chỉ nhận hàng</h2>
                 </div>
               </Link>
             </div>

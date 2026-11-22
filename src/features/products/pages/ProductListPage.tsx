@@ -140,9 +140,10 @@ export const ProductListPage = () => {
       <PageWrapper className="pb-24">
         <Container className="space-y-16">
           <header className="space-y-5">
-            <h1 className="font-display text-[3.5rem] leading-[0.95] text-text-primary md:text-[4.5rem]">The Permanent Collection</h1>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">Fashion Shop · Tuyển chọn</p>
+            <h1 className="text-3xl font-semibold leading-tight text-text-primary md:text-4xl">Khám phá sản phẩm</h1>
             <p className="max-w-xl text-lg leading-8 text-text-secondary">
-              Architectural silhouettes and noble materials. A curation of essential pieces designed to endure beyond the seasonal cycle.
+              Tìm thiết kế phù hợp với phong cách của bạn. Lọc theo danh mục, thương hiệu hoặc khoảng giá.
             </p>
           </header>
 
@@ -178,7 +179,7 @@ export const ProductListPage = () => {
               </div>
 
               {productsQuery.isLoading ? (
-                <div className="grid grid-cols-2 gap-x-6 gap-y-12 md:grid-cols-3 lg:grid-cols-4 xl:gap-x-8 xl:gap-y-16">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 xl:gap-x-8 xl:gap-y-14">
                   {Array.from({ length: 8 }).map((_, index) => (
                     <SkeletonCard key={index} />
                   ))}
@@ -201,7 +202,7 @@ export const ProductListPage = () => {
                     </button>
                   }
                   description="Try broadening the query or resetting a few filters."
-                  title="No products match this edit"
+                    title="Không tìm thấy sản phẩm phù hợp"
                 />
               ) : null}
 
