@@ -241,10 +241,10 @@ export const ProductDetailPage = () => {
           <BreadcrumbNav items={[{ label: 'Trang chủ', href: routes.home }, { label: 'Sản phẩm', href: routes.products }, { label: product.name }]} />
 
           <div className="grid gap-8 lg:grid-cols-12 lg:gap-12">
-            <div className="lg:col-span-7">
+            <div className="lg:col-span-8">
               <ProductMediaGallery media={product.media} productName={product.name} selectedVariantId={selectedVariant?.id} />
             </div>
-            <div className="lg:col-span-5">
+            <div className="lg:col-span-4">
               <PurchaseBlock
                 addError={addError}
                 addToCartDisabled={addToCartDisabled}

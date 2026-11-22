@@ -52,7 +52,7 @@ export const PurchaseBlock = ({
             <PriceDisplay align="left" compareAtPrice={compareAtPrice} price={currentPrice} size="lg" />
           </div>
         ) : <p className="text-sm text-text-secondary">Chọn phân loại để xem giá.</p>}
-        {product.subtitle ? <p className="max-w-prose text-base leading-7 text-text-secondary">{product.subtitle}</p> : null}
+        {product.subtitle ? <p className="max-w-prose text-base leading-7 text-text-secondary md:hidden">{product.subtitle}</p> : null}
       </header>
 
       <VariantSelector
@@ -77,7 +77,7 @@ export const PurchaseBlock = ({
       </div>
 
       {product.description ? (
-        <details className="border-y border-border py-4">
+        <details className="border-y border-border py-4" open>
           <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary">
             Chi tiết sản phẩm
           </summary>

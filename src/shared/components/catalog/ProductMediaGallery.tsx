@@ -42,7 +42,7 @@ export const ProductMediaGallery = ({ media, productName, selectedVariantId }: P
           >
             <img
               alt={image.alt}
-              className="aspect-[3/4] h-full w-full object-cover"
+              className="aspect-[4/5] h-full w-full object-cover"
               height={image.height}
               loading="lazy"
               src={image.src}
@@ -55,7 +55,7 @@ export const ProductMediaGallery = ({ media, productName, selectedVariantId }: P
         <div className="relative overflow-hidden bg-surface-soft">
           <img
             alt={selectedImage.alt}
-            className="aspect-[3/4] h-full w-full object-cover"
+            className="aspect-[4/5] h-full w-full object-cover"
             height={selectedImage.height}
             loading="eager"
             src={selectedImage.src}
