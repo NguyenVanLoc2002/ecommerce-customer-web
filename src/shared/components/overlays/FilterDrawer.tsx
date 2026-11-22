@@ -9,7 +9,7 @@ type FilterDrawerProps = {
 };
 
 export const FilterDrawer = ({ children, onClose, open }: FilterDrawerProps) => (
-  <Drawer onClose={onClose} open={open} title="Refine the collection">
+  <Drawer onClose={onClose} open={open} title="Bộ lọc sản phẩm">
     {children}
   </Drawer>
 );

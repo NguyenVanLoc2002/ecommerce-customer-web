@@ -7,10 +7,9 @@ import type { ProductSummary } from '@/shared/types/catalog.types';
 
 type ProductCardProps = {
   product: ProductSummary;
-  showBadge?: boolean;
 };
 
-export const ProductCard = ({ product, showBadge = true }: ProductCardProps) => {
+export const ProductCard = ({ product }: ProductCardProps) => {
   const reducedMotion = useReducedMotion();
 
   return (
@@ -28,20 +27,15 @@ export const ProductCard = ({ product, showBadge = true }: ProductCardProps) => 
             src={product.primaryImage.src}
             width={product.primaryImage.width}
           />
-          {showBadge && product.badges[0] ? (
-            <span className="absolute left-4 top-4 border border-border bg-surface px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-text-primary">
-              {product.badges[0]}
-            </span>
-          ) : null}
         </div>
-        <div className="flex items-start justify-between gap-4 px-1 pt-5">
-          <div>
-            <h3 className="text-base font-semibold leading-snug text-text-primary md:text-lg">
+        <div className="flex min-w-0 flex-col items-start gap-3 px-1 pt-4">
+          <div className="min-w-0 w-full">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-text-secondary">{product.brandName}</p>
+            <h3 className="text-sm font-medium leading-snug text-text-primary sm:text-base">
               {product.name}
             </h3>
-            <p className="mt-2 max-w-[18rem] text-sm leading-6 text-text-secondary">{product.subtitle}</p>
           </div>
-          <PriceDisplay compareAtPrice={product.compareAtPrice} price={product.price} />
+          <PriceDisplay align="left" price={product.price} />
         </div>
       </Link>
     </motion.article>
