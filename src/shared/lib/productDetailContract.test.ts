@@ -150,6 +150,34 @@ test('mapProductDetailResponse uses salePrice first and compareAtPrice only when
   assert.equal(mapped.variants[1].compareAtPrice, undefined);
 });
 
+test('mapProductDetailResponse excludes video media and provides a shared placeholder when only variant media exists', () => {
+  const productWithVariantMediaOnly: ProductDetailResponse = {
+    ...baseProductDetailResponse,
+    media: [
+      {
+        id: 'variant-image',
+        mediaUrl: 'https://cdn.example.com/variant-only.jpg',
+        mediaType: 'IMAGE',
+        variantId: 'variant-1',
+        primary: true,
+      },
+      {
+        id: 'product-video',
+        mediaUrl: 'https://cdn.example.com/product-video.mp4',
+        mediaType: 'VIDEO',
+        variantId: null,
+        primary: false,
+      },
+    ],
+  };
+
+  const mapped = mapProductDetailResponse(productWithVariantMediaOnly);
+
+  assert.equal(mapped.media.some((image) => image.src.endsWith('.mp4')), false);
+  assert.equal(mapped.media.some((image) => !image.variantId), true);
+  assert.equal(mapped.primaryImage.src.startsWith('data:image/svg+xml'), true);
+});
+
 test('mapProductDetailResponse reads COLOR and SIZE from attributeCode or name', () => {
   const mapped = mapProductDetailResponse(baseProductDetailResponse);
 

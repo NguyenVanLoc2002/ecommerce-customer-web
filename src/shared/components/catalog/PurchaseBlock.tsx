@@ -2,71 +2,88 @@ import { PriceDisplay } from '@/shared/components/catalog/PriceDisplay';
 import { QuantitySelector } from '@/shared/components/catalog/QuantitySelector';
 import { VariantSelector } from '@/shared/components/catalog/VariantSelector';
 import { Button } from '@/shared/components/ui/Button';
+import type { VariantAttributeGroup, VariantSelectionResult } from '@/features/products/utils/variantSelection';
 import type { ProductDetail } from '@/shared/types/catalog.types';
+import type { RefObject } from 'react';
 
 type PurchaseBlockProps = {
-  addToCartDisabled?: boolean;
-  addToCartLabel?: string;
-  selectedVariantId: string;
-  currentPrice: number;
+  addToCartDisabled: boolean;
+  addToCartLabel: string;
+  addToCartLoading: boolean;
+  selection: VariantSelectionResult;
+  groups: VariantAttributeGroup[];
+  selectedValues: Record<string, string>;
+  currentPrice?: number;
   compareAtPrice?: number;
   product: ProductDetail;
   quantity: number;
-  onSelectVariant: (variantId: string) => void;
+  addError?: string;
+  purchaseActionRef: RefObject<HTMLDivElement>;
+  onSelectValue: (attributeId: string, valueId: string) => void;
   onAddToCart: () => void;
   onQuantityChange: (value: number) => void;
 };
 
 export const PurchaseBlock = ({
-  addToCartDisabled = false,
-  addToCartLabel = 'Add to Bag',
+  addError,
+  addToCartDisabled,
+  addToCartLabel,
+  addToCartLoading,
   compareAtPrice,
   currentPrice,
+  groups,
   onAddToCart,
   onQuantityChange,
-  onSelectVariant,
+  onSelectValue,
   product,
+  purchaseActionRef,
   quantity,
-  selectedVariantId,
+  selectedValues,
+  selection,
 }: PurchaseBlockProps) => (
-  <aside className="lg:sticky lg:top-32">
-    <div className="space-y-8 border-t border-border pt-6 lg:sticky lg:top-28 lg:border-0 lg:pt-0">
+  <aside className="lg:sticky lg:top-28">
+    <div className="space-y-7 border-t border-border pt-6 lg:border-0 lg:pt-0">
       <header className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">{product.brandName}</p>
-        <h1 className="text-3xl font-semibold leading-tight text-text-primary md:text-4xl">{product.name}</h1>
-        <p className="max-w-md text-base leading-7 text-text-secondary">{product.subtitle}</p>
-        <PriceDisplay compareAtPrice={compareAtPrice} price={currentPrice} size="lg" />
+        <p className="text-[13px] font-semibold uppercase tracking-[0.12em] text-brand-primary">{product.brandName}</p>
+        <h1 className="break-words text-[28px] font-medium leading-9 text-text-primary md:text-[40px] md:leading-[50px]">{product.name}</h1>
+        {currentPrice !== undefined ? (
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            {selection.status !== 'active' && selection.status !== 'inactive' ? <span className="text-sm text-text-secondary">Giá từ</span> : null}
+            <PriceDisplay align="left" compareAtPrice={compareAtPrice} price={currentPrice} size="lg" />
+          </div>
+        ) : <p className="text-sm text-text-secondary">Chọn phân loại để xem giá.</p>}
+        {product.subtitle ? <p className="max-w-prose text-base leading-7 text-text-secondary">{product.subtitle}</p> : null}
       </header>
 
       <VariantSelector
+        groups={groups}
+        onSelectValue={onSelectValue}
+        selectedValues={selectedValues}
+        selection={selection}
         variants={product.variants}
-        onSelectVariant={onSelectVariant}
-        selectedVariantId={selectedVariantId}
       />
 
-      <div className="space-y-4">
-        <p className="text-sm font-semibold text-text-primary">Số lượng</p>
-        <QuantitySelector onChange={onQuantityChange} value={quantity} />
+      <div className="space-y-3">
+        <p className="text-sm font-semibold text-text-primary" id="product-quantity-label">Số lượng</p>
+        <QuantitySelector labelledBy="product-quantity-label" onChange={onQuantityChange} value={quantity} />
       </div>
 
-      <div className="space-y-4 pt-2">
-        <Button disabled={addToCartDisabled} fullWidth onClick={onAddToCart} size="lg">
+      {addError ? <p aria-live="assertive" className="border border-danger/30 bg-danger/5 p-3 text-sm leading-6 text-danger" role="alert">{addError}</p> : null}
+
+      <div ref={purchaseActionRef}>
+        <Button disabled={addToCartDisabled} fullWidth loading={addToCartLoading} onClick={onAddToCart} size="lg">
           {addToCartLabel}
         </Button>
-        <Button className="justify-between" fullWidth size="lg" variant="ghost">
-          Chi tiết sản phẩm
-        </Button>
       </div>
 
-      <div className="border-t border-border pt-8">
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-sm font-semibold text-text-primary">Mô tả sản phẩm</span>
-          <span className="text-lg text-text-secondary">+</span>
-        </div>
-        <div className="mt-4 space-y-4 text-sm leading-7 text-text-secondary">
-          <p>{product.description}</p>
-        </div>
-      </div>
+      {product.description ? (
+        <details className="border-y border-border py-4">
+          <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary">
+            Chi tiết sản phẩm
+          </summary>
+          <p className="max-w-prose pb-2 pt-3 text-sm leading-7 text-text-secondary">{product.description}</p>
+        </details>
+      ) : null}
     </div>
   </aside>
 );

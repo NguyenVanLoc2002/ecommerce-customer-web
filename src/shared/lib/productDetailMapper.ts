@@ -75,7 +75,9 @@ const getVariantMediaImage = (product: ProductDetailResponse, variantId: string 
 };
 
 const getPrimaryMediaImage = (product: ProductDetailResponse, alt: string) => {
-  const media = [...(product.media ?? [])].filter((item) => item.mediaType?.toUpperCase() === 'IMAGE' && Boolean(item.mediaUrl)).sort(sortMedia);
+  const media = [...(product.media ?? [])]
+    .filter((item) => !item.variantId && item.mediaType?.toUpperCase() === 'IMAGE' && Boolean(item.mediaUrl))
+    .sort(sortMedia);
   const primaryMedia = media[0];
 
   return createProductImage(primaryMedia?.mediaUrl, alt);
@@ -113,11 +115,14 @@ const toProductVariant = (product: ProductDetailResponse, variant: ProductVarian
 };
 
 export const mapProductDetailResponse = (product: ProductDetailResponse): ProductDetail => {
-  const media = [...(product.media ?? [])]
+  const productImages = [...(product.media ?? [])]
     .filter((item) => item.mediaType?.toUpperCase() === 'IMAGE' && Boolean(item.mediaUrl))
     .sort(sortMedia)
     .map((item, index) => createProductImage(item.mediaUrl, `${product.name} image ${index + 1}`, item));
-  const primaryImage = media[0] ?? createProductImage(null, `${product.name} product image`);
+  const sharedPrimaryImage = getPrimaryMediaImage(product, `${product.name} product image`);
+  const hasSharedImage = productImages.some((image) => !image.variantId);
+  const primaryImage = hasSharedImage ? sharedPrimaryImage : createProductImage(null, `${product.name} product image`);
+  const media = hasSharedImage ? productImages : [...productImages, primaryImage];
   const variants = (product.variants ?? []).map((variant) => toProductVariant(product, variant));
   const firstVariant = variants[0];
   const categories = product.categories ?? [];
