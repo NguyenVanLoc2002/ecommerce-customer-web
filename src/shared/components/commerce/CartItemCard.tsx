@@ -35,7 +35,7 @@ export const CartItemCard = ({ item, onQuantityChange, onRemove, updating = fals
 
       <div className="flex min-w-0 flex-col justify-between gap-3 sm:gap-4 md:gap-5">
         <div className="flex min-w-0 items-start justify-between gap-3 sm:gap-5">
-          <div className="min-w-0">
+          <div className="min-w-0 pr-11 sm:pr-0">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-text-secondary sm:text-sm">{item.brandName}</p>
             <h2 className="mt-2 break-words text-base font-medium leading-snug text-text-primary sm:text-lg md:text-xl">
               <Link className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary" to={routePaths.productDetail(item.productSlug)}>
@@ -58,7 +58,7 @@ export const CartItemCard = ({ item, onQuantityChange, onRemove, updating = fals
             </div>
             <button
               aria-label={`Xóa ${item.productName} khỏi giỏ hàng`}
-              className="absolute right-3 top-3 inline-flex h-11 w-11 shrink-0 items-center justify-center text-text-secondary transition-colors hover:text-danger disabled:cursor-not-allowed disabled:opacity-50 sm:hidden"
+              className="absolute right-3 top-3 z-10 inline-flex h-11 w-11 shrink-0 items-center justify-center bg-surface text-text-secondary transition-colors hover:text-danger focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:cursor-not-allowed disabled:opacity-50 sm:hidden"
               disabled={updating}
               onClick={onRemove}
               type="button"

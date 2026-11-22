@@ -206,6 +206,17 @@ test.describe('Customer cart', () => {
     await expect(page.getByText('FASHION SHOP').first()).toBeInViewport();
     await expect(page.locator('nav.fixed')).toBeInViewport();
     await page.screenshot({ path: 'artifacts/issue-34/cart-mobile.png' });
+
+    const removeButton = page.getByRole('button', { name: 'Xóa Áo blazer dáng suông khỏi giỏ hàng' });
+    const removeBounds = await removeButton.boundingBox();
+    const productNameBounds = await page.getByRole('heading', { name: 'Áo blazer dáng suông' }).boundingBox();
+    if (!removeBounds || !productNameBounds) throw new Error('Mobile cart item controls must be visible.');
+    expect(removeBounds.width).toBeGreaterThanOrEqual(44);
+    expect(removeBounds.height).toBeGreaterThanOrEqual(44);
+    expect(productNameBounds.x + productNameBounds.width).toBeLessThanOrEqual(removeBounds.x);
+    await removeButton.click();
+    await expect(page.getByRole('heading', { name: 'Áo blazer dáng suông' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Tóm tắt đơn hàng' })).toBeVisible();
   });
 
   test('refreshes cart stock after a server conflict', async ({ page }) => {
