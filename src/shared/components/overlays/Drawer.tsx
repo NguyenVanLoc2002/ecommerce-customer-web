@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
@@ -14,6 +14,7 @@ type DrawerProps = {
 
 export const Drawer = ({ children, onClose, open, side = 'right', title }: DrawerProps) => {
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const titleId = useId();
   const reducedMotion = useReducedMotion();
 
   useEffect(() => {
@@ -22,6 +23,7 @@ export const Drawer = ({ children, onClose, open, side = 'right', title }: Drawe
     }
 
     const previousOverflow = document.body.style.overflow;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     document.body.style.overflow = 'hidden';
     panelRef.current?.focus();
 
@@ -62,6 +64,7 @@ export const Drawer = ({ children, onClose, open, side = 'right', title }: Drawe
 
     return () => {
       document.body.style.overflow = previousOverflow;
+      previouslyFocused?.focus();
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [onClose, open]);
@@ -91,15 +94,16 @@ export const Drawer = ({ children, onClose, open, side = 'right', title }: Drawe
             onClick={(event) => event.stopPropagation()}
             ref={panelRef}
             aria-modal="true"
+            aria-labelledby={titleId}
             role="dialog"
             tabIndex={-1}
             transition={reducedMotion ? { duration: 0 } : { duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="flex items-center justify-between border-b border-border pb-5">
-              <h2 className="font-display text-[1.75rem] leading-none">{title}</h2>
+              <h2 className="text-xl font-semibold leading-tight" id={titleId}>{title}</h2>
               <button
                 aria-label="Close drawer"
-                className="rounded-full p-2 transition-colors hover:bg-surface-soft hover:text-brand-primary"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-button transition-colors hover:bg-surface-soft hover:text-brand-primary"
                 onClick={onClose}
                 type="button"
               >

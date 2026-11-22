@@ -12,13 +12,13 @@ export const LoadingOverlay = ({ className, inline = false, label = 'Loading...'
   <div
     aria-live="polite"
     className={cn(
-      'flex items-center justify-center gap-3 border border-border bg-white/92 text-text-primary backdrop-blur',
+      'flex items-center justify-center gap-3 border border-border bg-canvas text-text-primary',
       inline ? 'min-h-[240px]' : 'fixed inset-0 z-[80]',
       className,
     )}
     role="status"
   >
-    <LoaderCircle className="h-5 w-5 animate-spin text-brand-primary" />
+    <LoaderCircle aria-hidden="true" className="h-5 w-5 animate-spin text-brand-primary motion-reduce:animate-none" />
     <span className="text-sm font-medium">{label}</span>
   </div>
 );

@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, useId } from 'react';
 import type { SelectHTMLAttributes } from 'react';
 
 import { cn } from '@/shared/utils/cn';
@@ -14,27 +14,32 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   { children, className, error, hint, id, label, variant = 'default', ...props },
   ref,
 ) {
+  const generatedId = useId();
+  const fieldId = id ?? generatedId;
+  const messageId = `${fieldId}-message`;
+  const describedBy = [props['aria-describedby'], error || hint ? messageId : undefined].filter(Boolean).join(' ') || undefined;
+
   return (
-    <label className="flex w-full flex-col gap-2 text-text-primary" htmlFor={id}>
-      <span className={cn(variant === 'transaction' ? 'text-[11px] font-bold uppercase tracking-[0.18em] text-outline' : 'text-sm font-medium')}>
+    <label className="flex w-full flex-col gap-2 text-sm text-text-primary" htmlFor={fieldId}>
+      <span className={cn(variant === 'transaction' ? 'text-xs font-medium text-text-secondary' : 'text-sm font-medium')}>
         {label}
       </span>
       <select
+        {...props}
+        aria-describedby={describedBy}
+        aria-invalid={error ? true : props['aria-invalid']}
         className={cn(
-          variant === 'transaction'
-            ? 'h-12 border border-border bg-surface px-4 text-sm uppercase tracking-[0.08em] text-text-primary transition-colors duration-300 focus:border-text-primary focus:outline-none focus:ring-0'
-            : 'h-12 rounded-input border border-border bg-surface px-4 text-text-primary transition-colors duration-200 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/15',
-          error && (variant === 'transaction' ? 'border-danger focus:border-danger' : 'border-danger focus:border-danger focus:ring-danger/15'),
+          'min-h-11 rounded-input border bg-surface px-3 text-base text-text-primary transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-text-secondary disabled:opacity-70',
+          error ? 'border-danger' : 'border-border hover:border-outline',
           className,
         )}
-        id={id}
+        id={fieldId}
         ref={ref}
-        {...props}
       >
         {children}
       </select>
-      {error ? <span className="text-sm text-danger">{error}</span> : null}
-      {!error && hint ? <span className="text-sm text-text-secondary">{hint}</span> : null}
+      {error ? <span className="text-sm text-danger" id={messageId} role="alert">{error}</span> : null}
+      {!error && hint ? <span className="text-sm text-text-secondary" id={messageId}>{hint}</span> : null}
     </label>
   );
 });
