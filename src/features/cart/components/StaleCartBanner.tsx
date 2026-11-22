@@ -5,14 +5,13 @@ type StaleCartBannerProps = {
 };
 
 export const StaleCartBanner = ({ count }: StaleCartBannerProps) => (
-  <div className="border border-danger/20 bg-surface px-5 py-4">
+  <div className="border border-danger/30 bg-danger/5 px-5 py-4" role="alert">
     <div className="flex items-start gap-3">
-      <AlertTriangle className="mt-0.5 h-5 w-5 text-danger" />
+      <AlertTriangle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-danger" />
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-danger">Adjustment required</p>
-        <h2 className="mt-2 font-display text-[1.75rem] leading-none text-text-primary">A bag item needs review.</h2>
-        <p className="mt-1 text-sm text-text-secondary">
-          {count} item{count === 1 ? '' : 's'} now exceed current stock. Reduce the quantity before checkout can continue.
+        <p className="text-sm font-semibold text-danger">Cần cập nhật số lượng</p>
+        <p className="mt-1 text-sm leading-6 text-text-primary">
+          {count} sản phẩm trong giỏ vượt quá số lượng hiện có. Hãy giảm số lượng để tiếp tục thanh toán.
         </p>
       </div>
     </div>

@@ -6,6 +6,7 @@ type ConfirmDialogProps = {
   title: string;
   description: string;
   confirmLabel?: string;
+  confirmLoading?: boolean;
   cancelLabel?: string;
   onConfirm: () => void;
   onClose: () => void;
@@ -14,6 +15,7 @@ type ConfirmDialogProps = {
 export const ConfirmDialog = ({
   cancelLabel = 'Cancel',
   confirmLabel = 'Confirm',
+  confirmLoading = false,
   description,
   onClose,
   onConfirm,
@@ -28,10 +30,10 @@ export const ConfirmDialog = ({
   >
     <p className="max-w-lg text-sm leading-7 text-text-secondary">{description}</p>
     <div className="mt-8 flex flex-wrap justify-end gap-3">
-      <Button className="min-w-[152px]" onClick={onClose} variant="ghost">
+      <Button className="min-w-[152px]" disabled={confirmLoading} onClick={onClose} variant="ghost">
         {cancelLabel}
       </Button>
-      <Button className="min-w-[152px]" onClick={onConfirm}>
+      <Button className="min-w-[152px]" loading={confirmLoading} onClick={onConfirm}>
         {confirmLabel}
       </Button>
     </div>
