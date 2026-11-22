@@ -16,7 +16,7 @@ export const HeroSection = () => {
   });
 
   return (
-    <section className="mx-auto grid max-w-[1440px] grid-cols-1 border-b border-border bg-canvas lg:min-h-[660px] lg:grid-cols-12">
+    <section className="grid w-full grid-cols-1 border-b border-border bg-canvas lg:min-h-[660px] lg:grid-cols-12">
       <div className="relative order-1 min-h-[420px] overflow-hidden bg-surface-muted sm:min-h-[560px] lg:col-span-8 lg:min-h-[660px]">
         <img
           alt="Người mẫu diện trang phục tông màu trung tính"

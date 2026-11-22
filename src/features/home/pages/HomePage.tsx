@@ -45,11 +45,11 @@ export const HomePage = () => {
       <PageWrapper className="space-y-0 pb-0 !pt-0">
         <HeroSection />
         {categoriesQuery.isLoading ? (
-          <Container className="grid grid-cols-1 gap-5 py-12 sm:grid-cols-3 md:py-section">
+          <Container className="grid grid-cols-1 gap-5 py-8 sm:grid-cols-3 md:py-12">
             {Array.from({ length: 3 }).map((_, index) => <SkeletonCard key={index} />)}
           </Container>
         ) : categoriesQuery.isError ? (
-          <Container className="py-12 md:py-section">
+          <Container className="py-8 md:py-12">
             <ErrorCard
               action={<button className="underline underline-offset-4" onClick={() => void categoriesQuery.refetch()} type="button">Thử lại</button>}
               description="Danh mục chưa tải được. Vui lòng thử lại."
@@ -61,11 +61,11 @@ export const HomePage = () => {
         )}
 
         {featuredQuery.isLoading ? (
-          <Container className="grid grid-cols-2 gap-4 py-12 md:grid-cols-4 md:py-section">
+          <Container className="grid grid-cols-2 gap-4 py-8 md:grid-cols-4 md:py-12">
             {Array.from({ length: 4 }).map((_, index) => <SkeletonCard key={index} />)}
           </Container>
         ) : featuredQuery.isError ? (
-          <Container className="py-12 md:py-section">
+          <Container className="py-8 md:py-12">
             <ErrorCard
               action={<button className="underline underline-offset-4" onClick={() => void featuredQuery.refetch()} type="button">Thử lại</button>}
               description="Các sản phẩm nổi bật chưa tải được. Vui lòng thử lại."
@@ -75,7 +75,7 @@ export const HomePage = () => {
         ) : featuredQuery.data?.length ? (
           <FeaturedProducts products={featuredQuery.data} />
         ) : (
-          <Container className="py-12 md:py-section">
+          <Container className="py-8 md:py-12">
             <EmptyState description="Sản phẩm nổi bật sẽ xuất hiện tại đây khi catalog có dữ liệu." title="Chưa có sản phẩm nổi bật" />
           </Container>
         )}
@@ -83,11 +83,11 @@ export const HomePage = () => {
         <CreativePerspectiveSection />
 
         {arrivalsQuery.isLoading ? (
-          <Container className="grid grid-cols-2 gap-4 py-12 md:grid-cols-4 md:py-section">
+          <Container className="grid grid-cols-2 gap-4 py-8 md:grid-cols-4 md:py-12">
             {Array.from({ length: 4 }).map((_, index) => <SkeletonCard key={index} />)}
           </Container>
         ) : arrivalsQuery.isError ? (
-          <Container className="py-12 md:py-section">
+          <Container className="py-8 md:py-12">
             <ErrorCard
               action={<button className="underline underline-offset-4" onClick={() => void arrivalsQuery.refetch()} type="button">Thử lại</button>}
               description="Sản phẩm mới chưa tải được. Vui lòng thử lại."
@@ -97,7 +97,7 @@ export const HomePage = () => {
         ) : arrivalsQuery.data?.length ? (
           <NewArrivals products={arrivalsQuery.data} />
         ) : (
-          <Container className="py-12 md:py-section">
+          <Container className="py-8 md:py-12">
             <EmptyState description="Sản phẩm mới sẽ xuất hiện tại đây khi catalog có dữ liệu." title="Chưa có sản phẩm mới" />
           </Container>
         )}

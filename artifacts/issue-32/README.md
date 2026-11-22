@@ -19,11 +19,17 @@ The primary Home reference is the original approved Stitch implementation preser
 
 ## Wide desktop comparison
 
-The approved HTML sets the hero to `max-width: 1440px; margin-inline: auto` and applies a subtle bottom border. At a 1600 CSS px viewport, both the reference and implementation therefore have an 80px centered margin and the same divider. These are part of the design, not additional layout added by the implementation. At 1280 CSS px the hero fills the viewport. The 1600px pair below uses the same viewport for both images.
+The review screenshot and follow-up clarify that the Home hero image should reach both viewport edges, while the header and content sections keep their own gutters. The older original HTML has a `max-width: 1440px` wrapper; the implementation follows the user's approved screenshot direction at wide desktop sizes. The fine divider below the hero remains, as it appears in the design reference.
 
-| Approved Stitch at 1600 × 900 CSS px | Implementation at 1600 × 900 CSS px |
+Home section vertical padding is now 32px on mobile and 48px on desktop, including query loading, error, and empty states. The featured section no longer combines its own heading margin with a second parent `space-y` gap. The visual smoke checks full-bleed bounds at 390, 1280, and 1600 CSS px, and checks the section padding at mobile and desktop widths.
+
+| Design reference | Implementation |
 | --- | --- |
-| ![Stitch Home wide desktop](screenshots/design-home-desktop-wide.jpg) | ![Home implementation wide desktop](screenshots/home-desktop-wide.jpg) |
+| Home Desktop, 1280 CSS px<br>![Home design desktop](screenshots/design-home-desktop.jpg) | ![Home implementation desktop](screenshots/home-desktop.jpg) |
+| Home Mobile, 390 CSS px<br>![Home design mobile](screenshots/design-home-mobile.jpg) | ![Home implementation mobile](screenshots/home-mobile.jpg) |
+| User-requested full-bleed check, 1600 CSS px | ![Home implementation wide desktop](screenshots/home-desktop-wide.jpg) |
+
+Remaining divergence: the older original Home HTML has a 1440px hero maximum, while the supplied design review and this follow-up require the image to reach the viewport edges at wide sizes. The 1600px implementation capture follows the user's clarification; all other Home sections retain their independent max-width and padding.
 
 ## Visual alignment and remaining differences
 

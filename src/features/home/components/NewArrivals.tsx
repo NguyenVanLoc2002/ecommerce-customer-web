@@ -10,7 +10,7 @@ type NewArrivalsProps = {
 };
 
 export const NewArrivals = ({ products }: NewArrivalsProps) => (
-  <section className="py-12 md:py-section">
+  <section className="py-8 md:py-12">
     <Container className="space-y-8">
       <SectionHeader
         action={<Link className="border-b border-text-primary pb-1 text-sm font-medium text-text-primary" to={routes.products}>Xem tất cả</Link>}
