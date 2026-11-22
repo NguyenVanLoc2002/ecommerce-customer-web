@@ -5,6 +5,7 @@ import { ChevronDown } from 'lucide-react';
 import { cn } from '@/shared/utils/cn';
 import type { CartTotals } from '@/shared/types/commerce.types';
 import { formatMoney } from '@/shared/utils/formatMoney';
+import { formatVnd } from '@/shared/utils/formatVnd';
 
 export type CartSummaryValueOverrides = Partial<{
   shippingFee: ReactNode;
@@ -26,7 +27,7 @@ type CartSummaryProps = {
 };
 
 const summaryShellClasses: Record<NonNullable<CartSummaryProps['variant']>, string> = {
-  cart: 'border border-border bg-surface-muted/55 px-5 py-6 md:px-6',
+  cart: 'border border-border bg-surface px-5 py-6 md:px-6',
   checkout: 'border border-border bg-surface px-5 py-6 md:px-6',
   order: 'border border-border bg-surface px-5 py-6 md:px-6',
 };
@@ -44,6 +45,8 @@ export const CartSummary = ({
   valueOverrides,
 }: CartSummaryProps) => {
   const [collapsed, setCollapsed] = useState(variant !== 'cart');
+  const isCartSummary = variant === 'cart';
+  const formatTotal = isCartSummary ? formatVnd : formatMoney;
 
   return (
     <aside className={cn('lg:sticky lg:top-28', summaryShellClasses[variant], className)}>
@@ -67,24 +70,30 @@ export const CartSummary = ({
       {supplementary ? <div className="mt-6 border-y border-border py-4">{supplementary}</div> : null}
       <dl aria-busy={isTotalsUpdating} aria-live={variant === 'cart' ? undefined : 'polite'} className="mt-6 space-y-4">
       <div className="flex items-center justify-between gap-4 text-sm">
-        <dt className="uppercase tracking-[0.12em] text-text-secondary">Items</dt>
+        <dt className="text-text-secondary">{isCartSummary ? 'Sản phẩm' : 'Items'}</dt>
         <dd className="font-medium text-text-primary">{totals.totalItems}</dd>
       </div>
-      <div className="flex items-center justify-between gap-4 text-sm">
-        <dt className="uppercase tracking-[0.12em] text-text-secondary">Subtotal</dt>
-        <dd className="font-medium text-text-primary">{formatMoney(totals.subTotal)}</dd>
-      </div>
-      <div className="flex items-center justify-between gap-4 text-sm">
-        <dt className="uppercase tracking-[0.12em] text-text-secondary">Shipping</dt>
-        <dd className="font-medium text-text-primary">{valueOverrides?.shippingFee ?? (totals.shippingFee === 0 ? 'Included' : formatMoney(totals.shippingFee))}</dd>
-      </div>
-      <div className="flex items-center justify-between gap-4 text-sm">
-        <dt className="uppercase tracking-[0.12em] text-text-secondary">Discount</dt>
-        <dd className="font-medium text-text-primary">{valueOverrides?.discountTotal ?? (totals.discountTotal === 0 ? '$0' : `-${formatMoney(totals.discountTotal)}`)}</dd>
-      </div>
+      {!isCartSummary ? (
+        <div className="flex items-center justify-between gap-4 text-sm">
+          <dt className="text-text-secondary">Subtotal</dt>
+          <dd className="font-medium text-text-primary">{formatTotal(totals.subTotal)}</dd>
+        </div>
+      ) : null}
+      {!isCartSummary ? (
+        <>
+          <div className="flex items-center justify-between gap-4 text-sm">
+            <dt className="uppercase tracking-[0.12em] text-text-secondary">Shipping</dt>
+            <dd className="font-medium text-text-primary">{valueOverrides?.shippingFee ?? (totals.shippingFee === 0 ? 'Included' : formatMoney(totals.shippingFee))}</dd>
+          </div>
+          <div className="flex items-center justify-between gap-4 text-sm">
+            <dt className="uppercase tracking-[0.12em] text-text-secondary">Discount</dt>
+            <dd className="font-medium text-text-primary">{valueOverrides?.discountTotal ?? (totals.discountTotal === 0 ? '$0' : `-${formatMoney(totals.discountTotal)}`)}</dd>
+          </div>
+        </>
+      ) : null}
       <div className="flex items-end justify-between gap-4 border-t border-border pt-5">
-        <dt className="text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary">Total</dt>
-        <dd className="font-display text-[2rem] leading-none text-text-primary">{valueOverrides?.grandTotal ?? formatMoney(totals.grandTotal)}</dd>
+        <dt className="text-sm font-semibold text-text-primary">{isCartSummary ? 'Tạm tính' : 'Total'}</dt>
+        <dd className="font-semibold leading-none text-text-primary">{valueOverrides?.grandTotal ?? formatTotal(isCartSummary ? totals.subTotal : totals.grandTotal)}</dd>
       </div>
       </dl>
       {footer ? <div className="mt-7">{footer}</div> : null}
