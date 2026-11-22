@@ -19,10 +19,10 @@ export const RegisterPage = () => {
 
   return (
     <>
-      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">Refining the Essence of Form</p>
-      <h1 className="mt-4 font-display text-[2.5rem] leading-[1.05] text-text-primary md:text-[3rem]">Create Account</h1>
+      <p className="text-sm font-medium text-brand-primary">Fashion Shop</p>
+      <h1 className="mt-4 text-2xl font-semibold leading-tight text-text-primary md:text-3xl">Tạo tài khoản</h1>
       <p className="mt-4 max-w-md text-base leading-7 text-text-secondary">
-        Build your profile for order history, address book access, and future editorial commerce releases.
+        Tạo hồ sơ để quản lý đơn hàng, địa chỉ và thông tin mua sắm của bạn.
       </p>
       <div className="mt-10">
         <RegisterForm onSuccess={() => navigate(resolveAuthRedirect(redirect), { replace: true })} />
@@ -32,7 +32,7 @@ export const RegisterPage = () => {
           className="inline-block border-b border-text-primary pb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary transition-opacity hover:opacity-70"
           to={withRedirectParam(routePaths.loginRedirect(), redirect)}
         >
-          Login to Profile
+          Đăng nhập
         </Link>
       </div>
       <PageSEO description="Create a customer account for faster checkout and order tracking." noIndex path={routes.register} title="Register" />

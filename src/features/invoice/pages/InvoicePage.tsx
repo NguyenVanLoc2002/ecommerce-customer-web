@@ -109,8 +109,8 @@ export const InvoicePage = () => {
             <section className="space-y-6 border border-border bg-surface px-6 py-8 print:border-0 print:px-0 print:py-0 md:px-8 md:py-10">
               <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">AURA Editorial</p>
-                  <h2 className="mt-3 font-display text-[2.4rem] leading-none text-text-primary">Invoice {invoice.invoiceCode}</h2>
+                  <p className="text-sm font-medium text-brand-primary">Fashion Shop</p>
+                  <h2 className="mt-3 break-words text-xl font-semibold leading-tight text-text-primary">Hóa đơn {invoice.invoiceCode}</h2>
                   <p className="mt-4 max-w-xl text-sm leading-7 text-text-secondary">
                     Issued {formatDate(invoice.issuedAt)} for order {invoice.orderCode}. Use this document for customer billing and fulfillment reference.
                   </p>

@@ -489,7 +489,7 @@ const hydrateCartItem = (item: StoredCartItem, storage: CommerceStorage): CartIt
   }
 
   const reservedQuantity = getReservedQuantity(storage, item.variantId);
-  const stockAvailable = Math.max(lookup.variant.stock - reservedQuantity, 0);
+  const stockAvailable = Math.max((lookup.variant.stock ?? 0) - reservedQuantity, 0);
 
   return {
     id: item.id,

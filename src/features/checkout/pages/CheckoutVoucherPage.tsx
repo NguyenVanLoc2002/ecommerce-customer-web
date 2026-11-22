@@ -1,9 +1,9 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
-import { routePaths, routes } from '@/constants/routes';
+import { routes } from '@/constants/routes';
 import { useCart } from '@/features/cart/hooks/useCart';
 import { VoucherForm } from '@/features/checkout/components/VoucherForm';
-import { useCheckoutPricing, useValidateVoucher } from '@/features/checkout/hooks/useCheckout';
+import { useCheckoutPricing } from '@/features/checkout/hooks/useCheckout';
 import { useCheckoutStore } from '@/features/checkout/stores/checkoutStore';
 import { CartSummary } from '@/shared/components/commerce/CartSummary';
 import { CheckoutStepper } from '@/shared/components/commerce/CheckoutStepper';
@@ -13,7 +13,6 @@ import { Container } from '@/shared/components/layout/Container';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
-import { isAuthenticationError } from '@/shared/lib/authErrors';
 import { useUiStore } from '@/shared/stores/uiStore';
 import { formatMoney } from '@/shared/utils/formatMoney';
 
@@ -24,7 +23,6 @@ const sampleOffers = [
 ] as const;
 
 export const CheckoutVoucherPage = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const addToast = useUiStore((state) => state.addToast);
   const cartQuery = useCart();
@@ -39,13 +37,10 @@ export const CheckoutVoucherPage = () => {
     selectedCarrier,
     summaryTotals,
   } = useCheckoutPricing(cart);
-  const validateVoucher = useValidateVoucher();
   const voucherCode = useCheckoutStore((state) => state.voucherCode);
-  const voucherPreview = useCheckoutStore((state) => state.voucherPreview);
   const orderPreview = useCheckoutStore((state) => state.orderPreview);
   const selectedCarrierId = useCheckoutStore((state) => state.selectedCarrierId);
   const setVoucherCode = useCheckoutStore((state) => state.setVoucherCode);
-  const setVoucherPreview = useCheckoutStore((state) => state.setVoucherPreview);
 
   if (cart?.items.length === 0) {
     return (
@@ -77,52 +72,19 @@ export const CheckoutVoucherPage = () => {
             <div className="space-y-4 border-b border-border pb-8">
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Step 03</p>
               <h1 className="font-display text-[3.25rem] leading-none text-text-primary md:text-[4.25rem]">Apply Rewards &amp; Vouchers</h1>
-              <p className="max-w-2xl text-sm leading-7 text-text-secondary">
-                Preview voucher eligibility here. The current contract stores the voucher code but does not reduce the order total yet.
+                <p className="max-w-2xl text-sm leading-7 text-text-secondary">
+                Enter a code to refresh the cart-aware order preview. The server calculates the discount, shipping, and total.
               </p>
             </div>
             {cartQuery.isLoading ? <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Loading voucher preview..." /> : null}
             <div className="border border-border bg-surface px-5 py-5 md:px-6">
               <VoucherForm
                 defaultValue={voucherCode}
-                loading={validateVoucher.isPending}
-                onSubmit={(nextVoucherCode) =>
-                  validateVoucher.mutate(
-                    {
-                      code: nextVoucherCode,
-                      orderAmount: cart?.subTotal ?? 0,
-                    },
-                    {
-                    onSuccess: (preview) => {
-                      setVoucherCode(preview.code);
-                      setVoucherPreview(preview);
-                      addToast({
-                        tone: preview.isApplicable ? 'success' : 'info',
-                        title: preview.isApplicable ? 'Voucher preview ready' : 'Voucher preview not applicable',
-                        description: preview.message,
-                      });
-                    },
-                    onError: (error) => {
-                      setVoucherPreview(null);
-                      if (isAuthenticationError(error)) {
-                        addToast({
-                          tone: 'info',
-                          title: 'Please sign in to continue',
-                          description: 'Sign in again to keep your checkout progress.',
-                        });
-                        navigate(routePaths.loginRedirect(location.pathname + location.search));
-                        return;
-                      }
-
-                      addToast({
-                        tone: 'danger',
-                        title: 'Voucher lookup failed',
-                        description: error instanceof Error ? error.message : 'Try another code.',
-                      });
-                    },
-                    },
-                  )
-                }
+                loading={previewLoading}
+                onSubmit={(nextVoucherCode) => {
+                  setVoucherCode(nextVoucherCode.trim().toUpperCase());
+                  addToast({ tone: 'info', title: 'Checking your code', description: 'The order preview is being recalculated from your cart.' });
+                }}
               />
             </div>
             <div className="grid gap-4 md:grid-cols-3">
@@ -134,21 +96,21 @@ export const CheckoutVoucherPage = () => {
                 </div>
               ))}
             </div>
-            {voucherPreview ? (
-              <div className={`border px-5 py-5 md:px-6 ${voucherPreview.isApplicable ? 'border-text-primary bg-surface' : 'border-danger/20 bg-surface'}`}>
+            {voucherCode && orderPreview?.voucherCode ? (
+              <div aria-live="polite" className="border border-brand-primary bg-surface px-5 py-5 md:px-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Applied preview</p>
-                    <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{voucherPreview.code}</h2>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Server order preview</p>
+                    <h2 className="mt-3 text-2xl font-semibold leading-tight text-text-primary">{orderPreview.voucherCode}</h2>
                   </div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary">
-                    {voucherPreview.discountAmount > 0 ? `Preview -${formatMoney(voucherPreview.discountAmount)}` : 'Preview $0'}
+                  <p className="text-sm font-semibold text-text-primary">
+                    Discount {formatMoney(orderPreview.discountAmount)}
                   </p>
                 </div>
-                <p className="mt-4 text-sm leading-7 text-text-secondary">{voucherPreview.message}</p>
-                <p className="mt-2 text-sm leading-7 text-text-secondary">{voucherPreview.description}</p>
+                <p className="mt-4 text-sm leading-7 text-text-secondary">Your cart discount and order total below come from the current server preview.</p>
               </div>
             ) : null}
+            {previewError ? <p aria-live="polite" className="border border-danger/30 bg-danger/5 p-4 text-sm text-danger" role="alert">{previewError}</p> : null}
           </section>
           {cart && summaryTotals ? (
             <CartSummary
@@ -161,7 +123,9 @@ export const CheckoutVoucherPage = () => {
                       ? 'Select a carrier before the backend can confirm shipping totals for this voucher preview.'
                       : previewError
                         ? 'The live shipping quote failed. Retry the quote before placing the order.'
-                        : 'The current backend stores the selected voucher code but may not apply the discount to totals yet.'
+                        : orderPreview
+                          ? 'Totals are calculated by the server from your active cart and selected delivery option.'
+                          : 'The server will calculate the discount and delivery once your address and carrier are selected.'
               }
               eyebrow="Order value"
               footer={
@@ -180,7 +144,7 @@ export const CheckoutVoucherPage = () => {
               isTotalsUpdating={previewLoading}
               supplementary={
                 <div className="space-y-3 text-sm leading-7 text-text-secondary">
-                  <p>Use any preview code above to validate eligibility before you place the order.</p>
+                  <p>Codes are checked against your cart by the order preview. Order placement recalculates and redeems the code.</p>
                   <p>
                     {selectedCarrier
                       ? `${selectedCarrier.name}${orderPreview?.shippingServiceName ? ` / ${orderPreview.shippingServiceName}` : ''}.`

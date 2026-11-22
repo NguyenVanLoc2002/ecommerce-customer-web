@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
@@ -33,8 +33,7 @@ export const ProductDetailPage = () => {
   const relatedQuery = useRelatedProducts(slug);
   const user = useAuthStore((state) => state.user);
   const product = productQuery.data;
-  const [selectedColor, setSelectedColor] = useState('');
-  const [selectedSize, setSelectedSize] = useState('');
+  const [selectedVariantId, setSelectedVariantId] = useState('');
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
@@ -42,53 +41,24 @@ export const ProductDetailPage = () => {
       return;
     }
 
-    const firstVariant = product.variants[0];
+    const firstVariant = product.variants.find((variant) => variant.status?.toUpperCase() !== 'INACTIVE') ?? product.variants[0];
     if (!firstVariant) {
-      setSelectedColor('');
-      setSelectedSize('');
+      setSelectedVariantId('');
       return;
     }
 
-    setSelectedColor(firstVariant.color);
-    setSelectedSize(firstVariant.size);
+    setSelectedVariantId(firstVariant.id);
   }, [product]);
-
-  const colors = useMemo(() => Array.from(new Set(product?.variants.map((variant) => variant.color) ?? [])), [product]);
-  const sizes = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          product?.variants.filter((variant) => variant.color === selectedColor).map((variant) => variant.size) ?? [],
-        ),
-      ),
-    [product, selectedColor],
-  );
-
-  useEffect(() => {
-    if (!sizes.includes(selectedSize) && sizes[0]) {
-      setSelectedSize(sizes[0]);
-    }
-  }, [selectedSize, sizes]);
-
-  const currentVariant =
-    product?.variants.find((variant) => variant.color === selectedColor && variant.size === selectedSize) ??
-    product?.variants[0];
+  const currentVariant = product?.variants.find((variant) => variant.id === selectedVariantId);
   const requiresLogin = !user || !accessToken;
-  const addToCartDisabled = addCartItem.isPending || !currentVariant;
+  const addToCartDisabled = addCartItem.isPending || !currentVariant || currentVariant.status?.toUpperCase() === 'INACTIVE';
   const addToCartLabel = currentVariant
     ? requiresLogin
-      ? 'Sign in to add to bag'
+      ? 'Đăng nhập để thêm vào giỏ'
       : addCartItem.isPending
-        ? 'Adding...'
-        : 'Add to Bag'
-    : 'Temporarily unavailable';
-  const colorSwatches = useMemo(
-    () =>
-      Object.fromEntries(
-        product?.variants.map((variant) => [variant.color, variant.swatch]) ?? [],
-      ) as Record<string, string>,
-    [product],
-  );
+        ? 'Đang thêm…'
+        : 'Thêm vào giỏ hàng'
+    : 'Chọn phiên bản';
 
   if (productQuery.isLoading) {
     return (
@@ -164,8 +134,8 @@ export const ProductDetailPage = () => {
         onSuccess: () => {
           addToast({
             tone: 'success',
-                title: 'Added to bag',
-            description: `${product.name} / ${selectedColor} / ${selectedSize} / Qty ${quantity} is now in your cart.`,
+              title: 'Đã thêm vào giỏ',
+                    description: `${product.name} · ${currentVariant.sku} · SL ${quantity} đã được thêm vào giỏ hàng.`,
           });
         },
         onError: (error) => {
@@ -183,7 +153,7 @@ export const ProductDetailPage = () => {
 
           addToast({
             tone: 'danger',
-            title: 'Unable to add to bag',
+            title: 'Không thể thêm vào giỏ',
             description: message,
           });
         },
@@ -210,9 +180,8 @@ export const ProductDetailPage = () => {
             brand: product.brandName,
             offers: {
               '@type': 'Offer',
-              priceCurrency: 'USD',
+              priceCurrency: 'VND',
               price: currentVariant?.price ?? product.price,
-              availability: currentVariant && currentVariant.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
             },
           },
           {
@@ -235,25 +204,20 @@ export const ProductDetailPage = () => {
         <Container className="space-y-20">
           <div className="grid gap-12 lg:grid-cols-12">
             <div className="lg:col-span-8">
-              <ProductMediaGallery media={product.media} productName={product.name} />
+              <ProductMediaGallery media={product.media} productName={product.name} selectedVariantId={currentVariant?.id} />
             </div>
             <div className="lg:col-span-4">
               <PurchaseBlock
                 addToCartDisabled={addToCartDisabled}
                 addToCartLabel={addToCartLabel}
-                colorSwatches={colorSwatches}
-                colors={colors}
+                selectedVariantId={selectedVariantId}
                 compareAtPrice={currentVariant?.compareAtPrice ?? product.compareAtPrice}
                 currentPrice={currentVariant?.price ?? product.price}
                 onAddToCart={addToCart}
                 onQuantityChange={setQuantity}
-                onSelectColor={setSelectedColor}
-                onSelectSize={setSelectedSize}
+                onSelectVariant={setSelectedVariantId}
                 product={product}
                 quantity={quantity}
-                selectedColor={selectedColor}
-                selectedSize={selectedSize}
-                sizes={sizes}
               />
             </div>
           </div>
@@ -261,15 +225,10 @@ export const ProductDetailPage = () => {
           <section className="border-y border-border py-16">
             <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
               <div className="space-y-10">
-                <h2 className="font-display text-[3rem] leading-[1.05] text-text-primary md:text-[4rem]">The Architecture of Silhouette</h2>
+            <h2 className="text-2xl font-semibold leading-tight text-text-primary md:text-3xl">Câu chuyện thiết kế</h2>
                 <div className="max-w-xl space-y-6">
                   <p className="text-lg italic leading-8 text-text-secondary">&quot;{product.story}&quot;</p>
-                  <p className="text-sm leading-7 text-text-secondary">
-                    Our design notes focus on structure, proportion, and movement. Every seam is placed to balance precision with softness across the silhouette.
-                  </p>
-                  <button className="border-b border-text-primary pb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary" type="button">
-                    Read the Editorial
-                  </button>
+                  {product.story !== product.description ? <p className="text-sm leading-7 text-text-secondary">{product.story}</p> : null}
                 </div>
               </div>
               <div className="relative">

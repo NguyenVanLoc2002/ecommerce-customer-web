@@ -109,7 +109,7 @@ export const OrderReviewPage = () => {
       <Container className="max-w-[800px] space-y-8 pb-16 pt-28 md:space-y-10 md:pb-20 md:pt-32">
         <Link className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary" to={routePaths.orderDetail(orderId)}>
           <ArrowLeft className="h-4 w-4" />
-          Back to order
+          Quay lại đơn hàng
         </Link>
 
         {orderQuery.isLoading || myReviewsQuery.isLoading ? <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Loading review form..." /> : null}
@@ -134,7 +134,7 @@ export const OrderReviewPage = () => {
           <EmptyState
             className="border-border bg-surface px-6 py-16"
             description="This order could not be found in your archive."
-            title="Order not found."
+            title="Không tìm thấy đơn hàng."
           />
         ) : null}
 
@@ -146,8 +146,8 @@ export const OrderReviewPage = () => {
               </Link>
             }
             className="border-border bg-surface px-6 py-16"
-            description="Reviews become available only after an eligible order is delivered or completed."
-            title="Review not eligible yet."
+            description="Bạn có thể đánh giá sau khi đơn hàng được giao hoặc hoàn tất."
+            title="Đơn hàng chưa đủ điều kiện đánh giá."
           />
         ) : null}
 

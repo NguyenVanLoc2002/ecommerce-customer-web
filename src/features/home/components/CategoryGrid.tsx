@@ -26,7 +26,7 @@ export const CategoryGrid = ({ categories }: CategoryGridProps) => {
   return (
     <section className="py-section">
       <Container className="space-y-14">
-        <SectionHeader action={<Link className="border-b border-text-primary pb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary transition-opacity hover:opacity-70" to={routes.products}>View All Categories</Link>} eyebrow="Curated Directory" title="Essential Silhouettes" />
+        <SectionHeader action={<Link className="border-b border-text-primary pb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary transition-opacity hover:opacity-70" to={routes.products}>Xem tất cả</Link>} eyebrow="DANH MỤC" title="Khám phá theo phong cách" />
         <motion.div className="grid grid-cols-2 gap-8 lg:grid-cols-4" {...motionPresets.staggerContainer(Boolean(reducedMotion), 0.06)}>
           {categoryItems.map((category) => (
             <motion.article className="group" key={category.slug} {...motionPresets.staggerItem(Boolean(reducedMotion))}>
@@ -41,8 +41,8 @@ export const CategoryGrid = ({ categories }: CategoryGridProps) => {
                     width={900}
                   />
                 </div>
-                <h3 className="mt-6 font-display text-2xl text-text-primary">{category.name}</h3>
-                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary">{category.itemCount} pieces</p>
+                <h3 className="mt-5 font-display text-xl font-semibold text-text-primary">{category.name}</h3>
+                <p className="mt-1 text-xs text-text-secondary">{category.itemCount} sản phẩm</p>
               </Link>
             </motion.article>
           ))}

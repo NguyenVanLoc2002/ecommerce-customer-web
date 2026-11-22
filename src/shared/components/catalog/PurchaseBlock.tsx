@@ -1,5 +1,3 @@
-import { MapPin } from 'lucide-react';
-
 import { PriceDisplay } from '@/shared/components/catalog/PriceDisplay';
 import { QuantitySelector } from '@/shared/components/catalog/QuantitySelector';
 import { VariantSelector } from '@/shared/components/catalog/VariantSelector';
@@ -9,59 +7,45 @@ import type { ProductDetail } from '@/shared/types/catalog.types';
 type PurchaseBlockProps = {
   addToCartDisabled?: boolean;
   addToCartLabel?: string;
-  colorSwatches: Record<string, string>;
-  colors: string[];
+  selectedVariantId: string;
   currentPrice: number;
   compareAtPrice?: number;
   product: ProductDetail;
   quantity: number;
-  selectedColor: string;
-  selectedSize: string;
-  sizes: string[];
+  onSelectVariant: (variantId: string) => void;
   onAddToCart: () => void;
   onQuantityChange: (value: number) => void;
-  onSelectColor: (value: string) => void;
-  onSelectSize: (value: string) => void;
 };
 
 export const PurchaseBlock = ({
   addToCartDisabled = false,
   addToCartLabel = 'Add to Bag',
-  colorSwatches,
-  colors,
   compareAtPrice,
   currentPrice,
   onAddToCart,
   onQuantityChange,
-  onSelectColor,
-  onSelectSize,
+  onSelectVariant,
   product,
   quantity,
-  selectedColor,
-  selectedSize,
-  sizes,
+  selectedVariantId,
 }: PurchaseBlockProps) => (
   <aside className="lg:sticky lg:top-32">
-    <div className="space-y-10 border-l border-border pl-0 lg:pl-8">
+    <div className="space-y-8 border-t border-border pt-6 lg:sticky lg:top-28 lg:border-0 lg:pt-0">
       <header className="space-y-3">
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Archive Series</p>
-        <h1 className="font-display text-[3rem] leading-none text-text-primary md:text-[3.5rem]">{product.name}</h1>
-        <p className="max-w-md text-sm leading-7 text-text-secondary">{product.subtitle}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">{product.brandName}</p>
+        <h1 className="text-3xl font-semibold leading-tight text-text-primary md:text-4xl">{product.name}</h1>
+        <p className="max-w-md text-base leading-7 text-text-secondary">{product.subtitle}</p>
         <PriceDisplay compareAtPrice={compareAtPrice} price={currentPrice} size="lg" />
       </header>
 
       <VariantSelector
-        colorSwatches={colorSwatches}
-        colors={colors}
-        onSelectColor={onSelectColor}
-        onSelectSize={onSelectSize}
-        selectedColor={selectedColor}
-        selectedSize={selectedSize}
-        sizes={sizes}
+        variants={product.variants}
+        onSelectVariant={onSelectVariant}
+        selectedVariantId={selectedVariantId}
       />
 
       <div className="space-y-4">
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary">Quantity</p>
+        <p className="text-sm font-semibold text-text-primary">Số lượng</p>
         <QuantitySelector onChange={onQuantityChange} value={quantity} />
       </div>
 
@@ -70,20 +54,17 @@ export const PurchaseBlock = ({
           {addToCartLabel}
         </Button>
         <Button className="justify-between" fullWidth size="lg" variant="ghost">
-          <MapPin className="h-4 w-4" />
-          Find in Store
+          Chi tiết sản phẩm
         </Button>
       </div>
 
       <div className="border-t border-border pt-8">
         <div className="flex items-center justify-between gap-4">
-          <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary">Details & Composition</span>
+          <span className="text-sm font-semibold text-text-primary">Mô tả sản phẩm</span>
           <span className="text-lg text-text-secondary">+</span>
         </div>
         <div className="mt-4 space-y-4 text-sm leading-7 text-text-secondary">
           <p>{product.description}</p>
-          {product.materials.length > 0 ? <p>Materials: {product.materials.join(', ')}.</p> : null}
-          {product.care.length > 0 ? <p>Care: {product.care.join(', ')}.</p> : null}
         </div>
       </div>
     </div>
