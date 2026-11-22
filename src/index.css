@@ -89,6 +89,11 @@
     background-color: rgb(var(--color-canvas) / 0.96);
   }
 
+  .product-detail-glass-header {
+    background-color: rgb(var(--color-canvas) / 0.82);
+    backdrop-filter: blur(12px);
+  }
+
   .auth-shell-bg {
     background-color: rgb(var(--color-canvas));
   }

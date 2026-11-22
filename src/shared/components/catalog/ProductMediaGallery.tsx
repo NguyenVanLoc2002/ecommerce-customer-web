@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 
 import type { ProductImage } from '@/shared/types/catalog.types';
 import { cn } from '@/shared/utils/cn';
@@ -10,6 +11,7 @@ type ProductMediaGalleryProps = {
 };
 
 export const ProductMediaGallery = ({ media, productName, selectedVariantId }: ProductMediaGalleryProps) => {
+  const reducedMotion = useReducedMotion();
   const imageMedia = media.filter((image) => !image.mediaType || image.mediaType.toUpperCase() === 'IMAGE');
   const variantMedia = selectedVariantId ? imageMedia.filter((image) => image.variantId === selectedVariantId) : [];
   const sharedMedia = imageMedia.filter((image) => !image.variantId);
@@ -33,8 +35,8 @@ export const ProductMediaGallery = ({ media, productName, selectedVariantId }: P
             aria-label={`Hiển thị ảnh ${index + 1} của ${productName}`}
             aria-pressed={selectedImage?.id === image.id}
             className={cn(
-              'h-20 w-16 shrink-0 overflow-hidden border bg-surface transition-colors motion-reduce:transition-none md:h-auto md:w-full',
-              selectedImage.id === image.id ? 'border-text-primary' : 'border-transparent hover:border-border',
+              'group/thumb aspect-[4/5] h-20 w-16 shrink-0 overflow-hidden border bg-surface transition-[border-color,opacity] duration-500 motion-reduce:transition-none md:h-auto md:w-full',
+              selectedImage.id === image.id ? 'border-text-primary opacity-100' : 'border-transparent opacity-50 hover:opacity-100',
             )}
             key={image.id}
             onClick={() => setSelectedId(image.id)}
@@ -42,7 +44,7 @@ export const ProductMediaGallery = ({ media, productName, selectedVariantId }: P
           >
             <img
               alt={image.alt}
-              className="aspect-[4/5] h-full w-full object-cover"
+              className="aspect-[4/5] h-full w-full object-cover transition-transform duration-1000 ease-out group-hover/thumb:scale-105 motion-reduce:transition-none"
               height={image.height}
               loading="lazy"
               src={image.src}
@@ -52,13 +54,17 @@ export const ProductMediaGallery = ({ media, productName, selectedVariantId }: P
         ))}
       </div>
       <div className="order-1 flex-1 md:order-2">
-        <div className="relative overflow-hidden bg-surface-soft">
-          <img
+        <div className="group relative overflow-hidden bg-surface-soft">
+          <motion.img
             alt={selectedImage.alt}
-            className="aspect-[4/5] h-full w-full object-cover"
+            animate={{ opacity: 1 }}
+            className="aspect-[4/5] h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105 motion-reduce:transition-none"
             height={selectedImage.height}
+            initial={reducedMotion ? false : { opacity: 0.65 }}
+            key={selectedImage.id}
             loading="eager"
             src={selectedImage.src}
+            transition={reducedMotion ? { duration: 0 } : { duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             width={selectedImage.width}
           />
         </div>

@@ -49,6 +49,7 @@ export const Header = () => {
   const unreadNotificationCount = unreadNotificationCountQuery.data ?? 0;
   const cartItemCount = cartItemCountQuery.data ?? 0;
   const productSurface = pathname.startsWith(routes.products);
+  const productDetailSurface = pathname.startsWith(`${routes.products}/`);
   const cartTarget = user ? routes.cart : routePaths.loginRedirect(routes.cart);
   const navLinks = collectionLinks;
   const logo = 'FASHION SHOP';
@@ -105,7 +106,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="glass-header fixed inset-x-0 top-0 z-50 border-b border-border print:hidden">
+    <header className={cn('glass-header fixed inset-x-0 top-0 z-50 border-b border-border print:hidden', productDetailSurface && 'product-detail-glass-header')}>
       <div className="mx-auto flex min-h-[72px] max-w-layout items-center justify-between gap-2 px-page md:min-h-20 md:gap-4">
         <div className="flex min-w-0 items-center gap-2 md:gap-8">
           <button
@@ -121,6 +122,7 @@ export const Header = () => {
             className={cn(
               'whitespace-nowrap text-xs font-semibold tracking-[0.08em] text-text-primary transition-opacity hover:opacity-70 sm:text-sm md:text-lg',
               productSurface && 'md:text-lg',
+              productDetailSurface && 'font-medium tracking-[0.2em] md:text-xl',
             )}
             to={routes.home}
           >
@@ -129,7 +131,11 @@ export const Header = () => {
         </div>
         <nav aria-label="Danh mục sản phẩm" className="hidden items-center gap-5 lg:flex">
           {navLinks.map((link) => (
-            <NavLink className={navLinkClass} key={link.label} to={link.to}>
+            <NavLink
+              className={({ isActive }) => cn(navLinkClass({ isActive }), productDetailSurface && 'text-[11px] font-medium uppercase tracking-[0.16em]')}
+              key={link.label}
+              to={link.to}
+            >
               {link.label}
             </NavLink>
           ))}

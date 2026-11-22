@@ -10,6 +10,7 @@ import { PurchaseBlock } from '@/shared/components/catalog/PurchaseBlock';
 import { RelatedProducts } from '@/shared/components/catalog/RelatedProducts';
 import { ReviewSection } from '@/shared/components/catalog/ReviewSection';
 import { StickyCartBar } from '@/shared/components/catalog/StickyCartBar';
+import { ProductStorySection } from '@/features/products/components/ProductStorySection';
 import { Button } from '@/shared/components/ui/Button';
 import { EmptyState } from '@/shared/components/feedback/EmptyState';
 import { ErrorCard } from '@/shared/components/feedback/ErrorCard';
@@ -236,8 +237,8 @@ export const ProductDetailPage = () => {
           },
         ]}
       />
-      <PageWrapper className="pb-32 lg:pb-0">
-        <Container className="space-y-14 md:space-y-20">
+      <PageWrapper className="pt-24 pb-32 lg:pb-0">
+        <Container className="space-y-5 md:space-y-6">
           <BreadcrumbNav items={[{ label: 'Trang chủ', href: routes.home }, { label: 'Sản phẩm', href: routes.products }, { label: product.name }]} />
 
           <div className="grid gap-8 lg:grid-cols-12 lg:gap-12">
@@ -265,6 +266,9 @@ export const ProductDetailPage = () => {
             </div>
           </div>
 
+        </Container>
+        {product.story && product.story !== product.description ? <ProductStorySection description={product.description} images={product.media} story={product.story} /> : null}
+        <Container className="space-y-14 md:space-y-20 pt-14 md:pt-20">
           {relatedQuery.data && relatedQuery.data.length > 0 ? <RelatedProducts products={relatedQuery.data} /> : null}
           <ReviewSection productId={product.id} />
         </Container>
