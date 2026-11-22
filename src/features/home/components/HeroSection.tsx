@@ -31,7 +31,7 @@ export const HeroSection = () => {
       <div className="order-2 flex items-center border-t border-border bg-canvas p-8 sm:p-10 lg:col-span-4 lg:border-l lg:border-t-0 lg:p-14">
         <motion.div className="max-w-xl space-y-6" {...motionPresets.fadeUp(Boolean(reducedMotion), 0.05)}>
           <p className="text-[13px] font-medium uppercase tracking-widest text-brand-primary">Tủ đồ mỗi ngày</p>
-          <h1 className="max-w-[13ch] text-4xl font-light leading-[1.08] tracking-tight text-text-primary md:text-6xl">
+          <h1 className="text-4xl font-light leading-[1.08] tracking-tight text-text-primary md:text-6xl lg:text-[64px]">
             Ít hơn, nhưng đúng hơn.
           </h1>
           <p className="pt-2 text-base leading-relaxed text-text-secondary">

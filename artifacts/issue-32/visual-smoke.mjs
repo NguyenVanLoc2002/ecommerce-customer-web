@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { chromium } from '@playwright/test';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -42,14 +43,22 @@ for (const viewport of [
   page.on('pageerror', (error) => errors.push(`${viewport.name}: ${error.message}`));
 
   for (const route of ['/', '/products']) {
-    await page.goto(referenceFor(route, viewport), { waitUntil: 'domcontentloaded' });
-    await revealImages(page);
-    await page.screenshot({
-      path: `${root}/screenshots/design-${route === '/' ? 'home' : 'products'}-${viewport.name}.jpg`,
-      type: 'jpeg',
-      quality: 90,
-      fullPage: true,
-    });
+    const referenceUrl = referenceFor(route, viewport);
+    const referencePath = route === '/'
+      ? viewport.name === 'desktop'
+        ? resolve('artifacts/stitch-review/stitch-home-original.html')
+        : resolve(root, 'screenshots/stitch-home-mobile.html')
+      : resolve(root, `screenshots/stitch-products-${viewport.name}.html`);
+    if (existsSync(referencePath)) {
+      await page.goto(referenceUrl, { waitUntil: 'domcontentloaded' });
+      await revealImages(page);
+      await page.screenshot({
+        path: `${root}/screenshots/design-${route === '/' ? 'home' : 'products'}-${viewport.name}.jpg`,
+        type: 'jpeg',
+        quality: 90,
+        fullPage: true,
+      });
+    }
 
     const implementationUrl = route === '/'
       ? 'http://127.0.0.1:4176/'
@@ -106,6 +115,38 @@ for (const viewport of [
         quality: 90,
         fullPage: true,
       });
+
+      if (viewport.name === 'desktop') {
+        await page.setViewportSize({ width: 1600, height: 900 });
+        await page.goto(referenceFor(route, viewport), { waitUntil: 'domcontentloaded' });
+        await revealImages(page);
+        await page.screenshot({
+          path: `${root}/screenshots/design-home-desktop-wide.jpg`,
+          type: 'jpeg',
+          quality: 90,
+          fullPage: true,
+        });
+
+        await page.goto('http://127.0.0.1:4176/', { waitUntil: 'domcontentloaded' });
+        await page.getByRole('heading', { level: 1 }).waitFor();
+        const heroBounds = await page.locator('main section').first().evaluate((section) => {
+          const { left, width } = section.getBoundingClientRect();
+          return { left, width };
+        });
+        if (heroBounds.left !== 80 || heroBounds.width !== 1440) {
+          failures.push(`desktop-wide Home hero must match the centered 1440px Stitch frame: ${JSON.stringify(heroBounds)}`);
+        }
+        await revealImages(page);
+        await page.screenshot({
+          path: `${root}/screenshots/home-desktop-wide.jpg`,
+          type: 'jpeg',
+          quality: 90,
+          fullPage: true,
+        });
+        await page.setViewportSize({ width: viewport.width, height: viewport.height });
+        await page.goto('http://127.0.0.1:4176/', { waitUntil: 'domcontentloaded' });
+        await page.getByRole('heading', { level: 1 }).waitFor();
+      }
     }
   }
 
@@ -118,5 +159,5 @@ if (failures.length) {
   console.error(failures.join('\n'));
   process.exitCode = 1;
 } else {
-  console.log('Visual smoke passed: Home/PLP design and implementation captures at 1280/390 CSS px, Home editorial section, one h1, no overflow, q keyword behavior, and mobile filter drawer.');
+  console.log('Visual smoke passed: Home/PLP captures at 1280/390 CSS px, centered 1440px Home hero and paired captures at 1600px, Home editorial section, one h1, no overflow, q keyword behavior, and mobile filter drawer.');
 }
