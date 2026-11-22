@@ -1,6 +1,7 @@
 import { config } from '@/constants/config';
 import { routes } from '@/constants/routes';
 import { CategoryGrid } from '@/features/home/components/CategoryGrid';
+import { CreativePerspectiveSection } from '@/features/home/components/CreativePerspectiveSection';
 import { FeaturedProducts } from '@/features/home/components/FeaturedProducts';
 import { HeroSection } from '@/features/home/components/HeroSection';
 import { NewArrivals } from '@/features/home/components/NewArrivals';
@@ -41,7 +42,7 @@ export const HomePage = () => {
           },
         ]}
       />
-      <PageWrapper className="space-y-0 pb-0 pt-0">
+      <PageWrapper className="space-y-0 pb-0 !pt-0">
         <HeroSection />
         {categoriesQuery.isLoading ? (
           <Container className="grid grid-cols-1 gap-5 py-12 sm:grid-cols-3 md:py-section">
@@ -78,6 +79,8 @@ export const HomePage = () => {
             <EmptyState description="Sản phẩm nổi bật sẽ xuất hiện tại đây khi catalog có dữ liệu." title="Chưa có sản phẩm nổi bật" />
           </Container>
         )}
+
+        <CreativePerspectiveSection />
 
         {arrivalsQuery.isLoading ? (
           <Container className="grid grid-cols-2 gap-4 py-12 md:grid-cols-4 md:py-section">
