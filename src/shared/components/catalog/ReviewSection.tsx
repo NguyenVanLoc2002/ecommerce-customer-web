@@ -60,8 +60,8 @@ export const ReviewSection = ({ productId }: ReviewSectionProps) => {
 
   return (
     <section className="border-t border-border pt-10">
-      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-text-secondary">Customer Notes</p>
-      <h2 className="mt-3 font-display text-[2rem] leading-tight text-text-primary">Reviews</h2>
+      <p className="text-sm font-semibold uppercase tracking-[0.12em] text-text-secondary">Đánh giá từ khách hàng</p>
+      <h2 className="mt-3 text-2xl font-semibold leading-tight text-text-primary">Đánh giá sản phẩm</h2>
 
       {reviewQuery.isLoading ? (
         <div className="mt-8 grid gap-10 lg:grid-cols-[280px_minmax(0,1fr)]">
@@ -93,8 +93,8 @@ export const ReviewSection = ({ productId }: ReviewSectionProps) => {
           <ErrorCard
             action={<Button onClick={() => void reviewQuery.refetch()}>Retry</Button>}
             className="border-border bg-surface"
-            description="Public review notes could not be loaded for this product."
-            title="Review section unavailable"
+            description="Không thể tải đánh giá sản phẩm lúc này. Vui lòng thử lại."
+            title="Đánh giá tạm thời chưa khả dụng"
           />
         </div>
       ) : null}
@@ -102,26 +102,30 @@ export const ReviewSection = ({ productId }: ReviewSectionProps) => {
       {!reviewQuery.isLoading && !reviewQuery.isError ? (
         <div className="mt-8 grid gap-10 lg:grid-cols-[280px_minmax(0,1fr)]">
           <aside className="space-y-6 border border-border bg-surface px-5 py-6 md:px-6">
-            <div>
-              <p className="font-display text-[3rem] leading-none text-text-primary">{reviewSummary.averageRating.toFixed(1)}</p>
-              <div className="mt-3 flex items-center gap-3">
-                <StarRatingDisplay rating={reviewSummary.averageRating} />
-                <span className="text-sm text-text-secondary">{reviewSummary.totalReviews} reviews</span>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {reviewSummary.distribution.map((item) => (
-                <RatingBar count={item.count} key={item.rating} rating={item.rating} totalReviews={reviewSummary.totalReviews} />
-              ))}
-            </div>
+            {reviewSummary.totalReviews > 0 ? (
+              <>
+                <div>
+                  <p className="text-4xl font-semibold leading-none text-text-primary">{reviewSummary.averageRating.toFixed(1)}</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <StarRatingDisplay rating={reviewSummary.averageRating} />
+                    <span className="text-sm text-text-secondary">{reviewSummary.totalReviews} đánh giá</span>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {reviewSummary.distribution.map((item) => (
+                    <RatingBar count={item.count} key={item.rating} rating={item.rating} totalReviews={reviewSummary.totalReviews} />
+                  ))}
+                </div>
+              </>
+            ) : <p className="text-sm leading-6 text-text-secondary">Chưa có đánh giá được duyệt.</p>}
           </aside>
 
           <div className="space-y-8">
             {reviewSummary.totalReviews === 0 ? (
               <EmptyState
                 className="border-border bg-surface px-6 py-16"
-                description="There are no approved product reviews yet. Completed orders can submit feedback after delivery."
-                title="No reviews yet."
+                description="Đánh giá sẽ hiển thị tại đây sau khi được duyệt."
+                title="Chưa có đánh giá"
               />
             ) : (
               <>
@@ -133,19 +137,19 @@ export const ReviewSection = ({ productId }: ReviewSectionProps) => {
                         <div>
                           <StarRatingDisplay rating={review.rating} />
                           <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.16em] text-text-secondary">
-                            {review.authorName} / {review.verifiedPurchase ? 'Verified Purchase' : 'Community Review'}
+                            {review.authorName} · {review.verifiedPurchase ? 'Đã mua hàng' : 'Đánh giá cộng đồng'}
                           </p>
                         </div>
                         <span className="text-sm text-text-secondary">{formatDate(review.createdAt)}</span>
                       </div>
-                      {review.title ? <h3 className="mt-4 font-display text-xl text-text-primary">{review.title}</h3> : null}
+                      {review.title ? <h3 className="mt-4 text-lg font-semibold text-text-primary">{review.title}</h3> : null}
                       <p className="mt-4 max-w-3xl text-sm leading-7 text-text-secondary">{review.comment}</p>
                     </article>
                   </div>
                 ))}
                 {visibleCount < reviews.length ? (
                   <Button onClick={() => setVisibleCount((currentValue) => currentValue + REVIEW_PAGE_SIZE)} variant="ghost">
-                    Load more reviews
+                    Xem thêm đánh giá
                   </Button>
                 ) : null}
               </>

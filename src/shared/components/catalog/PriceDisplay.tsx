@@ -5,13 +5,22 @@ type PriceDisplayProps = {
   compareAtPrice?: number;
   size?: 'md' | 'lg';
   align?: 'left' | 'right';
+  appearance?: 'display' | 'catalog';
 };
 
-export const PriceDisplay = ({ align = 'right', compareAtPrice, price, size = 'md' }: PriceDisplayProps) => (
-  <div className={`shrink-0 ${align === 'left' ? 'text-left' : 'text-right'}`}>
-    <span className={size === 'lg' ? 'font-display text-[2rem] leading-none text-text-primary' : 'font-display text-lg leading-none text-text-primary'}>
-      {formatVnd(price)}
-    </span>
-    {compareAtPrice ? <span className="ml-3 text-sm text-text-secondary line-through">{formatVnd(compareAtPrice)}</span> : null}
-  </div>
-);
+export const PriceDisplay = ({ align = 'right', appearance = 'display', compareAtPrice, price, size = 'md' }: PriceDisplayProps) => {
+  const priceClassName = appearance === 'catalog'
+    ? size === 'lg'
+      ? 'font-sans text-2xl font-semibold leading-tight text-text-primary md:text-[1.75rem]'
+      : 'font-sans text-base font-semibold leading-tight text-text-primary'
+    : size === 'lg'
+      ? 'font-display text-[2rem] leading-none text-text-primary'
+      : 'font-display text-lg leading-none text-text-primary';
+
+  return (
+    <div className={`shrink-0 ${align === 'left' ? 'text-left' : 'text-right'}`}>
+      <span className={priceClassName}>{formatVnd(price)}</span>
+      {compareAtPrice !== undefined && compareAtPrice > price ? <span className="ml-3 text-sm text-text-secondary line-through">{formatVnd(compareAtPrice)}</span> : null}
+    </div>
+  );
+};
