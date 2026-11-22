@@ -29,14 +29,14 @@ export const ProductMediaGallery = ({ media, productName, selectedVariantId }: P
 
   return (
     <div className="flex flex-col gap-3 md:flex-row md:gap-5">
-      <div aria-label={`Hình ảnh ${productName}`} className="order-2 flex gap-3 overflow-x-auto md:order-1 md:w-20 md:flex-col md:overflow-visible" role="group">
+      <div aria-label={`Hình ảnh ${productName}`} className="order-2 grid grid-cols-4 gap-2.5 px-page md:order-1 md:flex md:w-20 md:flex-col md:overflow-visible md:px-0" role="group">
         {visibleMedia.map((image, index) => (
           <button
             aria-label={`Hiển thị ảnh ${index + 1} của ${productName}`}
             aria-pressed={selectedImage?.id === image.id}
             className={cn(
-              'group/thumb aspect-[4/5] h-20 w-16 shrink-0 overflow-hidden border bg-surface transition-[border-color,opacity] duration-500 motion-reduce:transition-none md:h-auto md:w-full',
-              selectedImage.id === image.id ? 'border-text-primary opacity-100' : 'border-transparent opacity-50 hover:opacity-100',
+              'group/thumb aspect-[3/4] min-w-0 overflow-hidden rounded border bg-surface transition-[border-color,opacity] duration-300 motion-reduce:transition-none md:h-auto md:w-full',
+              selectedImage.id === image.id ? 'border-text-primary opacity-100' : 'border-transparent opacity-70 hover:opacity-100',
             )}
             key={image.id}
             onClick={() => setSelectedId(image.id)}
@@ -44,7 +44,7 @@ export const ProductMediaGallery = ({ media, productName, selectedVariantId }: P
           >
             <img
               alt={image.alt}
-              className="aspect-[4/5] h-full w-full object-cover transition-transform duration-1000 ease-out group-hover/thumb:scale-105 motion-reduce:transition-none"
+              className="aspect-[3/4] h-full w-full object-cover transition-opacity duration-300 group-hover/thumb:opacity-90 motion-reduce:transition-none"
               height={image.height}
               loading="lazy"
               src={image.src}
@@ -54,11 +54,11 @@ export const ProductMediaGallery = ({ media, productName, selectedVariantId }: P
         ))}
       </div>
       <div className="order-1 flex-1 md:order-2">
-        <div className="group relative overflow-hidden bg-surface-soft">
+        <div className="group relative aspect-[3/4] overflow-hidden bg-surface-soft">
           <motion.img
             alt={selectedImage.alt}
             animate={{ opacity: 1 }}
-            className="aspect-[4/5] h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105 motion-reduce:transition-none"
+            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.015] motion-reduce:transition-none"
             height={selectedImage.height}
             initial={reducedMotion ? false : { opacity: 0.65 }}
             key={selectedImage.id}

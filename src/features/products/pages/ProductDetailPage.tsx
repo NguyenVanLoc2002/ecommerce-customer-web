@@ -33,6 +33,14 @@ const isStockFailure = (error: unknown) => {
   return ['INVENTORY_NOT_ENOUGH', 'VARIANT_OUT_OF_STOCK', 'STOCK_RESERVATION_FAILED'].includes(String(error.code));
 };
 
+const productCategoryLabels: Record<string, string> = {
+  womenswear: 'Nữ',
+  menswear: 'Nam',
+  accessories: 'Phụ kiện',
+};
+
+const getProductCategoryLabel = (categorySlug?: string) => categorySlug ? productCategoryLabels[categorySlug] ?? 'Sản phẩm' : 'Sản phẩm';
+
 export const ProductDetailPage = () => {
   const { slug = '' } = useParams();
   const location = useLocation();
@@ -49,7 +57,6 @@ export const ProductDetailPage = () => {
   const [selectedValues, setSelectedValues] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
   const [addError, setAddError] = useState('');
-  const [showStickyCartBar, setShowStickyCartBar] = useState(false);
   const variantGroups = useMemo(() => getVariantAttributeGroups(product?.variants ?? []), [product?.variants]);
   const selection = resolveVariantSelection(product?.variants ?? [], variantGroups, selectedValues);
   const selectedVariant = selection.variant;
@@ -58,6 +65,10 @@ export const ProductDetailPage = () => {
     .map((variant) => variant.price);
   const currentPrice = selectedVariant?.price ?? (activeVariantPrices.length > 0 ? Math.min(...activeVariantPrices) : undefined);
   const currentCompareAtPrice = selection.status === 'active' ? selection.variant.compareAtPrice : undefined;
+  const variantSummary = variantGroups
+    .map((group) => group.values.find((value) => value.valueId === selectedValues[group.attributeId])?.label)
+    .filter((value): value is string => Boolean(value))
+    .join(' · ');
   const requiresLogin = !user || !accessToken;
   const canAddToCart = selection.status === 'active';
   const addToCartDisabled = addCartItem.isPending || !canAddToCart;
@@ -74,30 +85,6 @@ export const ProductDetailPage = () => {
   useEffect(() => {
     setSelectedValues({});
     setAddError('');
-  }, [product?.id]);
-
-  useEffect(() => {
-    const purchaseAction = purchaseActionRef.current;
-    if (!purchaseAction || typeof IntersectionObserver === 'undefined') {
-      return;
-    }
-
-    let hasBeenVisible = false;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry) {
-        return;
-      }
-
-      if (entry.isIntersecting) {
-        hasBeenVisible = true;
-        setShowStickyCartBar(false);
-      } else if (hasBeenVisible) {
-        setShowStickyCartBar(true);
-      }
-    }, { threshold: 0.1 });
-
-    observer.observe(purchaseAction);
-    return () => observer.disconnect();
   }, [product?.id]);
 
   if (productQuery.isLoading) {
@@ -237,15 +224,15 @@ export const ProductDetailPage = () => {
           },
         ]}
       />
-      <PageWrapper className="pt-24 pb-32 lg:pb-0">
+      <PageWrapper className="pt-24 pb-40 md:pt-20 md:pb-24 lg:pb-0">
         <Container className="space-y-5 md:space-y-6">
-          <BreadcrumbNav items={[{ label: 'Trang chủ', href: routes.home }, { label: 'Sản phẩm', href: routes.products }, { label: product.name }]} />
+          <BreadcrumbNav items={[{ label: 'Trang chủ', href: routes.home }, { label: getProductCategoryLabel(product.categorySlugs[0]), href: routes.products }, { label: product.name }]} />
 
           <div className="grid gap-8 lg:grid-cols-12 lg:gap-12">
-            <div className="lg:col-span-8">
+            <div className="max-lg:-mx-page max-lg:w-[calc(100%+2*var(--space-page))] lg:col-span-7">
               <ProductMediaGallery media={product.media} productName={product.name} selectedVariantId={selectedVariant?.id} />
             </div>
-            <div className="lg:col-span-4">
+            <div className="lg:col-span-5">
               <PurchaseBlock
                 addError={addError}
                 addToCartDisabled={addToCartDisabled}
@@ -272,16 +259,15 @@ export const ProductDetailPage = () => {
           {relatedQuery.data && relatedQuery.data.length > 0 ? <RelatedProducts products={relatedQuery.data} /> : null}
           <ReviewSection productId={product.id} />
         </Container>
-        {showStickyCartBar ? (
-          <StickyCartBar
-            compareAtPrice={currentCompareAtPrice}
-            disabled={addToCartDisabled}
-            label={requiresLogin && canAddToCart ? 'Đăng nhập để mua' : addToCartLabel}
-            loading={addCartItem.isPending}
-            onAddToCart={addToCart}
-            price={currentPrice}
-          />
-        ) : null}
+        <StickyCartBar
+          compareAtPrice={currentCompareAtPrice}
+          disabled={addToCartDisabled}
+          label={requiresLogin && canAddToCart ? 'Đăng nhập để mua' : addToCartLabel}
+          loading={addCartItem.isPending}
+          onAddToCart={addToCart}
+          price={currentPrice}
+          variantSummary={variantSummary}
+        />
       </PageWrapper>
     </>
   );

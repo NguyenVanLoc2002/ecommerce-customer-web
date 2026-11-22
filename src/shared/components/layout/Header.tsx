@@ -19,6 +19,11 @@ const collectionLinks = [
   { label: 'Hàng mới', to: `${routes.products}?sort=${SORT_OPTIONS.NEWEST}` },
   { label: 'Nổi bật', to: `${routes.products}?sort=${SORT_OPTIONS.FEATURED}` },
 ];
+const productDetailLinks = [
+  { label: 'Nữ', to: `${routes.products}?category=womenswear` },
+  { label: 'Nam', to: `${routes.products}?category=menswear` },
+  { label: 'Phụ kiện', to: `${routes.products}?category=accessories` },
+];
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -51,7 +56,7 @@ export const Header = () => {
   const productSurface = pathname.startsWith(routes.products);
   const productDetailSurface = pathname.startsWith(`${routes.products}/`);
   const cartTarget = user ? routes.cart : routePaths.loginRedirect(routes.cart);
-  const navLinks = collectionLinks;
+  const navLinks = productDetailSurface ? productDetailLinks : collectionLinks;
   const logo = 'FASHION SHOP';
   const accountNavItems = getAccountNavItems({ includeNotifications: false });
   const cartBadgeText = cartItemCount > 99 ? '99+' : String(cartItemCount);
@@ -107,7 +112,7 @@ export const Header = () => {
 
   return (
     <header className={cn('glass-header fixed inset-x-0 top-0 z-50 border-b border-border print:hidden', productDetailSurface && 'product-detail-glass-header')}>
-      <div className="mx-auto flex min-h-[72px] max-w-layout items-center justify-between gap-2 px-page md:min-h-20 md:gap-4">
+      <div className={cn('mx-auto flex min-h-[72px] max-w-layout items-center justify-between gap-2 px-page md:min-h-20 md:gap-4', productDetailSurface && 'md:min-h-16')}>
         <div className="flex min-w-0 items-center gap-2 md:gap-8">
           <button
             aria-expanded={isMobileNavOpen}
@@ -122,7 +127,7 @@ export const Header = () => {
             className={cn(
               'whitespace-nowrap text-xs font-semibold tracking-[0.08em] text-text-primary transition-opacity hover:opacity-70 sm:text-sm md:text-lg',
               productSurface && 'md:text-lg',
-              productDetailSurface && 'font-medium tracking-[0.2em] md:text-xl',
+              productDetailSurface && 'font-semibold tracking-[0.02em] md:text-base',
             )}
             to={routes.home}
           >
@@ -141,13 +146,14 @@ export const Header = () => {
           ))}
         </nav>
         <div className="flex items-center gap-2 md:gap-3">
-          <Link aria-label="Tìm kiếm sản phẩm" className={headerIconButtonClassName} to={routes.products}>
+          <Link aria-label="Tìm kiếm sản phẩm" className={cn(headerIconButtonClassName, productDetailSurface && 'max-md:order-1 md:order-1 md:w-auto md:gap-2 md:px-2')} to={routes.products}>
             <Search aria-hidden="true" className="h-5 w-5" strokeWidth={1.7} />
+            {productDetailSurface ? <span className="hidden text-sm lg:inline">Tìm kiếm</span> : null}
           </Link>
           {user ? (
             <Link
               aria-label="Thông báo"
-              className={cn(headerIconButtonClassName, 'hidden md:inline-flex')}
+              className={cn(headerIconButtonClassName, 'hidden md:inline-flex', productDetailSurface && 'md:hidden')}
               to={routes.notifications}
             >
               <Bell className="h-5 w-5" strokeWidth={1.7} />
@@ -160,10 +166,12 @@ export const Header = () => {
           ) : null}
           <Link
             aria-label={cartAriaLabel}
-            className={headerIconButtonClassName}
+            className={cn(headerIconButtonClassName, productDetailSurface && 'min-w-[56px] max-md:order-3 md:order-3 md:w-auto md:gap-2 md:px-2')}
             to={cartTarget}
           >
             <ShoppingBag className="h-5 w-5" strokeWidth={1.7} />
+            {productDetailSurface ? <span className="hidden text-sm lg:inline">Giỏ hàng ({cartItemCount})</span> : null}
+            {productDetailSurface ? <span className="text-[10px] md:hidden">({cartItemCount})</span> : null}
             {cartItemCount > 0 ? (
               <motion.span
                 animate={reducedMotion ? undefined : { opacity: 1, scale: 1 }}
@@ -184,13 +192,14 @@ export const Header = () => {
                 aria-expanded={isAccountMenuOpen}
                 aria-haspopup="menu"
                 aria-label="Open account menu"
-                className={cn(headerIconButtonClassName, isAccountMenuOpen && 'bg-surface-muted')}
+                className={cn(headerIconButtonClassName, isAccountMenuOpen && 'bg-surface-muted', productDetailSurface && 'max-md:order-2 max-md:rounded-full max-md:bg-text-primary max-md:text-surface md:order-2 md:w-auto md:gap-2 md:px-2')}
                 onClick={() => setIsAccountMenuOpen((open) => !open)}
                 onKeyDown={handleAccountMenuButtonKeyDown}
                 ref={accountMenuButtonRef}
                 type="button"
               >
                 <User2 className="h-5 w-5" strokeWidth={1.7} />
+                {productDetailSurface ? <span className="hidden text-sm lg:inline">Tài khoản</span> : null}
                 <ChevronDown className={cn('h-3.5 w-3.5 text-outline transition-transform duration-300', isAccountMenuOpen && 'rotate-180')} strokeWidth={1.7} />
               </button>
               {isAccountMenuOpen ? (
@@ -247,10 +256,11 @@ export const Header = () => {
           ) : (
             <Link
               aria-label="Đăng nhập"
-              className={headerIconButtonClassName}
+              className={cn(headerIconButtonClassName, productDetailSurface && 'max-md:order-2 max-md:rounded-full max-md:bg-text-primary max-md:text-surface md:order-2 md:w-auto md:gap-2 md:px-2')}
               to={routes.login}
             >
               <User2 className="h-5 w-5" strokeWidth={1.7} />
+              {productDetailSurface ? <span className="hidden text-sm lg:inline">Tài khoản</span> : null}
             </Link>
           )}
         </div>

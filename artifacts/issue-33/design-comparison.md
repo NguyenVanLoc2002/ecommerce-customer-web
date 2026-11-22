@@ -1,38 +1,38 @@
 # Issue #33: product detail design mapping
 
-## Route and reference frames
+## Route, states, and approved Stitch frames
 
-| Route | Viewport/state | Approved reference | Implementation source |
-|---|---|---|---|
-| `/products/:slug` | Product loaded, desktop, 1280 × 2781 CSS px | Stitch project **Fashion Shop Premium Customer Web**, frame `03_Product_Detail_Page` / `Product Detail - Maison Editorial` ([project](https://stitch.withgoogle.com/projects/6681847091792507757), screen `bd9072526f7849a2b6fafc024cfec9dd`) | `pdp-desktop.png`, captured at 1280 × 2781 using local mock catalog |
-| `/products/:slug` | Product loaded, mobile, 390 × 2873 CSS px | No mobile frame exists in the approved Stitch project. Reference is the responsive PDP prototype at `artifacts/stitch-review/index.html#/products/ao-blazer-dang-suong` | `pdp-mobile.png`, captured at 390 × 2873 using local mock catalog |
-| `/products/:slug` | Loading | No dedicated Stitch frame. Use the frame's product/gallery and purchase hierarchy as the loaded-state target. | Existing detail query skeleton; route and API lookup unchanged |
-| `/products/:slug` | Product not found | No dedicated Stitch frame; empty-state pattern is from `artifacts/stitch-review` | Existing not-found empty state and products link |
-| `/products/:slug` | Product request error/retry | No dedicated Stitch frame; error-state pattern is from `artifacts/stitch-review` | Existing query error and retry |
-| `/products/:slug` | No/partial variant selected | Stitch 03 purchase panel, variant group and choice order; responsive prototype on mobile | Attribute groups and values come only from the product detail response |
-| `/products/:slug` | Exact active variant selected | Stitch 03 selected choice treatment; responsive prototype on mobile | Only the exact resolved variant ID is submitted to the cart API |
-| `/products/:slug` | Inactive or unavailable combination | Stitch 03 choice treatment and the responsive prototype's unavailable states | Existing inactive/unavailable state; unavailable values not in API are not synthesized |
-| `/products/:slug` | Add pending, success, guest, API/stock error | No separate Stitch frame for every state; Stitch review state sheet and responsive prototype are visual references | Existing auth redirect, pending guard, cart mutation, toast and API error handling |
-| `/products/:slug` | Media selection/fallback | Stitch 03 gallery; responsive prototype for touch layout | Existing IMAGE media selection and shared-image fallback; video excluded |
-| `/products/:slug` | Review loading/empty/error | Not part of the main Stitch 03 PDP frame | Existing review integration remains; API authorization/error is not shown as empty reviews |
+The target is the approved PDP in Stitch project [`Fashion Shop · Duyệt thiết kế 01 · Be Vietnam Pro`](https://stitch.google.com/projects/15029798778414010901), not the similarly numbered frame in another project.
 
-## Comparison captures
+| Route/state | Stitch reference | Implementation behavior |
+|---|---|---|
+| `/products/:slug`, loaded desktop | **05 Product Detail Desktop**, screen `bb73d20b8d804861a019e6afcae99bd5`; design viewport 1280 × 3007 CSS px | API product gallery, purchase panel, details, editorial story, related items, review section and footer. Screenshot uses the same 1280 × 3007 viewport. |
+| `/products/:slug`, loaded mobile | **06 Product Detail Mobile**, screen `ed757c495a284a1091355b9aa22b9855`; design viewport 390 × 3037 CSS px | Responsive gallery, variants, quantity, CTA, accordions, related grid, fixed purchase bar and bottom navigation. Screenshot uses the same 390 × 3037 viewport. |
+| Loading | No separate loading frame; use the corresponding desktop/mobile PDP hierarchy | Existing product query skeleton. |
+| Not found | No separate frame; retain the app's existing not-found/empty pattern | Existing not-found state and products link. |
+| Product request error/retry | No separate frame; retain the app's existing error pattern | Existing query error and retry. |
+| No or partial variant selection | Variant groups and order in frames 05/06 | Attribute groups/values from product detail only; add action remains guarded until an exact active variant resolves. |
+| Exact active variant selected | Selected choice treatment in frames 05/06 | The existing exact variant ID resolution is preserved and submitted to the existing cart API. |
+| Inactive/unavailable combination | Disabled-choice treatment in frames 05/06 | Existing inactive/unavailable options remain disabled; no unavailable options are invented. Public API does not expose inventory quantities. |
+| Add to cart: guest, pending, success, API/stock error | Frames show the primary CTA; each transient outcome has no separate approved frame | Existing auth redirect, pending duplicate-submit guard, cart mutation, success feedback and API error handling. |
+| Gallery media selection/fallback | Gallery and thumbnails in frames 05/06 | Existing IMAGE media filtering, selection and fallback; no video or synthetic media. |
+| Review loading/empty/error | Review state panel is a design-review specimen in the Stitch artboard, not customer review data | Existing review API integration and its real loading/empty/error states remain. No sample review states are shipped. |
 
-The desktop design capture is the Stitch 03 HTML at the same 1280 × 2781 CSS viewport. No Stitch mobile frame was found for this project, so the mobile design capture is the named local responsive prototype at the same 390 × 2873 CSS viewport as implementation. Both implementation captures use local mock catalog data and are not live API evidence.
+## Side-by-side comparison captures
 
-| Desktop, 1280 × 2781 | Mobile, 390 × 2873 |
+The approved design source images and implementation captures are in this directory. Stitch files are 2560 × 6014 and 780 × 6074 physical pixels (DPR 2), equivalent to the CSS viewports above. Implementation captures use those same CSS viewport sizes and DPR 2, with reduced motion enabled. They load the existing local mock route `/products/tailored-hourglass-blazer`; this is visual evidence for layout and interactions, not live API evidence. The rendered local document is taller than the artboards (desktop 3363 CSS px; mobile 3755 CSS px), so these viewport captures show the top viewport and crop lower page content/footer. This height difference comes from the app's real content and API-driven review/error states; no review specimen or shorter fake page is injected to force the artboard height.
+
+| Desktop · 1280 × 3007 CSS px | Mobile · 390 × 3037 CSS px |
 |---|---|
-| Design: [Stitch 03](pdp-design-desktop.png)<br>Implementation: [Customer Web](pdp-desktop.png) | Design: [responsive prototype](pdp-design-mobile.png)<br>Implementation: [Customer Web](pdp-mobile.png) |
+| **Design**<br>![Approved Stitch 05 Product Detail Desktop](pdp-design-desktop.png)<br>**Implementation**<br>![Customer Web desktop PDP](pdp-desktop.png) | **Design**<br>![Approved Stitch 06 Product Detail Mobile](pdp-design-mobile.png)<br>**Implementation**<br>![Customer Web mobile PDP](pdp-mobile.png) |
 
-## Intentional differences from Stitch 03
+## Mapping and remaining differences
 
-- The approved frame uses Aura branding, serif typography, EUR and editorial product copy. The application keeps Fashion Shop branding, Be Vietnam Pro, VND and API-backed catalog fields per repository design/API contracts.
-- Stitch presents one size group and adds `Size Guide` and `Find in Store` actions. The customer API can return multiple catalog-backed attribute groups, and there is no size-guide route or store availability endpoint, so these controls are not fabricated.
-- Stitch provides color swatch colors and editorial copy/media. The API exposes variant attribute/value identifiers and labels, product short/long descriptions and product media, but no verified swatch colors or editorial content relation. The page now uses the API-backed short description, long description and product media in the same editorial two-column composition; the title and copy therefore remain product data rather than Stitch's sample story.
-- Stitch has no breadcrumb, quantity, reviews, or related-products section in frame 03. The app retains the required semantic breadcrumb, existing quantity control, and API-backed related/review areas. Related products use the reference's staggered 4-column desktop / 2-column mobile image-led layout and hover reveal, but links navigate to the existing PDP route instead of adding to cart. Review failure in these captures is the actual local mock authorization error, not a live API test.
-- Product labels, image, price and variant fixtures differ from Stitch. We did not modify mock or backend catalog data to mimic the design sample.
-- The approved frame uses Aura's serif display face; the reviewed app brief requires Be Vietnam Pro throughout. The implementation keeps Be Vietnam Pro and matches the source hierarchy through size, weight, tracking and spacing.
+- The page sequence, desktop gallery/purchase split, mobile stacked hierarchy, image ratios, thumbnail arrangement, variant selection controls, quantity/add action, accordion hierarchy, related-product grid, mobile sticky purchase bar, and bottom navigation are mapped to frames 05/06. Gallery selection, thumbnail dimming, image transition, hover treatment, and motion-reduced behavior use the existing UI and shared motion conventions.
+- Brand, typography (Be Vietnam Pro), Fashion Shop identity and VND follow the repository contracts. Stitch uses illustrative Maison Aure product copy and photography. The implementation screenshot consequently shows the existing mock product `Tailored Hourglass Blazer`, its English catalog copy, its current media, price, and variants. These fixtures were not edited to imitate the design sample; live catalog content may differ.
+- The screenshot is the logged-out state: its primary action routes to login and its desktop/mobile header account affordance follows the existing auth behavior. Stitch's sample CTA is shown as add-to-cart, so its label/action differs for a guest under the current authentication contract.
+- Stitch's `THIẾT KẾ KINH ĐIỂN` badge, exact editorial story copy/media, size-guide content, and shipping/return promises have no verified product API fields or dedicated customer endpoint. The page uses only API-backed product fields/media for its story and omits unsupported claims/actions. Public product responses do not expose stock quantities, so no stock count is displayed.
+- The review-state strip visible in the Stitch artboard is a review-only design specimen. It is not customer content and is not rendered. Actual reviews remain integrated through the existing API state handling. The app also keeps its existing semantic breadcrumb, related-product and review sections where they are outside or differ from the artboard's illustrative specimen.
+- The approved mobile frame has four related cards while this local mock response returns two. The UI lays out the returned products in the same two-column grid and does not synthesize extra catalog items.
 
-## Visual review
-
-The PDP follows Stitch 03's desktop sequence: compact breadcrumb then image-led gallery and sticky purchase panel, expandable product details, full-width editorial story block, then image-led related products. Gallery hover zoom, inactive-thumbnail dimming, main-image fade, CTA hover scale, desktop story reveal and staggered related-card reveal are implemented with reduced-motion handling. Desktop keeps vertical thumbnails beside the 4:5 hero. Mobile follows the local responsive prototype: the gallery stacks before product data, the short description stays under price, choices use a four-column grid, and the desktop-only story block is omitted. Remaining differences above follow the existing brand, user-approved typeface, API and route contracts.
+No API, route, validation, authentication, or commerce behavior was changed to match illustrative Stitch content. Live API results were not checked in this visual comparison.
