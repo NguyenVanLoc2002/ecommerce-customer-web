@@ -19,14 +19,14 @@ export const CheckoutStepper = ({ currentStep }: CheckoutStepperProps) => {
 
   return (
     <nav aria-label="Các bước thanh toán" className="border-b border-border pb-5">
-      <ol className="grid grid-cols-4 gap-2 md:gap-5">
+      <ol className="mx-auto grid max-w-3xl grid-cols-4 gap-2 md:gap-6">
         {steps.map((step, index) => {
           const active = index === currentIndex;
           const complete = index < currentIndex;
 
           return (
             <li aria-current={active ? 'step' : undefined} className="min-w-0 space-y-1.5" key={step.key}>
-              <div className="flex flex-col items-center gap-1 md:flex-row md:items-center md:gap-3">
+              <div className="flex min-h-14 flex-col items-center justify-start gap-1 md:min-h-10 md:flex-row md:justify-center md:gap-2">
                 <span
                   className={cn(
                     'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-colors',
@@ -39,8 +39,8 @@ export const CheckoutStepper = ({ currentStep }: CheckoutStepperProps) => {
                 >
                   {complete ? '✓' : index + 1}
                 </span>
-                <span className={cn('text-center text-[9px] leading-3 md:text-left md:text-sm md:leading-5', active || complete ? 'font-semibold text-text-primary' : 'text-text-secondary')}>
-                  {index + 1}. {step.label}
+                <span className={cn('text-center text-[10px] leading-3 md:text-xs md:leading-5', active || complete ? 'font-semibold text-text-primary' : 'text-text-secondary')}>
+                  {step.label}
                 </span>
               </div>
               <div className={cn('h-1 rounded-full', complete || active ? 'bg-text-primary' : 'bg-border')} />

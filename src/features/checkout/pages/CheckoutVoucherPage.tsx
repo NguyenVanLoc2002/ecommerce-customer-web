@@ -59,15 +59,14 @@ export const CheckoutVoucherPage = () => {
   return (
     <>
       <PageSEO description="Preview voucher eligibility before reviewing the order." noIndex path={routes.checkoutVoucher} title="Checkout Voucher" />
-      <Container className="mx-auto max-w-[1280px] space-y-8 px-5 py-8 md:space-y-10 md:px-12 md:py-12">
+      <Container className="max-w-6xl space-y-6 py-5 md:space-y-8 md:py-8">
         <CheckoutStepper currentStep="voucher" />
-        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px] xl:gap-14">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-8">
           <section className="space-y-6">
-            <div className="space-y-4 border-b border-border pb-8">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Step 03</p>
-              <h1 className="font-display text-3xl leading-tight text-text-primary md:text-[2.5rem]">Apply Rewards &amp; Vouchers</h1>
+            <div className="space-y-2 border-b border-border pb-4">
+              <h1 className="text-xl font-medium tracking-tight text-text-primary md:text-3xl">Mã giảm giá &amp; Khuyến mãi</h1>
                 <p className="max-w-2xl text-sm leading-7 text-text-secondary">
-                Enter a code to refresh the cart-aware order preview. The server calculates the discount, shipping, and total.
+                Nhập mã ưu đãi để kiểm tra mức giảm cho đơn hàng.
               </p>
             </div>
             {cartQuery.isLoading ? <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Loading voucher preview..." /> : null}
@@ -113,17 +112,17 @@ export const CheckoutVoucherPage = () => {
                           ? 'Totals are calculated by the server from your active cart and selected delivery option.'
                           : 'The server will calculate the discount and delivery once your address and carrier are selected.'
               }
-              eyebrow="Order value"
+              items={cart.items}
               footer={
                 <div className="space-y-3">
                   <Button fullWidth onClick={() => navigate(routes.checkoutReview)} size="lg">
-                    Continue to review your order
+                    Xem lại đơn hàng
                   </Button>
                   <Button fullWidth onClick={() => navigate(routes.checkoutPayment)} variant="ghost">
-                    Return to payment
+                    Quay lại thanh toán
                   </Button>
                   <Button fullWidth onClick={() => navigate(routes.checkoutReview)} variant="ghost">
-                    Continue without a code
+                    Tiếp tục không dùng mã
                   </Button>
                 </div>
               }
@@ -140,7 +139,7 @@ export const CheckoutVoucherPage = () => {
                   </p>
                 </div>
               }
-              title="Summary"
+              title="Đơn hàng của bạn"
               totals={summaryTotals}
               valueOverrides={previewValueOverrides}
               variant="checkout"

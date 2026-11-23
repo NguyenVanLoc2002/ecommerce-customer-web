@@ -32,7 +32,7 @@ export const CheckoutCarrierSelector = ({
     return (
       <section aria-live="polite" className="border border-border bg-surface px-5 py-5 md:px-6">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Shipping carrier</p>
-        <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Loading delivery options</h2>
+        <h2 className="mt-2 text-sm font-semibold uppercase tracking-wider text-text-primary">Loading delivery options</h2>
         <p className="mt-4 text-sm leading-7 text-text-secondary">Fetching the live carrier list for this checkout.</p>
       </section>
     );
@@ -42,7 +42,7 @@ export const CheckoutCarrierSelector = ({
     return (
       <section aria-live="assertive" className="border border-danger/30 bg-surface px-5 py-5 md:px-6">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-danger">Shipping carrier</p>
-        <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Carrier loading failed</h2>
+        <h2 className="mt-2 text-sm font-semibold uppercase tracking-wider text-text-primary">Carrier loading failed</h2>
         <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">{errorMessage}</p>
         <div className="mt-6">
           <Button onClick={onRetry} variant="secondary">
@@ -57,7 +57,7 @@ export const CheckoutCarrierSelector = ({
     return (
       <section aria-live="polite" className="border border-border bg-surface px-5 py-5 md:px-6">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Shipping carrier</p>
-        <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">No carrier available</h2>
+        <h2 className="mt-2 text-sm font-semibold uppercase tracking-wider text-text-primary">No carrier available</h2>
         <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">
           The backend returned no active checkout carrier, so this order can still continue with a zero-fee shipping fallback.
         </p>
@@ -70,12 +70,12 @@ export const CheckoutCarrierSelector = ({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Shipping carrier</p>
-          <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Choose a delivery option</h2>
+          <h2 className="mt-2 text-sm font-semibold uppercase tracking-wider text-text-primary">Đơn vị vận chuyển</h2>
         </div>
         {previewLoading ? <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary">Refreshing total...</p> : null}
       </div>
       <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">
-        Delivery fees are quoted server-side from the selected carrier and your chosen shipping address.
+        Phí giao hàng được tính theo địa chỉ và đơn vị vận chuyển đã chọn.
       </p>
       <fieldset aria-describedby="shipping-carrier-hint" className="mt-6">
         <legend className="sr-only">Shipping carrier</legend>
@@ -127,7 +127,7 @@ export const CheckoutCarrierSelector = ({
                           width={40}
                         />
                       ) : null}
-                      <h3 className="font-display text-[1.75rem] leading-none text-text-primary">{option.name}</h3>
+                      <h3 className="text-sm font-semibold leading-snug text-text-primary">{option.name}</h3>
                     </div>
                     <p className="mt-3 text-sm leading-7 text-text-secondary">
                       {option.description?.trim() ? option.description : 'Live shipping quote available during checkout preview.'}

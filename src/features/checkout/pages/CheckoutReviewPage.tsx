@@ -214,13 +214,12 @@ export const CheckoutReviewPage = () => {
   return (
     <>
       <PageSEO description="Review address, payment, voucher preview, and order total before placing the order." noIndex path={routes.checkoutReview} title="Checkout Review" />
-      <Container className="mx-auto max-w-[1280px] space-y-8 px-5 py-8 md:space-y-10 md:px-12 md:py-12">
+      <Container className="max-w-6xl space-y-6 py-5 md:space-y-8 md:py-8">
         <CheckoutStepper currentStep="review" />
-        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px] xl:gap-14">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-8">
           <section className="space-y-6">
-            <div className="space-y-4 border-b border-border pb-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">Bước cuối · Xác nhận đơn</p>
-              <h1 className="text-3xl font-semibold leading-tight text-text-primary md:text-4xl">Xem lại đơn hàng</h1>
+            <div className="space-y-2 border-b border-border pb-4">
+              <h1 className="text-xl font-medium tracking-tight text-text-primary md:text-3xl">Xác nhận đơn hàng</h1>
               <p className="max-w-2xl text-sm leading-7 text-text-secondary">
                 Kiểm tra thông tin trước khi gửi yêu cầu tạo đơn. Hệ thống sẽ xác minh lại giá, ưu đãi và phí vận chuyển.
               </p>
@@ -241,8 +240,8 @@ export const CheckoutReviewPage = () => {
                 <section className="border border-border bg-surface px-5 py-5 md:px-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Thông tin giao hàng</p>
-                      <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{address.receiverName}</h2>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">1. Thông tin giao hàng</p>
+                      <h2 className="mt-2 text-base font-semibold leading-snug text-text-primary">{address.receiverName}</h2>
                     </div>
                     <button className={editLinkClassName} onClick={() => navigate(routes.checkoutAddress)} type="button">
                       Chỉnh sửa
@@ -273,8 +272,8 @@ export const CheckoutReviewPage = () => {
                 <section className="border border-border bg-surface px-5 py-5 md:px-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Phương thức thanh toán</p>
-                      <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{getPaymentMethodLabel(paymentMethod)}</h2>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">3. Phương thức thanh toán</p>
+                      <h2 className="mt-2 text-base font-semibold leading-snug text-text-primary">{getPaymentMethodLabel(paymentMethod)}</h2>
                     </div>
                     <button className={editLinkClassName} onClick={() => navigate(routes.checkoutPayment)} type="button">
                       Thay đổi
@@ -287,6 +286,32 @@ export const CheckoutReviewPage = () => {
                 </section>
 
                 <section className="border border-border bg-surface px-5 py-5 md:px-6">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">4. Sản phẩm trong kiện hàng ({cart?.items.length ?? 0})</p>
+                  <div className="mt-6 space-y-5">
+                    {cart?.items.map((item) => (
+                      <article className="grid grid-cols-[56px_minmax(0,1fr)_auto] items-start gap-3 border-b border-border pb-4 last:border-b-0 last:pb-0 md:grid-cols-[72px_minmax(0,1fr)_auto]" key={item.id}>
+                        <img
+                          alt={item.primaryImage.alt}
+                          className="aspect-[4/5] w-full bg-surface-soft object-cover"
+                          height={item.primaryImage.height}
+                          loading="lazy"
+                          src={item.primaryImage.src}
+                          width={item.primaryImage.width}
+                        />
+                        <div>
+                          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">{item.brandName}</p>
+                          <h3 className="mt-1 text-sm font-medium leading-snug text-text-primary">{item.productName}</h3>
+                          <p className="mt-3 text-sm uppercase tracking-[0.08em] text-text-secondary">
+                            {item.color} / {item.size} / Qty {item.quantity}
+                          </p>
+                        </div>
+                        <p className="text-sm font-medium text-text-primary md:text-right">{formatVnd(item.subtotal)}</p>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+
+                                <section className="border border-border bg-surface px-5 py-5 md:px-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Mã ưu đãi</p>
@@ -306,32 +331,6 @@ export const CheckoutReviewPage = () => {
                 <section className="border border-border bg-surface px-5 py-5 md:px-6">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Ghi chú đơn hàng</p>
                   <p className="mt-4 text-sm leading-7 text-text-secondary">{customerNote.trim().length > 0 ? customerNote : 'Không có ghi chú.'}</p>
-                </section>
-
-                <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Sản phẩm trong đơn</p>
-                  <div className="mt-6 space-y-5">
-                    {cart?.items.map((item) => (
-                      <article className="grid gap-4 border-b border-border pb-5 last:border-b-0 last:pb-0 md:grid-cols-[104px_minmax(0,1fr)_auto]" key={item.id}>
-                        <img
-                          alt={item.primaryImage.alt}
-                          className="aspect-[4/5] w-full bg-surface-soft object-cover"
-                          height={item.primaryImage.height}
-                          loading="lazy"
-                          src={item.primaryImage.src}
-                          width={item.primaryImage.width}
-                        />
-                        <div>
-                          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">{item.brandName}</p>
-                          <h3 className="mt-3 font-display text-[1.5rem] leading-none text-text-primary">{item.productName}</h3>
-                          <p className="mt-3 text-sm uppercase tracking-[0.08em] text-text-secondary">
-                            {item.color} / {item.size} / Qty {item.quantity}
-                          </p>
-                        </div>
-                        <p className="text-sm font-medium text-text-primary md:text-right">{formatVnd(item.subtotal)}</p>
-                      </article>
-                    ))}
-                  </div>
                 </section>
               </div>
             ) : null}

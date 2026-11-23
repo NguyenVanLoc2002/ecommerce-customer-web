@@ -22,13 +22,13 @@ import { PAYMENT_PROVIDERS } from '@/shared/types/payment.types';
 const paymentOptions = [
   {
     value: PAYMENT_METHODS.COD,
-    title: 'Cash on delivery',
-    description: 'Pay for your order when it is delivered.',
+    title: 'Thanh toán khi nhận hàng (COD)',
+    description: 'Thanh toán khi nhận được đơn hàng.',
   },
   {
     value: PAYMENT_METHODS.ONLINE,
     title: 'Thanh toán online',
-    description: 'Reserve the order now, then continue to the payment flow after the order is placed. Hiện hỗ trợ MoMo và PayPal.',
+    description: 'Chọn MoMo hoặc PayPal để thanh toán sau khi tạo đơn.',
   },
 ] as const;
 
@@ -105,15 +105,14 @@ export const CheckoutPaymentPage = () => {
   return (
     <>
       <PageSEO description="Select the payment method and add delivery notes for this order." noIndex path={routes.checkoutPayment} title="Checkout Payment" />
-      <Container className="space-y-8 py-8 md:space-y-10 md:py-10">
+      <Container className="max-w-6xl space-y-6 py-5 md:space-y-8 md:py-8">
         <CheckoutStepper currentStep="payment" />
-        <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-8">
           <section className="space-y-6">
-            <div className="space-y-4 border-b border-border pb-8">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Step 02</p>
-              <h1 className="font-display text-3xl leading-tight text-text-primary md:text-[2.5rem]">Payment Method</h1>
+            <div className="space-y-2 border-b border-border pb-4">
+              <h1 className="text-xl font-medium tracking-tight text-text-primary md:text-3xl">Chọn cách bạn thanh toán</h1>
               <p className="max-w-2xl text-sm leading-7 text-text-secondary">
-                Choose how you want to complete the order, then add any delivery note that should travel with it.
+                Chọn phương thức thanh toán và thêm ghi chú giao hàng nếu cần.
               </p>
             </div>
             {cartQuery.isLoading ? <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Loading payment options..." /> : null}
@@ -127,16 +126,15 @@ export const CheckoutPaymentPage = () => {
                       selected ? 'border-text-primary bg-surface' : 'border-border bg-surface hover:border-text-primary'
                     }`}
                     key={option.value}
-                    onClick={() => setPaymentMethod(option.value)}
+                    aria-pressed={selected} onClick={() => setPaymentMethod(option.value)}
                     type="button"
                   >
                     <div className="flex items-start gap-4">
-                      <span className={`mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full border ${selected ? 'border-text-primary' : 'border-border'}`}>
+                      <span className={`mt-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-text-primary' : 'border-border'}`}>
                         <span className={`h-2 w-2 rounded-full ${selected ? 'bg-text-primary' : 'bg-transparent'}`} />
                       </span>
                       <div>
-                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Payment option</p>
-                        <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{option.title}</h2>
+                        <h2 className="mt-2 text-base font-semibold leading-snug text-text-primary">{option.title}</h2>
                         <p className="mt-3 max-w-2xl text-sm leading-7 text-text-secondary">{option.description}</p>
                       </div>
                     </div>
@@ -146,8 +144,7 @@ export const CheckoutPaymentPage = () => {
             </div>
             {paymentMethod === PAYMENT_METHODS.ONLINE ? (
               <div className="border border-border bg-surface px-5 py-5 md:px-6">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Provider</p>
-                <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Choose your online gateway</h2>
+                <h2 className="mt-2 text-base font-semibold leading-snug text-text-primary">Chọn cổng thanh toán</h2>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-text-secondary">
                   Chọn cổng thanh toán online trước khi tiếp tục đặt đơn.
                 </p>
@@ -161,16 +158,15 @@ export const CheckoutPaymentPage = () => {
                           selected ? 'border-text-primary bg-surface' : 'border-border bg-surface hover:border-text-primary'
                         }`}
                         key={option.value}
-                        onClick={() => setPaymentProvider(option.value)}
+                        aria-pressed={selected} onClick={() => setPaymentProvider(option.value)}
                         type="button"
                       >
                         <div className="flex items-start gap-4">
-                          <span className={`mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full border ${selected ? 'border-text-primary' : 'border-border'}`}>
+                          <span className={`mt-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-text-primary' : 'border-border'}`}>
                             <span className={`h-2 w-2 rounded-full ${selected ? 'bg-text-primary' : 'bg-transparent'}`} />
                           </span>
                           <div>
-                            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Online provider</p>
-                            <h3 className="mt-3 font-display text-[1.75rem] leading-none text-text-primary">{option.title}</h3>
+                            <h3 className="mt-2 text-sm font-semibold leading-snug text-text-primary">{option.title}</h3>
                             <p className="mt-3 max-w-2xl text-sm leading-7 text-text-secondary">{option.description}</p>
                           </div>
                         </div>
@@ -183,7 +179,7 @@ export const CheckoutPaymentPage = () => {
             <div className="border border-border bg-surface px-5 py-5 md:px-6">
               <Textarea
                 hint="Optional note saved on the order record."
-                label="Delivery note"
+                label="Ghi chú giao hàng"
                 onChange={(event) => setCustomerNote(event.target.value)}
                 placeholder="Special delivery instructions or styling timing."
                 value={customerNote}
@@ -206,14 +202,14 @@ export const CheckoutPaymentPage = () => {
                           ? `${getPaymentMethodNote(paymentMethod)} Provider: ${getPaymentProviderLabel(paymentProvider)}.`
                           : getPaymentMethodNote(paymentMethod)
               }
-              eyebrow="Selected payment"
+              items={cart.items}
               footer={
                 <div className="space-y-3">
                   <Button fullWidth onClick={() => navigate(routes.checkoutVoucher)} size="lg">
-                    Continue to rewards
+                    Tiếp tục
                   </Button>
                   <Button fullWidth onClick={() => navigate(routes.checkoutAddress)} variant="ghost">
-                    Back to shipping
+                    Quay lại địa chỉ
                   </Button>
                 </div>
               }
@@ -233,7 +229,7 @@ export const CheckoutPaymentPage = () => {
                   </p>
                 </div>
               }
-              title="Order value"
+              title="Đơn hàng của bạn"
               totals={summaryTotals}
               valueOverrides={previewValueOverrides}
               variant="checkout"

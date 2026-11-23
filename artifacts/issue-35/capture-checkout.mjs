@@ -57,6 +57,11 @@ const browser = await chromium.launch({ headless: true });
 try {
   for (const viewport of [{ name: 'desktop', width: 1280 }, { name: 'mobile', width: 390 }]) {
     const page = await browser.newPage({ viewport: { width: viewport.width, height: 1000 }, deviceScaleFactor: 2 });
+    const runtimeErrors = [];
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    page.on('console', (message) => {
+      if (message.type() === 'error' && !message.text().includes('401 (Unauthorized)')) runtimeErrors.push(message.text());
+    });
     await page.route('**/api/v1/**', async (route) => {
       const pathname = new URL(route.request().url()).pathname;
       const data = pathname.endsWith('/cart') ? cart
@@ -67,7 +72,9 @@ try {
       await route.fulfill({ status: pathname.endsWith('/auth/refresh-token') ? 401 : 200, contentType: 'application/json', body: JSON.stringify({ data, message: null, timestamp: new Date().toISOString() }) });
     });
     await page.goto(`${baseURL}/`);
-    await page.waitForTimeout(250);
+    await page.waitForLoadState('networkidle');
+    // The checkout audit starts after the storefront bootstrap.
+    runtimeErrors.length = 0;
     await page.evaluate(async ({ address, order }) => {
       const { useAuthStore } = await import('/src/shared/stores/authStore.ts');
       const { useCheckoutStore } = await import('/src/features/checkout/stores/checkoutStore.ts');
@@ -90,9 +97,15 @@ try {
         window.dispatchEvent(new PopStateEvent('popstate'));
       }, `/checkout/${route}`);
       await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(300);
+      await page.locator('main h1').waitFor({ state: 'visible' });
+      await page.evaluate(() => document.fonts.ready);
+      if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) {
+        throw new Error(`Horizontal overflow on ${route} at ${viewport.width}px`);
+      }
       await page.screenshot({ path: join(outputDir, `${route}-${viewport.name}.png`), fullPage: true });
+      console.log(`Captured ${route} at ${viewport.width}×${height}`);
     }
+    if (runtimeErrors.length) throw new Error(runtimeErrors.join('\n'));
     await page.close();
   }
 } finally {
