@@ -26,7 +26,7 @@ import {
 import { useUiStore } from '@/shared/stores/uiStore';
 import { createIdempotencyKey } from '@/shared/utils/createIdempotencyKey';
 import { formatAddress } from '@/shared/utils/formatAddress';
-import { formatMoney } from '@/shared/utils/formatMoney';
+import { formatVnd } from '@/shared/utils/formatVnd';
 import { PAYMENT_METHODS } from '@/shared/types/enums';
 import { PAYMENT_PROVIDERS } from '@/shared/types/payment.types';
 
@@ -214,15 +214,14 @@ export const CheckoutReviewPage = () => {
   return (
     <>
       <PageSEO description="Review address, payment, voucher preview, and order total before placing the order." noIndex path={routes.checkoutReview} title="Checkout Review" />
-      <Container className="space-y-8 py-8 md:space-y-10 md:py-10">
+      <Container className="max-w-6xl space-y-6 py-5 md:space-y-8 md:py-8">
         <CheckoutStepper currentStep="review" />
-        <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-8">
           <section className="space-y-6">
-            <div className="space-y-4 border-b border-border pb-8">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Step 04</p>
-              <h1 className="font-display text-[3.25rem] leading-none text-text-primary md:text-[4.25rem]">Review Your Order</h1>
+            <div className="space-y-2 border-b border-border pb-4">
+              <h1 className="text-xl font-medium tracking-tight text-text-primary md:text-3xl">Xác nhận đơn hàng</h1>
               <p className="max-w-2xl text-sm leading-7 text-text-secondary">
-                Confirm each detail before the order is placed and moved into the archive.
+                Kiểm tra thông tin trước khi gửi yêu cầu tạo đơn. Hệ thống sẽ xác minh lại giá, ưu đãi và phí vận chuyển.
               </p>
             </div>
             {cartQuery.isLoading || addressesQuery.isLoading ? (
@@ -241,11 +240,11 @@ export const CheckoutReviewPage = () => {
                 <section className="border border-border bg-surface px-5 py-5 md:px-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Shipping address</p>
-                      <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{address.receiverName}</h2>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">1. Thông tin giao hàng</p>
+                      <h2 className="mt-2 text-base font-semibold leading-snug text-text-primary">{address.receiverName}</h2>
                     </div>
                     <button className={editLinkClassName} onClick={() => navigate(routes.checkoutAddress)} type="button">
-                      Edit
+                      Chỉnh sửa
                     </button>
                   </div>
                   <p className="mt-4 text-sm uppercase tracking-[0.08em] text-text-secondary">{address.phoneNumber}</p>
@@ -273,11 +272,11 @@ export const CheckoutReviewPage = () => {
                 <section className="border border-border bg-surface px-5 py-5 md:px-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Payment method</p>
-                      <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{getPaymentMethodLabel(paymentMethod)}</h2>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">3. Phương thức thanh toán</p>
+                      <h2 className="mt-2 text-base font-semibold leading-snug text-text-primary">{getPaymentMethodLabel(paymentMethod)}</h2>
                     </div>
                     <button className={editLinkClassName} onClick={() => navigate(routes.checkoutPayment)} type="button">
-                      Edit
+                      Thay đổi
                     </button>
                   </div>
                   <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">
@@ -287,32 +286,10 @@ export const CheckoutReviewPage = () => {
                 </section>
 
                 <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Rewards &amp; voucher</p>
-                      <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{voucherCode || 'No voucher applied'}</h2>
-                    </div>
-                    <button className={editLinkClassName} onClick={() => navigate(routes.checkoutVoucher)} type="button">
-                      Edit
-                    </button>
-                  </div>
-                  <p className="mt-4 text-sm leading-7 text-text-secondary">
-                    {orderPreview?.voucherCode
-                      ? `The server preview includes a ${formatMoney(orderPreview.discountAmount)} discount. Order placement will revalidate the code and recalculate the final total.`
-                      : 'No voucher is included in the current order preview.'}
-                  </p>
-                </section>
-
-                <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Order note (optional)</p>
-                  <p className="mt-4 text-sm leading-7 text-text-secondary">{customerNote.trim().length > 0 ? customerNote : 'No note provided.'}</p>
-                </section>
-
-                <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Your selection</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">4. Sản phẩm trong kiện hàng ({cart?.items.length ?? 0})</p>
                   <div className="mt-6 space-y-5">
                     {cart?.items.map((item) => (
-                      <article className="grid gap-4 border-b border-border pb-5 last:border-b-0 last:pb-0 md:grid-cols-[104px_minmax(0,1fr)_auto]" key={item.id}>
+                      <article className="grid grid-cols-[56px_minmax(0,1fr)_auto] items-start gap-3 border-b border-border pb-4 last:border-b-0 last:pb-0 md:grid-cols-[72px_minmax(0,1fr)_auto]" key={item.id}>
                         <img
                           alt={item.primaryImage.alt}
                           className="aspect-[4/5] w-full bg-surface-soft object-cover"
@@ -323,15 +300,37 @@ export const CheckoutReviewPage = () => {
                         />
                         <div>
                           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">{item.brandName}</p>
-                          <h3 className="mt-3 font-display text-[1.5rem] leading-none text-text-primary">{item.productName}</h3>
+                          <h3 className="mt-1 text-sm font-medium leading-snug text-text-primary">{item.productName}</h3>
                           <p className="mt-3 text-sm uppercase tracking-[0.08em] text-text-secondary">
                             {item.color} / {item.size} / Qty {item.quantity}
                           </p>
                         </div>
-                        <p className="text-sm text-text-primary md:text-right">{formatMoney(item.subtotal)}</p>
+                        <p className="text-sm font-medium text-text-primary md:text-right">{formatVnd(item.subtotal)}</p>
                       </article>
                     ))}
                   </div>
+                </section>
+
+                                <section className="border border-border bg-surface px-5 py-5 md:px-6">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Mã ưu đãi</p>
+                      <h2 className="mt-3 text-xl font-semibold leading-tight text-text-primary">{voucherCode || 'Không dùng mã'}</h2>
+                    </div>
+                    <button className={editLinkClassName} onClick={() => navigate(routes.checkoutVoucher)} type="button">
+                      Thay đổi
+                    </button>
+                  </div>
+                  <p className="mt-4 text-sm leading-7 text-text-secondary">
+                    {orderPreview?.voucherCode
+                      ? `Báo giá hệ thống đã trừ ${formatVnd(orderPreview.discountAmount)}. Hệ thống sẽ kiểm tra và tính lại khi tạo đơn.`
+                      : 'Đơn hàng hiện không áp dụng mã ưu đãi.'}
+                  </p>
+                </section>
+
+                <section className="border border-border bg-surface px-5 py-5 md:px-6">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Ghi chú đơn hàng</p>
+                  <p className="mt-4 text-sm leading-7 text-text-secondary">{customerNote.trim().length > 0 ? customerNote : 'Không có ghi chú.'}</p>
                 </section>
               </div>
             ) : null}
@@ -341,10 +340,10 @@ export const CheckoutReviewPage = () => {
               footer={
                 <div className="space-y-3">
                   <Button disabled={placeOrderDisabled} fullWidth onClick={handlePlaceOrder} size="lg">
-                    {submitStage === 'placing-order' ? 'Creating order...' : 'Place order'}
+                    {submitStage === 'placing-order' ? 'Đang tạo đơn…' : 'Đặt hàng'}
                   </Button>
                   <Button fullWidth onClick={() => navigate(routes.checkoutVoucher)} variant="ghost">
-                    Back to rewards
+                    Quay lại mã ưu đãi
                   </Button>
                   <Button
                     fullWidth
@@ -354,7 +353,7 @@ export const CheckoutReviewPage = () => {
                     }}
                     variant="ghost"
                   >
-                    Start over
+                    Quay lại giỏ hàng
                   </Button>
                 </div>
               }
@@ -369,8 +368,8 @@ export const CheckoutReviewPage = () => {
                     : previewError
                       ? 'The shipping quote preview failed. Refresh the carrier selection before placing the order.'
                       : orderPreview
-                        ? 'Live totals are sourced from POST /orders/preview. Voucher codes still persist without changing discount totals in the current backend.'
-                        : 'Waiting for a live shipping quote from the server.'
+                        ? 'Tổng tiền lấy từ POST /orders/preview và sẽ được máy chủ xác minh lại khi tạo đơn.'
+                        : 'Đang chờ báo giá từ hệ thống.'
               }
               supplementary={
                 <div className="space-y-3 text-sm leading-7 text-text-secondary">
@@ -381,7 +380,7 @@ export const CheckoutReviewPage = () => {
                         ? `${selectedCarrier.name}${orderPreview?.shippingServiceName ? ` / ${orderPreview.shippingServiceName}` : ''}.`
                       : carrierSelectionRequired
                         ? 'Choose a carrier to finish the shipping quote preview.'
-                        : 'No carrier is currently available for this checkout, so the backend fallback keeps shipping at $0.'}
+                        : 'No carrier is currently available for this checkout. Shipping is calculated by the server.'}
                   </p>
                   <p>
                     The order is created immediately after placement and moved into the archive.

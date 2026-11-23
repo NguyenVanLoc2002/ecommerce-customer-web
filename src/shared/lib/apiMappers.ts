@@ -181,7 +181,7 @@ export const toVoucherPreview = (code: string, response: ValidateVoucherResponse
   description:
     response.discountAmount > 0
       ? `Preview amount ${response.discountAmount.toFixed(2)} from ${response.discountType ?? 'promotion'}.`
-      : 'The backend validates voucher eligibility here, but order totals are still unchanged until backend support is completed.',
+      : 'The server calculated this voucher against the current order preview; it does not reduce this order total.',
   discountAmount: response.discountAmount,
 });
 
