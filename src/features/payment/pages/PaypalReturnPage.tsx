@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { CheckCircle2, LoaderCircle, XCircle } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 
@@ -8,8 +8,8 @@ import { clearPendingPaypalPayment } from '@/features/payment/lib/pendingPaypalP
 import { EmptyState } from '@/shared/components/feedback/EmptyState';
 import { ErrorCard } from '@/shared/components/feedback/ErrorCard';
 import { LoadingOverlay } from '@/shared/components/feedback/LoadingOverlay';
-import { Container } from '@/shared/components/layout/Container';
-import { PageSEO } from '@/shared/components/seo/PageSEO';
+import { PaymentPageLayout } from '@/features/payment/components/PaymentPageLayout';
+import { PaymentOrderSummary } from '@/features/payment/components/PaymentOrderSummary';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { getPaymentProviderLabel, getPaymentStatusLabel } from '@/shared/lib/commerceLabels';
@@ -18,13 +18,13 @@ import { canStartOrRetryOnlinePayment, getCancelledPaidMessage, isCancelledOrder
 import { isMutationProcessingError, isPaymentAlreadyProcessedError, isUncertainMutationFailure } from '@/shared/lib/idempotentMutation';
 import { PAYMENT_PROVIDERS, PAYMENT_STATUSES } from '@/shared/types/payment.types';
 import { formatDate } from '@/shared/utils/formatDate';
-import { formatMoney } from '@/shared/utils/formatMoney';
+import { formatVnd } from '@/shared/utils/formatVnd';
 
 const statusToneClasses: Record<string, string> = {
-  [PAYMENT_STATUSES.PAID]: 'border-success/20 bg-success/10 text-success',
-  [PAYMENT_STATUSES.INITIATED]: 'border-warning/20 bg-warning/10 text-warning',
-  [PAYMENT_STATUSES.PENDING]: 'border-warning/20 bg-warning/10 text-warning',
-  [PAYMENT_STATUSES.PROCESSING]: 'border-warning/20 bg-warning/10 text-warning',
+  [PAYMENT_STATUSES.PAID]: 'border-success/20 bg-success/10 text-brand-primary',
+  [PAYMENT_STATUSES.INITIATED]: 'border-warning/20 bg-warning/10 text-brand-primary',
+  [PAYMENT_STATUSES.PENDING]: 'border-warning/20 bg-warning/10 text-brand-primary',
+  [PAYMENT_STATUSES.PROCESSING]: 'border-warning/20 bg-warning/10 text-brand-primary',
   [PAYMENT_STATUSES.FAILED]: 'border-danger/20 bg-danger/10 text-danger',
   [PAYMENT_STATUSES.CANCELLED]: 'border-danger/20 bg-danger/10 text-danger',
   [PAYMENT_STATUSES.EXPIRED]: 'border-danger/20 bg-danger/10 text-danger',
@@ -47,7 +47,7 @@ export const PaypalReturnPage = () => {
   const capturePayment = useCapturePayment();
   const paymentQuery = usePaypalReturnPolling(orderId);
   const orderQuery = useOrderLifecycle(orderId);
-  const [hasTriggeredCapture, setHasTriggeredCapture] = useState(false);
+  const hasTriggeredCapture = useRef(false);
 
   const payment = paymentQuery.data;
   const order = orderQuery.data;
@@ -71,11 +71,11 @@ export const PaypalReturnPage = () => {
   }, [orderId]);
 
   useEffect(() => {
-    if (!orderId || !providerToken || hasTriggeredCapture || orderQuery.isLoading || orderQuery.isError || !order || !canCapture) {
+    if (!orderId || !providerToken || hasTriggeredCapture.current || orderQuery.isLoading || orderQuery.isError || !order || !canCapture) {
       return;
     }
 
-    setHasTriggeredCapture(true);
+    hasTriggeredCapture.current = true;
     capturePayment.mutate(
       {
         orderId,
@@ -90,96 +90,84 @@ export const PaypalReturnPage = () => {
         },
       },
     );
-  }, [canCapture, capturePayment, hasTriggeredCapture, order, orderId, orderQuery.isError, orderQuery.isLoading, paymentQuery, providerToken]);
+  }, [canCapture, capturePayment, order, orderId, orderQuery.isError, orderQuery.isLoading, paymentQuery, providerToken]);
 
   if (!orderId) {
     return (
-      <>
-        <PageSEO description="Verify the latest PayPal payment status for your order." noIndex path={routes.paymentPaypalReturn} title="PayPal Payment Return" />
-        <Container className="py-12">
-          <EmptyState
-            action={
-              <div className="flex flex-wrap justify-center gap-3">
-                <Link className={buttonStyles({})} to={routes.orders}>
-                  Xem đơn hàng
-                </Link>
-                <Link className={buttonStyles({ variant: 'ghost' })} to={routes.products}>
-                  Tiếp tục mua sắm
-                </Link>
-              </div>
-            }
-            className="border-border bg-surface px-6 py-16"
-            description="Không tìm thấy thông tin đơn hàng để kiểm tra thanh toán."
-            title="Thiếu mã đơn hàng"
-          />
-        </Container>
-      </>
+      <PaymentPageLayout path={routes.paymentPaypalReturn} title="Xác thực thanh toán PayPal">
+        <EmptyState
+          action={
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link className={buttonStyles({})} to={routes.orders}>
+                Xem đơn hàng
+              </Link>
+              <Link className={buttonStyles({ variant: 'ghost' })} to={routes.products}>
+                Tiếp tục mua sắm
+              </Link>
+            </div>
+          }
+          className="border-border bg-surface px-6 py-16"
+          description="Không tìm thấy thông tin đơn hàng để kiểm tra thanh toán."
+          title="Thiếu mã đơn hàng"
+        />
+      </PaymentPageLayout>
     );
   }
 
   if (!providerToken) {
     return (
-      <>
-        <PageSEO description="Verify the latest PayPal payment status for your order." noIndex path={routes.paymentPaypalReturn} title="PayPal Payment Return" />
-        <Container className="py-12">
-          <EmptyState
-            action={
-              <div className="flex flex-wrap justify-center gap-3">
-                <Link className={buttonStyles({})} to={routePaths.orderDetail(orderId)}>
-                  Xem đơn hàng
-                </Link>
-                <Link className={buttonStyles({ variant: 'ghost' })} to={routes.products}>
-                  Tiếp tục mua sắm
-                </Link>
-              </div>
-            }
-            className="border-border bg-surface px-6 py-16"
-            description="Không tìm thấy mã xác nhận PayPal."
-            title="Thiếu token PayPal"
-          />
-        </Container>
-      </>
+      <PaymentPageLayout path={routes.paymentPaypalReturn} title="Xác thực thanh toán PayPal">
+        <EmptyState
+          action={
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link className={buttonStyles({})} to={routePaths.orderDetail(orderId)}>
+                Xem đơn hàng
+              </Link>
+              <Link className={buttonStyles({ variant: 'ghost' })} to={routes.products}>
+                Tiếp tục mua sắm
+              </Link>
+            </div>
+          }
+          className="border-border bg-surface px-6 py-16"
+          description="Không tìm thấy mã xác nhận PayPal."
+          title="Thiếu token PayPal"
+        />
+      </PaymentPageLayout>
     );
   }
 
   if (paymentQuery.isError && paymentErrorCode === 'ORDER_NOT_FOUND') {
     return (
-      <>
-        <PageSEO description="Verify the latest PayPal payment status for your order." noIndex path={routes.paymentPaypalReturn} title="PayPal Payment Return" />
-        <Container className="py-12">
-          <EmptyState
-            action={
-              <div className="flex flex-wrap justify-center gap-3">
-                <Link className={buttonStyles({})} to={routes.orders}>
-                  Xem đơn hàng
-                </Link>
-                <Link className={buttonStyles({ variant: 'ghost' })} to={routes.products}>
-                  Tiếp tục mua sắm
-                </Link>
-              </div>
-            }
-            className="border-border bg-surface px-6 py-16"
-            description="Không tìm thấy thông tin đơn hàng để kiểm tra thanh toán."
-            title="Đơn hàng không tồn tại"
-          />
-        </Container>
-      </>
+      <PaymentPageLayout path={routes.paymentPaypalReturn} title="Xác thực thanh toán PayPal">
+        <EmptyState
+          action={
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link className={buttonStyles({})} to={routes.orders}>
+                Xem đơn hàng
+              </Link>
+              <Link className={buttonStyles({ variant: 'ghost' })} to={routes.products}>
+                Tiếp tục mua sắm
+              </Link>
+            </div>
+          }
+          className="border-border bg-surface px-6 py-16"
+          description="Không tìm thấy thông tin đơn hàng để kiểm tra thanh toán."
+          title="Đơn hàng không tồn tại"
+        />
+      </PaymentPageLayout>
     );
   }
 
   if (paymentQuery.isError && paymentErrorCode !== 'PAYMENT_NOT_FOUND' && paymentErrorCode !== 'ORDER_NOT_FOUND') {
     return (
-      <>
-        <PageSEO description="Verify the latest PayPal payment status for your order." noIndex path={routes.paymentPaypalReturn} title="PayPal Payment Return" />
-        <Container className="py-12">
-          <ErrorCard
-            action={<Button onClick={() => void paymentQuery.refetch()}>Kiểm tra lại</Button>}
-            className="border-border bg-surface"
-            description="Không thể tải trạng thái thanh toán từ hệ thống hiện tại."
-            title="Không thể kiểm tra thanh toán"
-          />
-        </Container>
-      </>
+      <PaymentPageLayout path={routes.paymentPaypalReturn} title="Xác thực thanh toán PayPal">
+        <ErrorCard
+          action={<Button onClick={() => void paymentQuery.refetch()}>Kiểm tra lại</Button>}
+          className="border-border bg-surface"
+          description="Không thể tải trạng thái thanh toán từ hệ thống hiện tại."
+          title="Không thể kiểm tra thanh toán"
+        />
+      </PaymentPageLayout>
     );
   }
 
@@ -205,7 +193,7 @@ export const PaypalReturnPage = () => {
           ? 'Đang hoàn tất thanh toán PayPal...'
           : isPendingAfterTimeout
             ? 'Thanh toán PayPal đang được xử lý'
-            : 'Đang xác nhận thanh toán PayPal...';
+            : 'Fashion Shop đang xác minh kết quả PayPal qua máy chủ trước khi ghi nhận thanh toán.';
   const description = isLatePaid
     ? cancelledPaidMessage
     : isOrderCancelled && !isSuccess
@@ -227,95 +215,93 @@ export const PaypalReturnPage = () => {
             : 'Đang xác nhận thanh toán PayPal...';
 
   return (
-    <>
-      <PageSEO description="Verify the latest PayPal payment status for your order." noIndex path={routes.paymentPaypalReturn} title="PayPal Payment Return" />
-      <Container className="space-y-8 pb-16 pt-28 md:space-y-10 md:pb-20 md:pt-32">
-        {paymentQuery.isLoading && !payment || orderQuery.isLoading ? <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Đang xác minh đơn và thanh toán PayPal..." /> : null}
-        {orderQuery.isError ? (
-          <ErrorCard action={<Button onClick={() => void orderQuery.refetch()}>Kiểm tra trạng thái đơn</Button>} className="border-border bg-surface" description="Đã dừng capture cho đến khi trạng thái đơn được xác minh. Vui lòng kiểm tra lại trước khi tiếp tục." title="Không tải được trạng thái đơn" />
-        ) : null}
-        <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_380px]">
-          <section className="space-y-6">
-            <div className="border border-border bg-surface px-6 py-8 md:px-8 md:py-10">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">PayPal return</p>
-                  <h1 className="mt-4 font-sans text-[2rem] font-semibold leading-tight text-text-primary md:text-4xl">{title}</h1>
-                  <p className="mt-4 text-sm uppercase tracking-[0.08em] text-text-secondary">{providerLabel}</p>
-                </div>
-                {status ? (
-                  <div className={`inline-flex items-center gap-2 border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] ${statusToneClasses[status] ?? 'border-border bg-surface-muted text-text-primary'}`}>
-                    {isSuccess ? <CheckCircle2 className="h-4 w-4" /> : null}
-                    {isFailed ? <XCircle className="h-4 w-4" /> : null}
-                    {isCapturing || isChecking ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-                    {getPaymentStatusLabel(status)}
-                  </div>
-                ) : null}
+    <PaymentPageLayout path={routes.paymentPaypalReturn} title="Xác thực thanh toán PayPal" orderCode={payment?.orderCode ?? order?.orderCode}>
+      {paymentQuery.isLoading && !payment || orderQuery.isLoading ? <LoadingOverlay className="min-h-24 rounded-lg border-border bg-surface" inline label="Đang xác minh đơn và thanh toán PayPal..." /> : null}
+      {orderQuery.isError ? (
+        <ErrorCard action={<Button onClick={() => void orderQuery.refetch()}>Kiểm tra trạng thái đơn</Button>} className="border-border bg-surface" description="Đã dừng capture cho đến khi trạng thái đơn được xác minh. Vui lòng kiểm tra lại trước khi tiếp tục." title="Không tải được trạng thái đơn" />
+      ) : null}
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-8">
+        <section className="min-w-0 space-y-5">
+          <div className="rounded-lg border border-border bg-surface p-5 md:p-8 lg:p-10">
+            <div className="flex flex-wrap items-start justify-between gap-4" role="status">
+              <div>
+                <h2 className="text-xl font-semibold leading-tight text-text-primary md:text-2xl">{title}</h2>
+                <p className="mt-4 text-sm uppercase tracking-[0.08em] text-text-secondary">{providerLabel}</p>
               </div>
-
-              <p className="mt-5 max-w-2xl text-sm leading-7 text-text-secondary">{description}</p>
-
-              {isCapturing ? (
-                <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Đang hoàn tất thanh toán PayPal...</p>
-              ) : null}
-              {isChecking ? (
-                <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Poll {paymentQuery.attemptCount} / 15</p>
+              {status ? (
+                <div className={`inline-flex items-center gap-2 border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] ${statusToneClasses[status] ?? 'border-border bg-surface-muted text-text-primary'}`}>
+                  {isSuccess ? <CheckCircle2 className="h-4 w-4" /> : null}
+                  {isFailed ? <XCircle className="h-4 w-4" /> : null}
+                  {isCapturing || isChecking ? <LoaderCircle aria-hidden="true" className="h-4 w-4 motion-safe:animate-spin" /> : null}
+                  {getPaymentStatusLabel(status)}
+                </div>
               ) : null}
             </div>
 
-            {payment ? (
-              <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                <div className="grid gap-5 md:grid-cols-2">
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Order code</p>
-                    <p className="mt-3 font-mono text-sm text-text-primary">{payment.orderCode}</p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Payment code</p>
-                    <p className="mt-3 font-mono text-sm text-text-primary">{payment.paymentCode}</p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Amount</p>
-                    <p className="mt-3 text-sm text-text-primary">{formatMoney(payment.amount)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Updated from backend</p>
-                    <p className="mt-3 text-sm text-text-primary">
-                      {formatDate(payment.paidAt ?? payment.createdAt, {
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
-                  </div>
-                </div>
-              </section>
-            ) : null}
-          </section>
+            <p className="mt-5 rounded bg-surface-muted p-4 text-sm leading-7 text-text-secondary md:p-5">{description}</p>
 
-          <aside className="space-y-4">
-            <section className="border border-border bg-surface px-5 py-5 md:px-6">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Next actions</p>
-              <div className="mt-6 space-y-3">
-                <Link className={buttonStyles({ fullWidth: true })} to={routePaths.orderDetail(orderId)}>
-                  Xem đơn hàng
-                </Link>
-                <Link className={buttonStyles({ fullWidth: true, variant: 'ghost' })} to={routes.products}>
-                  Tiếp tục mua sắm
-                </Link>
-                {hasBlockingCaptureError || isPendingAfterTimeout ? (
-                  <Button fullWidth onClick={() => void paymentQuery.refetch()} variant="secondary">
-                    Kiểm tra lại
-                  </Button>
-                ) : null}
+            {isCapturing ? (
+              <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Đang hoàn tất thanh toán PayPal...</p>
+            ) : null}
+            {isChecking ? (
+              <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Lần kiểm tra {paymentQuery.attemptCount} / 15</p>
+            ) : null}
+          </div>
+
+          {payment ? (
+            <section className="min-w-0 rounded-lg border border-border bg-surface p-5 md:p-8">
+              <h2 className="mb-5 text-sm font-semibold uppercase tracking-wide">Thông tin giao dịch</h2>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Mã đơn hàng</p>
+                  <p className="mt-3 break-all font-mono text-sm text-text-primary">{payment.orderCode}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Mã thanh toán</p>
+                  <p className="mt-3 break-all font-mono text-sm text-text-primary">{payment.paymentCode}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Tổng thanh toán</p>
+                  <p className="mt-3 text-sm text-text-primary">{formatVnd(payment.amount)}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Thời gian giao dịch</p>
+                  <p className="mt-3 text-sm text-text-primary">
+                    {formatDate(payment.paidAt ?? payment.createdAt, {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
               </div>
             </section>
-          </aside>
-        </div>
-      </Container>
-    </>
+          ) : null}
+          <section className="min-w-0 rounded-lg border border-border bg-surface p-5 md:p-8">
+            <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Thao tác tiếp theo</h2>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {hasBlockingCaptureError || isChecking || isPendingAfterTimeout ? (
+                <Button disabled={paymentQuery.isFetching || isCapturing} fullWidth onClick={() => void paymentQuery.refetch()}>
+                  Kiểm tra lại
+                </Button>
+              ) : null}
+              <Link className={buttonStyles({ fullWidth: true })} to={routePaths.orderDetail(orderId)}>
+                Xem đơn hàng
+              </Link>
+              <Link className={buttonStyles({ fullWidth: true, variant: 'ghost' })} to={routes.products}>
+                Tiếp tục mua sắm
+              </Link>
+            </div>
+          </section>
+        </section>
+
+        <aside className="min-w-0 space-y-4">
+          {!orderQuery.isError && order ? <PaymentOrderSummary order={order} /> : null}
+        </aside>
+      </div>
+    </PaymentPageLayout>
   );
 };
 

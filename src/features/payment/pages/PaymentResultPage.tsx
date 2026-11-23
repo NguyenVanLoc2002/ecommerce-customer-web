@@ -10,8 +10,8 @@ import { getPaymentRedirectUrl } from '@/features/payment/services/paymentServic
 import { EmptyState } from '@/shared/components/feedback/EmptyState';
 import { ErrorCard } from '@/shared/components/feedback/ErrorCard';
 import { LoadingOverlay } from '@/shared/components/feedback/LoadingOverlay';
-import { Container } from '@/shared/components/layout/Container';
-import { PageSEO } from '@/shared/components/seo/PageSEO';
+import { PaymentPageLayout } from '@/features/payment/components/PaymentPageLayout';
+import { PaymentOrderSummary } from '@/features/payment/components/PaymentOrderSummary';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { isAuthenticationError } from '@/shared/lib/authErrors';
@@ -28,7 +28,7 @@ import { canStartOrRetryOnlinePayment, getCancelledPaidMessage, isCancelledOrder
 import { PAYMENT_PROVIDERS, PAYMENT_STATUSES, normalizePaymentProvider, type PaymentProvider } from '@/shared/types/payment.types';
 import { createIdempotencyKey } from '@/shared/utils/createIdempotencyKey';
 import { formatDate } from '@/shared/utils/formatDate';
-import { formatMoney } from '@/shared/utils/formatMoney';
+import { formatVnd } from '@/shared/utils/formatVnd';
 
 const codeButtonClassName =
   'inline-flex items-center border border-border px-4 py-2 font-mono text-sm text-text-primary transition-colors hover:border-text-primary';
@@ -36,10 +36,10 @@ const PAYMENT_STATUS_UNKNOWN_MESSAGE =
   'Thanh toán có thể vẫn đang được xử lý. Vui lòng kiểm tra lại trạng thái đơn hàng hoặc thử lại sau.';
 
 const statusToneClasses: Record<string, string> = {
-  [PAYMENT_STATUSES.PAID]: 'border-success/20 bg-success/10 text-success',
+  [PAYMENT_STATUSES.PAID]: 'border-success/20 bg-success/10 text-brand-primary',
   [PAYMENT_STATUSES.INITIATED]: 'border-info/20 bg-info/10 text-info',
-  [PAYMENT_STATUSES.PENDING]: 'border-warning/20 bg-warning/10 text-warning',
-  [PAYMENT_STATUSES.PROCESSING]: 'border-warning/20 bg-warning/10 text-warning',
+  [PAYMENT_STATUSES.PENDING]: 'border-warning/20 bg-warning/10 text-brand-primary',
+  [PAYMENT_STATUSES.PROCESSING]: 'border-warning/20 bg-warning/10 text-brand-primary',
   [PAYMENT_STATUSES.FAILED]: 'border-danger/20 bg-danger/10 text-danger',
   [PAYMENT_STATUSES.CANCELLED]: 'border-danger/20 bg-danger/10 text-danger',
   [PAYMENT_STATUSES.EXPIRED]: 'border-danger/20 bg-danger/10 text-danger',
@@ -331,250 +331,241 @@ export const PaymentResultPage = () => {
 
   if (!orderId) {
     return (
-      <>
-        <PageSEO description="Review the latest payment status for your order." noIndex path={routes.paymentResult} title="Payment Result" />
-        <Container className="py-12">
-          <EmptyState
-            action={
-              <Link className={buttonStyles({})} to={routes.orders}>
-                View orders
-              </Link>
-            }
-            className="border-border bg-surface px-6 py-16"
-            description="Open this page from an order detail payment action so the correct order reference is available."
-            title="Payment reference missing."
-          />
-        </Container>
-      </>
+      <PaymentPageLayout path={routes.paymentResult} title="Kết quả xử lý giao dịch đơn hàng">
+        <EmptyState
+          action={
+            <Link className={buttonStyles({})} to={routes.orders}>
+              View orders
+            </Link>
+          }
+          className="border-border bg-surface px-6 py-16"
+          description="Open this page from an order detail payment action so the correct order reference is available."
+          title="Payment reference missing."
+        />
+      </PaymentPageLayout>
     );
   }
 
   return (
-    <>
-      <PageSEO description="Review the latest payment status for your order." noIndex path={routes.paymentResult} title="Payment Result" />
-      <Container className="space-y-8 pb-16 pt-28 md:space-y-10 md:pb-20 md:pt-32">
-        {paymentQuery.isLoading || orderQuery.isLoading ? <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Loading order and payment status..." /> : null}
-        {isRedirecting ? <LoadingOverlay label={`Đang chuyển hướng sang ${paymentProviderLabel}...`} /> : null}
-        {paymentQuery.isError && !isNotFound && !isOrderMissing ? (
-          <ErrorCard
-            action={<Button onClick={() => void paymentQuery.refetch()}>Retry</Button>}
-            className="border-border bg-surface"
-            description="The payment record could not be loaded from the current service."
-            title="Payment lookup failed"
-          />
-        ) : null}
-        {orderQuery.isError && !isOrderMissing ? (
-          <ErrorCard
-            action={<Button onClick={() => void orderQuery.refetch()}>Check order status again</Button>}
-            className="border-border bg-surface"
-            description="Payment actions are paused until the current order status can be verified."
-            title="Order status unavailable"
-          />
-        ) : null}
-        {paymentQuery.isError && isOrderMissing ? (
-          <EmptyState
-            action={
-              <Link className={buttonStyles({})} to={routes.orders}>
-                Return to archive
-              </Link>
-            }
-            className="border-border bg-surface px-6 py-16"
-            description="This order reference could not be matched to your customer archive."
-            title="Order not found."
-          />
-        ) : null}
-        {paymentQuery.isError && isNotFound && orderLifecycle && !orderQuery.isError ? (
-          <EmptyState
-            action={
-              <div className="flex flex-wrap justify-center gap-3">
-                {canManagePayment && paymentProvider ? (
-                  <Button disabled={initiatePayment.isPending} onClick={() => initiate()}>
-                    {initiatePayment.isPending ? 'Initiating payment...' : `Start ${paymentProviderLabel} payment`}
+    <PaymentPageLayout path={routes.paymentResult} title="Kết quả xử lý giao dịch đơn hàng" orderCode={payment?.orderCode ?? orderLifecycle?.orderCode}>
+      {paymentQuery.isLoading || orderQuery.isLoading ? <LoadingOverlay className="min-h-24 rounded-lg border-border bg-surface" inline label="Loading order and payment status..." /> : null}
+      {isRedirecting ? <LoadingOverlay label={`Đang chuyển hướng sang ${paymentProviderLabel}...`} /> : null}
+      {paymentQuery.isError && !isNotFound && !isOrderMissing ? (
+        <ErrorCard
+          action={<Button onClick={() => void paymentQuery.refetch()}>Retry</Button>}
+          className="border-border bg-surface"
+          description="The payment record could not be loaded from the current service."
+          title="Payment lookup failed"
+        />
+      ) : null}
+      {orderQuery.isError && !isOrderMissing ? (
+        <ErrorCard
+          action={<Button onClick={() => void orderQuery.refetch()}>Check order status again</Button>}
+          className="border-border bg-surface"
+          description="Payment actions are paused until the current order status can be verified."
+          title="Order status unavailable"
+        />
+      ) : null}
+      {paymentQuery.isError && isOrderMissing ? (
+        <EmptyState
+          action={
+            <Link className={buttonStyles({})} to={routes.orders}>
+              Return to archive
+            </Link>
+          }
+          className="border-border bg-surface px-6 py-16"
+          description="This order reference could not be matched to your customer archive."
+          title="Order not found."
+        />
+      ) : null}
+      {paymentQuery.isError && isNotFound && orderLifecycle && !orderQuery.isError ? (
+        <EmptyState
+          action={
+            <div className="flex flex-wrap justify-center gap-3">
+              {canManagePayment && paymentProvider ? (
+                <Button disabled={initiatePayment.isPending} onClick={() => initiate()}>
+                  {initiatePayment.isPending ? 'Initiating payment...' : `Start ${paymentProviderLabel} payment`}
+                </Button>
+              ) : canManagePayment ? (
+                <>
+                  <Button disabled={initiatePayment.isPending} onClick={() => initiate(PAYMENT_PROVIDERS.PAYPAL)}>
+                    {initiatePayment.isPending ? 'Initiating payment...' : 'Start PayPal payment'}
                   </Button>
-                ) : canManagePayment ? (
+                  <Button disabled={initiatePayment.isPending} onClick={() => initiate(PAYMENT_PROVIDERS.MOMO)} variant="secondary">
+                    {initiatePayment.isPending ? 'Initiating payment...' : 'Start MoMo payment'}
+                  </Button>
+                </>
+              ) : null}
+              <Link className={buttonStyles({ variant: 'ghost' })} to={routePaths.orderDetail(orderId)}>
+                Back to order
+              </Link>
+            </div>
+          }
+          className="border-border bg-surface px-6 py-16"
+          description={cancelledPaidMessage ?? (canManagePayment
+            ? paymentProvider
+              ? 'No payment record exists yet. Start the selected online payment to create the first transaction.'
+              : 'No payment record exists yet. Choose MoMo or PayPal to create the first transaction.'
+            : 'This order is no longer awaiting online payment. Review its current status in the order details.')}
+          title={cancelledPaidMessage ? 'Payment received, order cancelled.' : canManagePayment ? 'Payment not found.' : 'Payment cannot be started for this order.'}
+        />
+      ) : null}
+      {payment ? (
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-8">
+          <section className="min-w-0 space-y-5">
+            <div className="rounded-lg border border-border bg-surface p-5 md:p-8 lg:p-10">
+              <div className="flex flex-wrap items-start justify-between gap-4" role="status">
+                <div>
+                  <h2 className="text-xl font-semibold leading-tight text-text-primary md:text-2xl">
+                    {isLatePaid
+                      ? 'Payment received, order cancelled.'
+                      : isOrderCancelled
+                        ? 'Order cancelled. Payment cannot continue.'
+                      : payment.status === PAYMENT_STATUSES.PAID
+                        ? orderQuery.isError
+                          ? 'Payment recorded, order status unavailable.'
+                          : 'Payment Completed.'
+                      : payment.status === PAYMENT_STATUSES.FAILED
+                        ? 'Payment Failed.'
+                        : isPaymentEnded
+                          ? 'Payment attempt ended.'
+                          : 'Payment Processing.'}
+                  </h2>
+                  <p className="mt-4 text-sm uppercase tracking-[0.08em] text-text-secondary">{getPaymentProviderLabel(payment.provider ?? payment.transactions[0]?.provider ?? paymentProvider)}</p>
+                </div>
+                <div className={`inline-flex items-center gap-2 border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] ${statusToneClasses[payment.status]}`}>
+                  {payment.status === PAYMENT_STATUSES.PAID ? <CheckCircle2 className="h-4 w-4" /> : null}
+                  {payment.status === PAYMENT_STATUSES.FAILED ? <XCircle className="h-4 w-4" /> : null}
+                  {isProcessingStatus(payment.status) ? <LoaderCircle aria-hidden="true" className="h-4 w-4 motion-safe:animate-spin" /> : null}
+                  {getPaymentStatusLabel(payment.status)}
+                </div>
+              </div>
+
+              <p className="mt-5 rounded bg-surface-muted p-4 text-sm leading-7 text-text-secondary md:p-5">
+                {isLatePaid
+                  ? cancelledPaidMessage
+                  : isOrderCancelled
+                    ? 'This order expired and was cancelled. Do not continue payment or assume it will be fulfilled.'
+                  : payment.status === PAYMENT_STATUSES.PAID
+                    ? orderQuery.isError
+                      ? 'The payment service reports PAID, but the order status could not be verified. Check the order details before assuming fulfillment has started.'
+                      : 'The Backend confirms payment. Review the order status for the current fulfillment state.'
+                  : payment.status === PAYMENT_STATUSES.FAILED
+                    ? `The gateway reported a failed ${paymentProviderLabel} transaction. You can retry payment from this page without creating a duplicate record.`
+                    : isPaymentEnded
+                      ? 'This payment attempt is closed. Start another attempt only if the Backend still reports the order as awaiting payment.'
+                    : paymentQuery.maxAttemptsReached
+                      ? 'The payment is still processing. Automatic polling has paused, but you can check again manually at any time.'
+                      : 'Fashion Shop đang kiểm tra trạng thái giao dịch từ máy chủ. Việc quay lại từ cổng thanh toán chưa xác nhận giao dịch.'}
+              </p>
+
+              <div className="mt-6 flex flex-wrap items-baseline justify-between gap-3 border-t border-border pt-5">
+                <span className="text-sm text-text-secondary">Tổng thanh toán</span>
+                <strong className="text-xl">{formatVnd(payment.amount)}</strong>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                <button aria-label={`Sao chép mã thanh toán ${payment.paymentCode}`} className={codeButtonClassName} onClick={() => void copyCode(payment.paymentCode, 'Mã thanh toán')} type="button">
+                  {payment.paymentCode}
+                </button>
+                <button aria-label={`Sao chép mã đơn hàng ${payment.orderCode}`} className={codeButtonClassName} onClick={() => void copyCode(payment.orderCode, 'Mã đơn hàng')} type="button">
+                  {payment.orderCode}
+                </button>
+              </div>
+            </div>
+
+            {payment.transactions.length > 0 ? (
+              <section className="min-w-0 rounded-lg border border-border bg-surface p-5 md:p-8">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Lịch sử giao dịch</h2>
+                </div>
+                {isProcessingStatus(payment.status) && !paymentQuery.maxAttemptsReached ? (
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Lần kiểm tra {paymentQuery.attemptCount} / 8</p>
+                ) : null}
+              </div>
+              <div className="mt-6 space-y-4">
+                {payment.transactions.map((transaction) => (
+                  <article className="grid gap-4 border-b border-border pb-4 last:border-b-0 last:pb-0 md:grid-cols-[minmax(0,1fr)_180px]" key={transaction.id}>
+                    <div>
+                      <p className="break-all font-mono text-sm text-text-primary">{transaction.transactionCode}</p>
+                      <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
+                        {getPaymentStatusLabel(transaction.status)} / {getPaymentProviderLabel(transaction.provider)}
+                      </p>
+                      <p className="mt-3 text-sm leading-7 text-text-secondary">{transaction.note ?? 'No transaction note provided.'}</p>
+                    </div>
+                    <div className="text-left md:text-right">
+                      <p className="text-sm text-text-primary">{formatVnd(transaction.amount)}</p>
+                      <p className="mt-2 text-sm text-text-secondary">
+                        {formatDate(transaction.createdAt, {
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+            ) : null}
+            <section className="min-w-0 rounded-lg border border-border bg-surface p-5 md:p-8">
+              <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Thao tác tiếp theo</h2>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {isProcessingStatus(payment.status) ? (
+                  <Button disabled={paymentQuery.isFetching} fullWidth onClick={() => void paymentQuery.refetch()}>
+                    Check again
+                  </Button>
+                ) : null}
+                <Link className={buttonStyles({ fullWidth: true })} to={routePaths.orderDetail(payment.orderId)}>
+                  View order
+                </Link>
+                <Link className={buttonStyles({ fullWidth: true, variant: 'ghost' })} to={routes.products}>
+                  Continue shopping
+                </Link>
+                {canResumePayment ? (
+                  <Button
+                    fullWidth
+                    onClick={() => {
+                      setIsRedirecting(true);
+                      window.location.href = paymentRedirectUrl!;
+                    }}
+                    variant="secondary"
+                  >
+                    Continue to {getPaymentProviderLabel(payment.provider ?? payment.transactions[0]?.provider ?? paymentProvider)}
+                  </Button>
+                ) : null}
+                {canChooseProviderForExistingPayment ? (
                   <>
-                    <Button disabled={initiatePayment.isPending} onClick={() => initiate(PAYMENT_PROVIDERS.PAYPAL)}>
-                      {initiatePayment.isPending ? 'Initiating payment...' : 'Start PayPal payment'}
+                    <Button disabled={initiatePayment.isPending} fullWidth onClick={() => initiate(PAYMENT_PROVIDERS.PAYPAL)} variant="secondary">
+                      {initiatePayment.isPending ? 'Retrying payment...' : 'Create PayPal payment link'}
                     </Button>
-                    <Button disabled={initiatePayment.isPending} onClick={() => initiate(PAYMENT_PROVIDERS.MOMO)} variant="secondary">
-                      {initiatePayment.isPending ? 'Initiating payment...' : 'Start MoMo payment'}
+                    <Button disabled={initiatePayment.isPending} fullWidth onClick={() => initiate(PAYMENT_PROVIDERS.MOMO)} variant="secondary">
+                      {initiatePayment.isPending ? 'Retrying payment...' : 'Create MoMo payment link'}
                     </Button>
                   </>
                 ) : null}
-                <Link className={buttonStyles({ variant: 'ghost' })} to={routePaths.orderDetail(orderId)}>
-                  Back to order
-                </Link>
+                {canReinitiatePayment ? (
+                  <Button disabled={initiatePayment.isPending} fullWidth onClick={() => initiate()} variant="secondary">
+                    {initiatePayment.isPending
+                      ? 'Retrying payment...'
+                      : payment.status === PAYMENT_STATUSES.FAILED
+                        ? `Retry ${paymentProviderLabel} payment`
+                        : `Create ${paymentProviderLabel} payment link`}
+                  </Button>
+                ) : null}
               </div>
-            }
-            className="border-border bg-surface px-6 py-16"
-            description={cancelledPaidMessage ?? (canManagePayment
-              ? paymentProvider
-                ? 'No payment record exists yet. Start the selected online payment to create the first transaction.'
-                : 'No payment record exists yet. Choose MoMo or PayPal to create the first transaction.'
-              : 'This order is no longer awaiting online payment. Review its current status in the order details.')}
-            title={cancelledPaidMessage ? 'Payment received, order cancelled.' : canManagePayment ? 'Payment not found.' : 'Payment cannot be started for this order.'}
-          />
-        ) : null}
-        {payment ? (
-          <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_380px]">
-            <section className="space-y-6">
-              <div className="border border-border bg-surface px-6 py-8 md:px-8 md:py-10">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Payment result</p>
-                    <h1 className="mt-4 font-sans text-[2rem] font-semibold leading-tight text-text-primary md:text-4xl">
-                      {isLatePaid
-                        ? 'Payment received, order cancelled.'
-                        : isOrderCancelled
-                          ? 'Order cancelled. Payment cannot continue.'
-                        : payment.status === PAYMENT_STATUSES.PAID
-                          ? orderQuery.isError
-                            ? 'Payment recorded, order status unavailable.'
-                            : 'Payment Completed.'
-                        : payment.status === PAYMENT_STATUSES.FAILED
-                          ? 'Payment Failed.'
-                          : isPaymentEnded
-                            ? 'Payment attempt ended.'
-                            : 'Payment Processing.'}
-                    </h1>
-                    <p className="mt-4 text-sm uppercase tracking-[0.08em] text-text-secondary">{getPaymentProviderLabel(payment.provider ?? payment.transactions[0]?.provider ?? paymentProvider)}</p>
-                  </div>
-                  <div className={`inline-flex items-center gap-2 border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] ${statusToneClasses[payment.status]}`}>
-                    {payment.status === PAYMENT_STATUSES.PAID ? <CheckCircle2 className="h-4 w-4" /> : null}
-                    {payment.status === PAYMENT_STATUSES.FAILED ? <XCircle className="h-4 w-4" /> : null}
-                    {isProcessingStatus(payment.status) ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-                    {getPaymentStatusLabel(payment.status)}
-                  </div>
-                </div>
-
-                <p className="mt-5 max-w-2xl text-sm leading-7 text-text-secondary">
-                  {isLatePaid
-                    ? cancelledPaidMessage
-                    : isOrderCancelled
-                      ? 'This order expired and was cancelled. Do not continue payment or assume it will be fulfilled.'
-                    : payment.status === PAYMENT_STATUSES.PAID
-                      ? orderQuery.isError
-                        ? 'The payment service reports PAID, but the order status could not be verified. Check the order details before assuming fulfillment has started.'
-                        : 'The Backend confirms payment. Review the order status for the current fulfillment state.'
-                    : payment.status === PAYMENT_STATUSES.FAILED
-                      ? `The gateway reported a failed ${paymentProviderLabel} transaction. You can retry payment from this page without creating a duplicate record.`
-                      : isPaymentEnded
-                        ? 'This payment attempt is closed. Start another attempt only if the Backend still reports the order as awaiting payment.'
-                      : paymentQuery.maxAttemptsReached
-                        ? 'The payment is still processing. Automatic polling has paused, but you can check again manually at any time.'
-                        : 'We are polling the latest payment status and will stop automatically when the gateway settles it.'}
-                </p>
-
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <button className={codeButtonClassName} onClick={() => void copyCode(payment.paymentCode, 'Payment code')} type="button">
-                    {payment.paymentCode}
-                  </button>
-                  <button className={codeButtonClassName} onClick={() => void copyCode(payment.orderCode, 'Order code')} type="button">
-                    {payment.orderCode}
-                  </button>
-                </div>
-              </div>
-
-              <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Transactions</p>
-                    <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Activity</h2>
-                  </div>
-                  {isProcessingStatus(payment.status) && !paymentQuery.maxAttemptsReached ? (
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Poll {paymentQuery.attemptCount} / 8</p>
-                  ) : null}
-                </div>
-                <div className="mt-6 space-y-4">
-                  {payment.transactions.map((transaction) => (
-                    <article className="grid gap-4 border-b border-border pb-4 last:border-b-0 last:pb-0 md:grid-cols-[minmax(0,1fr)_180px]" key={transaction.id}>
-                      <div>
-                        <p className="font-mono text-sm text-text-primary">{transaction.transactionCode}</p>
-                        <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
-                          {getPaymentStatusLabel(transaction.status)} / {getPaymentProviderLabel(transaction.provider)}
-                        </p>
-                        <p className="mt-3 text-sm leading-7 text-text-secondary">{transaction.note ?? 'No transaction note provided.'}</p>
-                      </div>
-                      <div className="text-left md:text-right">
-                        <p className="text-sm text-text-primary">{formatMoney(transaction.amount)}</p>
-                        <p className="mt-2 text-sm text-text-secondary">
-                          {formatDate(transaction.createdAt, {
-                            month: 'long',
-                            day: 'numeric',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
             </section>
+          </section>
 
-            <aside className="space-y-4">
-              <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Amount</p>
-                <p className="mt-3 font-display text-[2.8rem] leading-none text-text-primary">{formatMoney(payment.amount)}</p>
-                <p className="mt-4 text-sm leading-7 text-text-secondary">
-                  Created {formatDate(payment.createdAt)}
-                  {payment.paidAt ? `, paid ${formatDate(payment.paidAt)}` : '.'}
-                </p>
-              </section>
-
-              <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Next actions</p>
-                <div className="mt-6 space-y-3">
-                  <Link className={buttonStyles({ fullWidth: true })} to={routePaths.orderDetail(payment.orderId)}>
-                    View order
-                  </Link>
-                  <Link className={buttonStyles({ fullWidth: true, variant: 'ghost' })} to={routes.products}>
-                    Continue shopping
-                  </Link>
-                  {canResumePayment ? (
-                    <Button
-                      fullWidth
-                      onClick={() => {
-                        setIsRedirecting(true);
-                        window.location.href = paymentRedirectUrl!;
-                      }}
-                      variant="secondary"
-                    >
-                      Continue to {getPaymentProviderLabel(payment.provider ?? payment.transactions[0]?.provider ?? paymentProvider)}
-                    </Button>
-                  ) : null}
-                  {canChooseProviderForExistingPayment ? (
-                    <>
-                      <Button disabled={initiatePayment.isPending} fullWidth onClick={() => initiate(PAYMENT_PROVIDERS.PAYPAL)} variant="secondary">
-                        {initiatePayment.isPending ? 'Retrying payment...' : 'Create PayPal payment link'}
-                      </Button>
-                      <Button disabled={initiatePayment.isPending} fullWidth onClick={() => initiate(PAYMENT_PROVIDERS.MOMO)} variant="secondary">
-                        {initiatePayment.isPending ? 'Retrying payment...' : 'Create MoMo payment link'}
-                      </Button>
-                    </>
-                  ) : null}
-                  {canReinitiatePayment ? (
-                    <Button disabled={initiatePayment.isPending} fullWidth onClick={() => initiate()} variant="secondary">
-                      {initiatePayment.isPending
-                        ? 'Retrying payment...'
-                        : payment.status === PAYMENT_STATUSES.FAILED
-                          ? `Retry ${paymentProviderLabel} payment`
-                          : `Create ${paymentProviderLabel} payment link`}
-                    </Button>
-                  ) : null}
-                  {paymentQuery.maxAttemptsReached ? (
-                    <Button fullWidth onClick={() => void paymentQuery.refetch()} variant="secondary">
-                      Check again
-                    </Button>
-                  ) : null}
-                </div>
-              </section>
-            </aside>
-          </div>
-        ) : null}
-      </Container>
-    </>
+          <aside className="min-w-0 space-y-4">
+              {!orderQuery.isError && orderLifecycle ? <PaymentOrderSummary order={orderLifecycle} /> : null}
+          </aside>
+        </div>
+      ) : null}
+    </PaymentPageLayout>
   );
 };
 
