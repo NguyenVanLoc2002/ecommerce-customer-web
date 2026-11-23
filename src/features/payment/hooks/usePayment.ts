@@ -69,6 +69,7 @@ export const useInitiatePayment = () => {
     onSettled: (_, __, variables) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.payments.byOrder(variables.orderId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(variables.orderId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.orders.lifecycle(variables.orderId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders.list });
     },
   });
@@ -84,6 +85,7 @@ export const useCapturePayment = () => {
     onSettled: (_, __, variables) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.payments.byOrder(variables.orderId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(variables.orderId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.orders.lifecycle(variables.orderId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders.list });
     },
   });
@@ -140,6 +142,7 @@ export const usePaymentStatusPolling = (orderId: string, options: PaymentPolling
     }
 
     void queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(orderId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.orders.lifecycle(orderId) });
     void queryClient.invalidateQueries({ queryKey: queryKeys.orders.list });
   }, [orderId, query.data?.status, queryClient, terminalStatuses]);
 

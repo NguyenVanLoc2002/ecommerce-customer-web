@@ -3,6 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
 import { useMomoReturnPolling } from '@/features/payment/hooks/usePayment';
+import { useOrderLifecycle } from '@/shared/hooks/useOrderLifecycle';
+import { getCancelledPaidMessage, isCancelledOrderWithPaidPayment } from '@/shared/lib/orderPaymentLifecycle';
 import { EmptyState } from '@/shared/components/feedback/EmptyState';
 import { ErrorCard } from '@/shared/components/feedback/ErrorCard';
 import { LoadingOverlay } from '@/shared/components/feedback/LoadingOverlay';
@@ -39,7 +41,14 @@ export const MomoReturnPage = () => {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('orderId') ?? '';
   const paymentQuery = useMomoReturnPolling(orderId);
+  const orderQuery = useOrderLifecycle(orderId);
   const payment = paymentQuery.data;
+  const order = orderQuery.data;
+  const lifecycle = order
+    ? { orderStatus: order.status, paymentMethod: order.paymentMethod, orderPaymentStatus: order.paymentStatus, paymentStatus: payment?.status }
+    : null;
+  const isLatePaid = lifecycle ? isCancelledOrderWithPaidPayment(lifecycle) : false;
+  const cancelledPaidMessage = lifecycle ? getCancelledPaidMessage(lifecycle) : null;
   const errorCode =
     paymentQuery.error instanceof Error && 'code' in paymentQuery.error ? String((paymentQuery.error as { code?: string }).code) : '';
 
@@ -128,18 +137,29 @@ export const MomoReturnPage = () => {
   const status = payment?.status;
   const providerLabel = getPaymentProviderLabel(payment?.provider ?? payment?.transactions[0]?.provider ?? 'MOMO');
   const isSuccess = status === PAYMENT_STATUSES.PAID;
+  const isOrderCancelled = order?.status === 'CANCELLED';
   const isProcessing = isProcessingStatus(status) || (!payment && (paymentQuery.isLoading || paymentQuery.isFetching));
   const isFailed = isFailedStatus(status);
   const isPendingAfterTimeout = !isSuccess && !isFailed && paymentQuery.maxAttemptsReached;
-  const title = isSuccess
-    ? 'Thanh toán MoMo thành công'
+  const title = isLatePaid
+    ? 'Đã nhận tiền, đơn hàng đã hủy.'
+    : isOrderCancelled
+      ? 'Đơn hàng đã hủy.'
+    : isSuccess
+      ? 'Thanh toán MoMo đã được ghi nhận'
     : isFailed
       ? 'Thanh toán chưa hoàn tất hoặc đã bị hủy.'
       : isPendingAfterTimeout
         ? 'Thanh toán MoMo đang được xử lý'
         : 'Đang kiểm tra trạng thái thanh toán...';
-  const description = isSuccess
-    ? 'Hệ thống đã xác nhận thanh toán từ backend. Đơn hàng của bạn đã được cập nhật.'
+  const description = isLatePaid
+    ? cancelledPaidMessage
+    : isOrderCancelled
+      ? 'Đơn hàng đã hết hạn và bị hủy. Không tiếp tục thanh toán hoặc giả định đơn sẽ được giao. Hãy xem chi tiết đơn để kiểm tra trạng thái cuối cùng.'
+    : isSuccess
+      ? orderQuery.isError
+        ? 'Backend ghi nhận thanh toán PAID nhưng chưa thể xác minh trạng thái đơn. Vui lòng kiểm tra chi tiết đơn trước khi giả định xử lý giao hàng đã bắt đầu.'
+        : 'Backend đã xác nhận thanh toán. Xem trạng thái đơn hiện tại để biết tiến trình xử lý.'
     : isFailed
       ? 'Backend chưa xác nhận thanh toán thành công cho đơn hàng này.'
       : isPendingAfterTimeout
@@ -150,14 +170,17 @@ export const MomoReturnPage = () => {
     <>
       <PageSEO description="Verify the latest MoMo payment status for your order." noIndex path={routes.paymentMomoReturn} title="MoMo Payment Return" />
       <Container className="space-y-8 pb-16 pt-28 md:space-y-10 md:pb-20 md:pt-32">
-        {paymentQuery.isLoading && !payment ? <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Đang kiểm tra trạng thái thanh toán..." /> : null}
+        {paymentQuery.isLoading && !payment || orderQuery.isLoading ? <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Đang kiểm tra trạng thái đơn và thanh toán..." /> : null}
+        {orderQuery.isError ? (
+          <ErrorCard action={<Button onClick={() => void orderQuery.refetch()}>Kiểm tra trạng thái đơn</Button>} className="border-border bg-surface" description="Chưa xác minh được đơn có còn hiệu lực hay không. Dữ liệu thanh toán vẫn có thể xem bên dưới." title="Không tải được trạng thái đơn" />
+        ) : null}
         <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_380px]">
           <section className="space-y-6">
             <div className="border border-border bg-surface px-6 py-8 md:px-8 md:py-10">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">MoMo return</p>
-                  <h1 className="mt-4 font-display text-[3.5rem] leading-none text-text-primary md:text-[4.5rem]">{title}</h1>
+                  <h1 className="mt-4 font-sans text-[2rem] font-semibold leading-tight text-text-primary md:text-4xl">{title}</h1>
                   <p className="mt-4 text-sm uppercase tracking-[0.08em] text-text-secondary">{providerLabel}</p>
                 </div>
                 {status ? (

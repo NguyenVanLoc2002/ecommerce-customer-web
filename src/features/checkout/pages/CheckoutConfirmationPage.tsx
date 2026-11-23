@@ -12,9 +12,10 @@ import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { getPaymentMethodLabel, getPaymentProviderLabel } from '@/shared/lib/commerceLabels';
+import { canStartOrRetryOnlinePayment, getCancelledPaidMessage, getCheckoutHoldMessage } from '@/shared/lib/orderPaymentLifecycle';
 import { useUiStore } from '@/shared/stores/uiStore';
 import { ORDER_STATUSES, PAYMENT_METHODS } from '@/shared/types/enums';
-import { PAYMENT_PROVIDERS, PAYMENT_STATUSES } from '@/shared/types/payment.types';
+import { PAYMENT_PROVIDERS } from '@/shared/types/payment.types';
 import { formatAddress } from '@/shared/utils/formatAddress';
 import { formatDate } from '@/shared/utils/formatDate';
 
@@ -25,10 +26,14 @@ export const CheckoutConfirmationPage = () => {
   const paymentProvider = useCheckoutStore((state) => state.paymentProvider);
   const resetCheckout = useCheckoutStore((state) => state.resetCheckout);
   const [copied, setCopied] = useState(false);
-  const requiresOnlinePayment =
-    confirmationOrder?.paymentMethod === PAYMENT_METHODS.ONLINE &&
-    confirmationOrder.status === ORDER_STATUSES.AWAITING_PAYMENT &&
-    confirmationOrder.paymentStatus !== PAYMENT_STATUSES.PAID;
+  const lifecycle = confirmationOrder
+    ? {
+        orderStatus: confirmationOrder.status,
+        paymentMethod: confirmationOrder.paymentMethod,
+        orderPaymentStatus: confirmationOrder.paymentStatus,
+      }
+    : null;
+  const requiresOnlinePayment = lifecycle ? canStartOrRetryOnlinePayment(lifecycle) : false;
 
   if (!confirmationOrder) {
     return (
@@ -58,6 +63,15 @@ export const CheckoutConfirmationPage = () => {
       : paymentProvider === PAYMENT_PROVIDERS.MOCK
         ? 'Continue to Mock payment'
         : 'Pay with MoMo';
+  const cancelledPaidMessage = lifecycle ? getCancelledPaidMessage(lifecycle) : null;
+  const holdMessage = lifecycle ? getCheckoutHoldMessage(lifecycle) : null;
+  const confirmationTitle = cancelledPaidMessage
+    ? 'Payment recorded, order cancelled.'
+    : confirmationOrder.status === ORDER_STATUSES.PENDING
+      ? 'Order placed, awaiting confirmation.'
+      : confirmationOrder.status === ORDER_STATUSES.AWAITING_PAYMENT
+        ? 'Order placed, payment pending.'
+        : 'Order status updated.';
 
   return (
     <>
@@ -68,7 +82,7 @@ export const CheckoutConfirmationPage = () => {
           '@type': 'Order',
           orderNumber: confirmationOrder.code,
           orderStatus: confirmationOrder.status,
-          priceCurrency: 'USD',
+          priceCurrency: 'VND',
           price: confirmationOrder.grandTotal,
           acceptedOffer: confirmationOrder.items.map((item) => ({
             '@type': 'Offer',
@@ -78,7 +92,7 @@ export const CheckoutConfirmationPage = () => {
               image: item.primaryImage.src,
             },
             price: item.unitPrice,
-            priceCurrency: 'USD',
+            priceCurrency: 'VND',
             eligibleQuantity: {
               '@type': 'QuantitativeValue',
               value: item.quantity,
@@ -90,10 +104,12 @@ export const CheckoutConfirmationPage = () => {
         <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_380px]">
           <section className="space-y-6">
             <div className="border border-border bg-surface px-6 py-8 md:px-8 md:py-10">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Order confirmed</p>
-              <h1 className="mt-4 font-display text-[3.5rem] leading-none text-text-primary md:text-[4.75rem]">Order Confirmed.</h1>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Order status</p>
+              <h1 className="mt-4 font-sans text-[2rem] font-semibold leading-tight text-text-primary md:text-4xl">{confirmationTitle}</h1>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">
-                Created {formatDate(confirmationOrder.createdAt)} with {paymentProviderLabel}. Your archive has been updated.
+                {cancelledPaidMessage ??
+                  holdMessage ??
+                  `Created ${formatDate(confirmationOrder.createdAt)} with ${paymentProviderLabel}. Current order status comes from the Backend.`}
               </p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <OrderStatusBadge status={confirmationOrder.status} />
@@ -142,9 +158,9 @@ export const CheckoutConfirmationPage = () => {
               <section className="border border-border bg-surface px-5 py-5 md:px-6">
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Next steps</p>
                 <ul className="mt-4 space-y-3 text-sm leading-7 text-text-secondary">
-                  <li>Your order is now available in the archive.</li>
-                  <li>Tracking, invoice, and payment status are now available from the order archive.</li>
-                  <li>You can return to the archive at any time from the storefront navigation.</li>
+                  <li>Your order is available in the order archive.</li>
+                  <li>Payment and fulfillment progress follow the latest Backend order status.</li>
+                  <li>Open the order details to check current actions and transaction history.</li>
                 </ul>
               </section>
               <section className="border border-border bg-surface px-5 py-5 md:px-6">
@@ -161,7 +177,7 @@ export const CheckoutConfirmationPage = () => {
               <p className="mt-4 text-sm leading-7 text-text-secondary">
                 {confirmationOrder.carrierName
                   ? `${confirmationOrder.carrierCode ?? confirmationOrder.carrierName}${confirmationOrder.carrierProviderType ? ` / ${confirmationOrder.carrierProviderType}` : ''}.`
-                  : 'This order was created without a selected carrier, so the backend fallback kept shipping at $0.'}
+                  : 'This order was created without a selected carrier. Shipping follows the Backend order total.'}
               </p>
             </section>
 
@@ -185,7 +201,7 @@ export const CheckoutConfirmationPage = () => {
           <OrderSummaryPanel
             supplementary={
               <div className="space-y-3 text-sm leading-7 text-text-secondary">
-                <p>Order code {confirmationOrder.code} is now active in your archive.</p>
+                <p>Order code {confirmationOrder.code} is recorded in your archive.</p>
                 <p>{confirmationOrder.carrierName ? `Persisted carrier: ${confirmationOrder.carrierName}.` : 'Persisted carrier: not selected.'}</p>
               </div>
             }
