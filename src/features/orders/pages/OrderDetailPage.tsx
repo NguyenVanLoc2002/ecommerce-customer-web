@@ -21,7 +21,7 @@ import { getCancelledPaidMessage, getCheckoutHoldMessage } from '@/shared/lib/or
 import { useUiStore } from '@/shared/stores/uiStore';
 import { formatAddress } from '@/shared/utils/formatAddress';
 import { formatDate } from '@/shared/utils/formatDate';
-import { formatMoney } from '@/shared/utils/formatMoney';
+import { formatVnd } from '@/shared/utils/formatVnd';
 import { ORDER_STATUSES, PAYMENT_METHODS } from '@/shared/types/enums';
 import { PAYMENT_STATUSES } from '@/shared/types/payment.types';
 
@@ -66,7 +66,7 @@ export const OrderDetailPage = () => {
     order?.status === ORDER_STATUSES.SHIPPED ||
     order?.status === ORDER_STATUSES.DELIVERED ||
     order?.status === ORDER_STATUSES.COMPLETED;
-  const reviewActionVisible = order?.status === ORDER_STATUSES.DELIVERED || order?.status === ORDER_STATUSES.COMPLETED;
+  const reviewActionVisible = order?.status === ORDER_STATUSES.COMPLETED;
 
   return (
     <>
@@ -95,7 +95,7 @@ export const OrderDetailPage = () => {
         ) : null}
         {order ? (
           <>
-            <div className="flex flex-col gap-5 border-b border-border pb-8 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-col gap-5 rounded-md border border-border bg-surface p-5 md:p-8 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-3">
                   <OrderStatusBadge status={order.status} />
@@ -133,21 +133,19 @@ export const OrderDetailPage = () => {
               </div>
             </div>
 
-            <OrderStatusStepper status={order.status} />
-
             {cancelledPaidMessage || checkoutHoldMessage ? (
               <div aria-live="polite" className={`border px-5 py-4 text-sm leading-7 ${cancelledPaidMessage ? 'border-danger/20 bg-danger/5 text-text-primary' : 'border-warning/20 bg-warning/5 text-text-primary'}`} role="status">
                 {cancelledPaidMessage ?? checkoutHoldMessage}
               </div>
             ) : null}
 
-            <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_380px]">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
               <section className="space-y-4">
                 <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Items</p>
+                  <h2 className="text-base font-semibold uppercase tracking-wide">Sản phẩm trong đơn</h2>
                   <div className="mt-6 space-y-5">
                     {order.items.map((item) => (
-                      <article className="grid gap-4 border-b border-border pb-5 last:border-b-0 last:pb-0 md:grid-cols-[104px_minmax(0,1fr)_auto]" key={item.id}>
+                      <article className="grid grid-cols-[72px_minmax(0,1fr)] items-start gap-x-4 gap-y-2 border-b border-border pb-5 last:border-b-0 last:pb-0 md:grid-cols-[104px_minmax(0,1fr)_auto]" key={item.id}>
                         <img
                           alt={item.primaryImage.alt}
                           className="aspect-[4/5] w-full bg-surface-soft object-cover"
@@ -158,15 +156,15 @@ export const OrderDetailPage = () => {
                         />
                         <div>
                           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">{item.brandName}</p>
-                          <h2 className="mt-3 font-display text-[1.5rem] leading-none text-text-primary">{item.productName}</h2>
+                          <h3 className="mt-2 break-words text-lg font-semibold leading-snug text-text-primary">{item.productName}</h3>
                           <p className="mt-3 text-sm uppercase tracking-[0.08em] text-text-secondary">
                             {item.color} / {item.size} / Qty {item.quantity}
                           </p>
                           <p className="mt-2 text-xs uppercase tracking-[0.16em] text-outline">{item.sku}</p>
                         </div>
-                        <div className="text-left md:text-right">
-                          <p className="text-sm text-text-primary">{formatMoney(item.subtotal)}</p>
-                          <p className="mt-2 text-sm text-text-secondary">{formatMoney(item.unitPrice)} each</p>
+                        <div className="col-start-2 text-left md:col-start-auto md:text-right">
+                          <p className="text-sm text-text-primary">{formatVnd(item.subtotal)}</p>
+                          <p className="mt-2 text-sm text-text-secondary">{formatVnd(item.unitPrice)} each</p>
                         </div>
                       </article>
                     ))}
@@ -176,7 +174,7 @@ export const OrderDetailPage = () => {
                 <div className="grid gap-4 lg:grid-cols-2">
                   <section className="border border-border bg-surface px-5 py-5 md:px-6">
                     <div className="flex flex-wrap items-start justify-between gap-4">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Shipping address</p>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Địa chỉ nhận hàng</p>
                       <Link className={actionLinkClassName} to={routePaths.orderTracking(order.id)}>
                         View shipment
                       </Link>
@@ -188,7 +186,7 @@ export const OrderDetailPage = () => {
 
                   <section className="border border-border bg-surface px-5 py-5 md:px-6">
                     <div className="flex flex-wrap items-start justify-between gap-4">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Payment method</p>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Phương thức thanh toán</p>
                       <Link className={actionLinkClassName} to={routePaths.orderInvoice(order.id)}>
                         Print invoice
                       </Link>
@@ -301,6 +299,7 @@ export const OrderDetailPage = () => {
               </section>
 
               <OrderSummaryPanel
+                title="Chi tiết thanh toán"
                 supplementary={
                   <div className="space-y-3 text-sm leading-7 text-text-secondary">
                     <p>Voucher code {order.voucherCode ?? 'not applied'}.</p>
@@ -310,12 +309,15 @@ export const OrderDetailPage = () => {
                 totals={order}
               />
             </div>
+
+            <OrderStatusStepper status={order.status} />
           </>
         ) : null}
       </Container>
       {order ? (
         <ConfirmDialog
-          cancelLabel="Keep order"
+          cancelLabel="Giữ đơn hàng"
+          confirmLoading={cancelOrder.isPending}
           confirmLabel={cancelOrder.isPending ? 'Cancelling...' : 'Cancel order'}
           description="This releases the pending order in the current flow and updates its status to Cancelled."
           onClose={() => setConfirmOpen(false)}

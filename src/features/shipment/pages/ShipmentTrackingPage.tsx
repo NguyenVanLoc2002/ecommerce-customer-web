@@ -15,7 +15,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { useUiStore } from '@/shared/stores/uiStore';
 import { formatDate } from '@/shared/utils/formatDate';
-import { formatMoney } from '@/shared/utils/formatMoney';
+import { formatVnd } from '@/shared/utils/formatVnd';
 
 const codeButtonClassName =
   'inline-flex items-center border border-border px-4 py-2 font-mono text-sm text-text-primary transition-colors hover:border-text-primary';
@@ -62,13 +62,13 @@ export const ShipmentTrackingPage = () => {
     <>
       <PageSEO description="Track the current shipment timeline and delivery progress for your order." noIndex path={routePaths.orderTracking(orderId || 'order')} title="Shipment Tracking" />
       <Container className="space-y-8 pb-16 pt-28 md:space-y-10 md:pb-20 md:pt-32">
-        <div className="border-b border-border pb-8">
+        <div className="rounded-md border border-border bg-surface p-5 md:p-8">
           <Link className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary" to={routePaths.orderDetail(orderId)}>
             <ArrowLeft className="h-4 w-4" />
             Quay lại đơn hàng
           </Link>
           <p className="mt-6 text-sm font-medium text-brand-primary">Đơn hàng / Vận chuyển</p>
-          <h1 className="mt-3 text-2xl font-semibold leading-tight text-text-primary md:text-3xl">Theo dõi vận chuyển</h1>
+          <h1 className="mt-3 text-2xl font-semibold leading-tight text-text-primary md:text-3xl">Theo dõi vận đơn</h1>
         </div>
 
         {shipmentQuery.isLoading ? <SkeletonTimeline /> : null}
@@ -106,13 +106,13 @@ export const ShipmentTrackingPage = () => {
         ) : null}
 
         {shipment ? (
-          <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <section className="space-y-6">
               <div className="border border-border bg-surface px-6 py-8 md:px-8 md:py-10">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Shipment summary</p>
-                    <h2 className="mt-4 font-display text-[3rem] leading-none text-text-primary md:text-[4rem]">{shipment.carrier}</h2>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Thông tin vận đơn</p>
+                    <h2 className="mt-3 break-words text-xl font-semibold text-text-primary md:text-2xl">{shipment.carrier}</h2>
                   </div>
                   <div className={`inline-flex items-center border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] ${shipmentToneClasses[shipment.status]}`}>
                     {shipment.status.replace(/_/g, ' ')}
@@ -138,7 +138,7 @@ export const ShipmentTrackingPage = () => {
               <section className="space-y-4">
                 <div className="border border-border bg-surface px-5 py-5 md:px-6">
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Timeline</p>
-                  <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Shipment events</h2>
+                  <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Hành trình vận chuyển</h2>
                 </div>
                 <ShipmentTimeline events={shipment.events} />
               </section>
@@ -160,9 +160,9 @@ export const ShipmentTrackingPage = () => {
               </section>
 
               <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Shipment note</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Ghi chú vận chuyển</p>
                 <p className="mt-4 text-sm leading-7 text-text-secondary">{shipment.note ?? 'No shipment note available.'}</p>
-                <p className="mt-4 text-sm leading-7 text-text-secondary">Shipping fee {formatMoney(shipment.shippingFee)}</p>
+                <p className="mt-4 text-sm leading-7 text-text-secondary">Shipping fee {formatVnd(shipment.shippingFee)}</p>
               </section>
 
               <Link className={buttonStyles({ fullWidth: true, variant: 'ghost' })} to={routePaths.orderDetail(orderId)}>

@@ -14,15 +14,15 @@ import { getPaymentMethodLabel } from '@/shared/lib/commerceLabels';
 import { useUiStore } from '@/shared/stores/uiStore';
 import { formatAddress } from '@/shared/utils/formatAddress';
 import { formatDate } from '@/shared/utils/formatDate';
-import { formatMoney } from '@/shared/utils/formatMoney';
+import { formatVnd } from '@/shared/utils/formatVnd';
 
 export const InvoicePage = () => {
-  const { orderId = '' } = useParams();
+  const { orderId = formatVnd(0) } = useParams();
   const addToast = useUiStore((state) => state.addToast);
   const invoiceQuery = useInvoiceByOrderId(orderId);
   const invoice = invoiceQuery.data;
   const errorCode =
-    invoiceQuery.error instanceof Error && 'code' in invoiceQuery.error ? String((invoiceQuery.error as { code?: string }).code) : '';
+    invoiceQuery.error instanceof Error && 'code' in invoiceQuery.error ? String((invoiceQuery.error as { code?: string }).code) : formatVnd(0);
 
   const copyInvoiceCode = async () => {
     if (!invoice) {
@@ -49,23 +49,23 @@ export const InvoicePage = () => {
     <>
       <PageSEO description="Review and print the customer invoice for this order." noIndex path={routePaths.orderInvoice(orderId || 'order')} title="Invoice" />
       <Container className="space-y-8 pb-16 pt-28 print:space-y-6 print:py-6 md:space-y-10 md:pb-20 md:pt-32">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-8 print:hidden">
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-md border border-border bg-surface p-5 print:hidden md:p-8">
           <div>
             <Link className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary" to={routePaths.orderDetail(orderId)}>
               <ArrowLeft className="h-4 w-4" />
               Back to order
             </Link>
             <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Invoice</p>
-            <h1 className="mt-3 font-display text-[3.5rem] leading-none text-text-primary md:text-[4.5rem]">Printable Invoice</h1>
+            <h1 className="mt-3 text-3xl font-semibold leading-tight text-text-primary md:text-4xl">Hóa đơn</h1>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button onClick={() => void copyInvoiceCode()} variant="ghost">
+            <Button disabled={!invoice} onClick={() => void copyInvoiceCode()} variant="ghost">
               <Copy className="h-4 w-4" />
-              Copy code
+              Sao chép mã
             </Button>
-            <Button onClick={() => window.print()} variant="secondary">
+            <Button disabled={!invoice} onClick={() => window.print()} variant="secondary">
               <Printer className="h-4 w-4" />
-              Print invoice
+              In hóa đơn
             </Button>
           </div>
         </div>
@@ -105,8 +105,8 @@ export const InvoicePage = () => {
         ) : null}
 
         {invoice ? (
-          <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <section className="space-y-6 border border-border bg-surface px-6 py-8 print:border-0 print:px-0 print:py-0 md:px-8 md:py-10">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] print:block">
+            <section className="space-y-6 border border-border bg-surface px-4 py-8 print:border-0 print:px-0 print:py-0 md:px-8 md:py-10">
               <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
                 <div>
                   <p className="text-sm font-medium text-brand-primary">Fashion Shop</p>
@@ -137,23 +137,23 @@ export const InvoicePage = () => {
               </div>
 
               <section className="border-t border-border pt-6">
-                <div className="grid grid-cols-[minmax(0,1.5fr)_auto_auto] gap-4 border-b border-border pb-4 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
+                <div className="grid grid-cols-[minmax(0,1fr)_2rem_auto] gap-2 sm:gap-4 border-b border-border pb-4 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
                   <span>Item</span>
                   <span>Qty</span>
                   <span className="text-right">Amount</span>
                 </div>
                 <div className="space-y-4 pt-4">
                   {invoice.items.map((item) => (
-                    <article className="grid grid-cols-[minmax(0,1.5fr)_auto_auto] gap-4 border-b border-border pb-4 last:border-b-0 last:pb-0" key={item.id}>
+                    <article className="grid grid-cols-[minmax(0,1fr)_2rem_auto] gap-2 sm:gap-4 border-b border-border pb-4 last:border-b-0 last:pb-0" key={item.id}>
                       <div>
-                        <p className="font-display text-[1.4rem] leading-none text-text-primary">{item.productName}</p>
+                        <p className="break-words text-base font-medium text-text-primary">{item.productName}</p>
                         <p className="mt-2 text-sm uppercase tracking-[0.08em] text-text-secondary">
                           {item.color ?? item.variantName ?? 'Default'} / {item.size ?? 'One Size'}
                         </p>
                         <p className="mt-2 text-xs uppercase tracking-[0.16em] text-outline">{item.sku}</p>
                       </div>
                       <span className="text-sm text-text-primary">{item.quantity}</span>
-                      <span className="text-right text-sm text-text-primary">{formatMoney(item.lineTotal ?? (item.effectivePrice ?? item.unitPrice) * item.quantity)}</span>
+                      <span className="text-right text-sm text-text-primary">{formatVnd(item.lineTotal ?? (item.effectivePrice ?? item.unitPrice) * item.quantity)}</span>
                     </article>
                   ))}
                 </div>
@@ -167,25 +167,25 @@ export const InvoicePage = () => {
               </section>
             </section>
 
-            <aside className="space-y-4 print:hidden">
+            <aside className="space-y-4 print:mt-6">
               <section className="border border-border bg-surface px-5 py-5 md:px-6">
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Summary</p>
                 <div className="mt-6 space-y-4 text-sm text-text-secondary">
                   <div className="flex items-center justify-between gap-4">
                     <span>Subtotal</span>
-                    <span className="text-text-primary">{formatMoney(invoice.subTotal)}</span>
+                    <span className="text-text-primary">{formatVnd(invoice.subTotal)}</span>
                   </div>
                   <div className="flex items-center justify-between gap-4">
                     <span>Shipping</span>
-                    <span className="text-text-primary">{invoice.shippingFee === 0 ? 'Included' : formatMoney(invoice.shippingFee)}</span>
+                    <span className="text-text-primary">{invoice.shippingFee === 0 ? 'Miễn phí' : formatVnd(invoice.shippingFee)}</span>
                   </div>
                   <div className="flex items-center justify-between gap-4">
                     <span>Discount</span>
-                    <span className="text-text-primary">{invoice.discountTotal === 0 ? '$0' : `-${formatMoney(invoice.discountTotal)}`}</span>
+                    <span className="text-text-primary">{invoice.discountTotal === 0 ? formatVnd(0) : `-${formatVnd(invoice.discountTotal)}`}</span>
                   </div>
                   <div className="flex items-center justify-between gap-4 border-t border-border pt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary">
                     <span>Total</span>
-                    <span>{formatMoney(invoice.grandTotal)}</span>
+                    <span>{formatVnd(invoice.grandTotal)}</span>
                   </div>
                 </div>
               </section>
@@ -199,7 +199,7 @@ export const InvoicePage = () => {
                 </div>
               </section>
 
-              <Link className={buttonStyles({ fullWidth: true, variant: 'ghost' })} to={routePaths.orderDetail(orderId)}>
+              <Link className={buttonStyles({ fullWidth: true, variant: 'ghost', className: 'print:hidden' })} to={routePaths.orderDetail(orderId)}>
                 Back to order detail
               </Link>
             </aside>
