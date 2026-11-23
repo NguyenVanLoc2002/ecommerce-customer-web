@@ -13,9 +13,10 @@ import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { getPaymentMethodLabel, getPaymentProviderLabel } from '@/shared/lib/commerceLabels';
+import { canStartOrRetryOnlinePayment, getCancelledPaidMessage, getCheckoutHoldMessage } from '@/shared/lib/orderPaymentLifecycle';
 import { useUiStore } from '@/shared/stores/uiStore';
 import { ORDER_STATUSES, PAYMENT_METHODS } from '@/shared/types/enums';
-import { PAYMENT_PROVIDERS, PAYMENT_STATUSES } from '@/shared/types/payment.types';
+import { PAYMENT_PROVIDERS } from '@/shared/types/payment.types';
 import { formatAddress } from '@/shared/utils/formatAddress';
 import { formatDate } from '@/shared/utils/formatDate';
 
@@ -26,10 +27,14 @@ export const CheckoutConfirmationPage = () => {
   const paymentProvider = useCheckoutStore((state) => state.paymentProvider);
   const resetCheckout = useCheckoutStore((state) => state.resetCheckout);
   const [copied, setCopied] = useState(false);
-  const requiresOnlinePayment =
-    confirmationOrder?.paymentMethod === PAYMENT_METHODS.ONLINE &&
-    confirmationOrder.status === ORDER_STATUSES.AWAITING_PAYMENT &&
-    confirmationOrder.paymentStatus !== PAYMENT_STATUSES.PAID;
+  const lifecycle = confirmationOrder
+    ? {
+        orderStatus: confirmationOrder.status,
+        paymentMethod: confirmationOrder.paymentMethod,
+        orderPaymentStatus: confirmationOrder.paymentStatus,
+      }
+    : null;
+  const requiresOnlinePayment = lifecycle ? canStartOrRetryOnlinePayment(lifecycle) : false;
 
   if (!confirmationOrder) {
     return (
@@ -59,6 +64,15 @@ export const CheckoutConfirmationPage = () => {
       : paymentProvider === PAYMENT_PROVIDERS.MOCK
         ? 'Continue to Mock payment'
         : 'Pay with MoMo';
+  const cancelledPaidMessage = lifecycle ? getCancelledPaidMessage(lifecycle) : null;
+  const holdMessage = lifecycle ? getCheckoutHoldMessage(lifecycle) : null;
+  const confirmationTitle = cancelledPaidMessage
+    ? 'Payment recorded, order cancelled.'
+    : confirmationOrder.status === ORDER_STATUSES.PENDING
+      ? 'Order placed, awaiting confirmation.'
+      : confirmationOrder.status === ORDER_STATUSES.AWAITING_PAYMENT
+        ? 'Order placed, payment pending.'
+        : 'Order status updated.';
 
   return (
     <>
@@ -92,9 +106,11 @@ export const CheckoutConfirmationPage = () => {
           <section className="space-y-6">
             <div className="rounded-sm border border-border bg-surface px-6 py-8 text-center md:px-10 md:py-12">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">Fashion Shop · Xác nhận đơn</p>
-              <h1 className="mt-4 text-xl font-semibold tracking-tight text-text-primary md:text-3xl">Đơn hàng đã được tạo thành công</h1>
+              <h1 className="mt-4 text-xl font-semibold tracking-tight text-text-primary md:text-3xl">{confirmationTitle}</h1>
               <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-text-secondary">
-                Đơn {confirmationOrder.code} được tạo lúc {formatDate(confirmationOrder.createdAt)}. Trạng thái hiện tại: {confirmationOrder.status}.
+                {cancelledPaidMessage ?? holdMessage ?? (
+                  <>Đơn {confirmationOrder.code} được tạo lúc {formatDate(confirmationOrder.createdAt)}. Trạng thái hiện tại: {confirmationOrder.status}.</>
+                )}
               </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
                 <OrderStatusBadge status={confirmationOrder.status} />

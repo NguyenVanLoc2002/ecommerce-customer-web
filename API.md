@@ -469,6 +469,14 @@ Order item fields:
   - selected carrier and shipping quote are recalculated and snapshotted; absent carrier means zero shipping fee
   - total includes the persisted discount and shipping; never replace it with client arithmetic
 
+### Checkout hold expiry and late online payment
+- Online checkout holds stock for up to 30 minutes while the order awaits payment.
+- COD orders await Admin confirmation for up to 24 hours. Once the order is confirmed and fulfillment begins, the checkout hold window no longer describes the order lifecycle.
+- When an awaiting order expires, the Backend cancels it and releases its reservation. Customer Web must read current order and payment statuses; it must not calculate a countdown from `createdAt`.
+- A late successful online payment is recorded as `PAID`, while the expired order remains `CANCELLED`. Show that the money was received, the order will not enter fulfillment, and manual reconciliation/refund is required. Do not imply an automatic refund or give a refund timeline.
+- No customer endpoint returns an authoritative checkout `expiredAt`. Display the hold duration as policy copy only; do not render a deadline or countdown.
+- Before starting, resuming, or retrying online payment, verify that the order remains `AWAITING_PAYMENT` and is an `ONLINE` order. Do not initiate/capture payment for a `CANCELLED` order.
+
 ### `GET /orders`
 - Access: authenticated
 - Filters:
@@ -817,6 +825,7 @@ Customer cancellation is limited to `PENDING`/`AWAITING_PAYMENT` by the current 
 - Do not client-side filter or re-sort backend keyword search results
 - Use `/products/slug/{slug}` for storefront slug lookup; do not scan paged `/products` responses.
 - Payment callback is not a customer UI endpoint
+- Payment `PAID` does not by itself prove that an order can enter fulfillment. Read both order and payment status, and treat `CANCELLED` + `PAID` as a manual reconciliation/refund case.
 - Customer Web sends `Idempotency-Key` only for `POST /orders` and `POST /payments/order/{orderId}/initiate`
 - Generate one UUID-like key per user action and keep the same key for same-action retry after timeout or `5xx`
 - Do not reuse an idempotency key for a different checkout payload, order, or payment-initiate payload

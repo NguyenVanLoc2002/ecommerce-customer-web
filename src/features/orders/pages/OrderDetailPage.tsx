@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { routePaths } from '@/constants/routes';
 import { useCancelOrder, useOrderDetail } from '@/features/orders/hooks/useOrders';
+import { usePaymentLifecycle } from '@/shared/hooks/usePaymentLifecycle';
 import { OrderSummaryPanel } from '@/shared/components/commerce/OrderSummaryPanel';
 import { OrderStatusBadge } from '@/shared/components/commerce/OrderStatusBadge';
 import { OrderStatusStepper } from '@/shared/components/commerce/OrderStatusStepper';
@@ -16,6 +17,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { isAuthenticationError } from '@/shared/lib/authErrors';
 import { getPaymentMethodLabel, getPaymentMethodNote, getPaymentStatusLabel } from '@/shared/lib/commerceLabels';
+import { getCancelledPaidMessage, getCheckoutHoldMessage } from '@/shared/lib/orderPaymentLifecycle';
 import { useUiStore } from '@/shared/stores/uiStore';
 import { formatAddress } from '@/shared/utils/formatAddress';
 import { formatDate } from '@/shared/utils/formatDate';
@@ -33,18 +35,31 @@ export const OrderDetailPage = () => {
   const addToast = useUiStore((state) => state.addToast);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const orderQuery = useOrderDetail(orderId);
+  const paymentQuery = usePaymentLifecycle(orderId);
   const cancelOrder = useCancelOrder();
   const order = orderQuery.data;
   const onlinePaymentPending =
     order?.paymentMethod === PAYMENT_METHODS.ONLINE &&
     order.status === ORDER_STATUSES.AWAITING_PAYMENT &&
+    paymentQuery.data?.status !== PAYMENT_STATUSES.PAID &&
     (order.paymentStatus === PAYMENT_STATUSES.PENDING ||
       order.paymentStatus === PAYMENT_STATUSES.PROCESSING ||
       order.paymentStatus === PAYMENT_STATUSES.INITIATED);
+  const lifecycle = order
+    ? {
+        orderStatus: order.status,
+        paymentMethod: order.paymentMethod,
+        orderPaymentStatus: order.paymentStatus,
+        paymentStatus: paymentQuery.data?.status,
+      }
+    : null;
+  const checkoutHoldMessage = lifecycle ? getCheckoutHoldMessage(lifecycle) : null;
+  const cancelledPaidMessage = lifecycle ? getCancelledPaidMessage(lifecycle) : null;
   const paymentActionVisible =
     order?.paymentMethod === PAYMENT_METHODS.ONLINE &&
     order.status === ORDER_STATUSES.AWAITING_PAYMENT &&
     order.paymentStatus !== PAYMENT_STATUSES.PAID &&
+    paymentQuery.data?.status !== PAYMENT_STATUSES.PAID &&
     !onlinePaymentPending;
   const shipmentActionVisible =
     order?.status === ORDER_STATUSES.PROCESSING ||
@@ -120,6 +135,12 @@ export const OrderDetailPage = () => {
 
             <OrderStatusStepper status={order.status} />
 
+            {cancelledPaidMessage || checkoutHoldMessage ? (
+              <div aria-live="polite" className={`border px-5 py-4 text-sm leading-7 ${cancelledPaidMessage ? 'border-danger/20 bg-danger/5 text-text-primary' : 'border-warning/20 bg-warning/5 text-text-primary'}`} role="status">
+                {cancelledPaidMessage ?? checkoutHoldMessage}
+              </div>
+            ) : null}
+
             <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_380px]">
               <section className="space-y-4">
                 <section className="border border-border bg-surface px-5 py-5 md:px-6">
@@ -173,11 +194,27 @@ export const OrderDetailPage = () => {
                       </Link>
                     </div>
                     <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{getPaymentMethodLabel(order.paymentMethod)}</h2>
-                    <p className="mt-4 text-sm leading-7 text-text-secondary">{getPaymentMethodNote(order.paymentMethod)}</p>
+                    <p className="mt-4 text-sm leading-7 text-text-secondary">
+                      {cancelledPaidMessage
+                        ? 'Payment was received after the order was cancelled. The order will not enter fulfillment; the payment requires manual reconciliation and refund handling.'
+                        : getPaymentMethodNote(order.paymentMethod)}
+                    </p>
                     {order.paymentStatus ? (
                       <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
-                        Payment status: {getPaymentStatusLabel(order.paymentStatus)}
+                        Order payment status: {getPaymentStatusLabel(order.paymentStatus)}
                       </p>
+                    ) : null}
+                    {paymentQuery.isLoading ? <p aria-live="polite" className="mt-3 text-sm text-text-secondary">Đang tải trạng thái giao dịch...</p> : null}
+                    {paymentQuery.data ? (
+                      <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
+                        Payment record: {getPaymentStatusLabel(paymentQuery.data.status)}
+                      </p>
+                    ) : null}
+                    {paymentQuery.isError && !(paymentQuery.error instanceof Error && 'code' in paymentQuery.error && paymentQuery.error.code === 'PAYMENT_NOT_FOUND') ? (
+                      <div className="mt-3 space-y-2" role="status">
+                        <p className="text-sm text-danger">Chưa tải được lịch sử trạng thái giao dịch. Trạng thái đơn ở trên vẫn lấy từ Order API.</p>
+                        <Button onClick={() => void paymentQuery.refetch()} size="sm" variant="secondary">Tải lại trạng thái thanh toán</Button>
+                      </div>
                     ) : null}
                   </section>
                 </div>
@@ -201,7 +238,7 @@ export const OrderDetailPage = () => {
                       <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Payment</p>
                       <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Complete payment</h2>
                       <p className="mt-4 text-sm leading-7 text-text-secondary">
-                        This online order is waiting for payment confirmation. Continue to the payment result flow to initiate or retry the online payment transaction.
+                        This online order is awaiting payment. The checkout hold lasts up to 30 minutes; payment actions remain available only while the Backend reports that the order is still awaiting payment.
                       </p>
                       <Link className={`${actionLinkClassName} mt-5 inline-flex`} to={routePaths.paymentResult(order.id)}>
                         Pay now

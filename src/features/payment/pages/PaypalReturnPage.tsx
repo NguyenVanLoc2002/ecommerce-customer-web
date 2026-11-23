@@ -13,6 +13,8 @@ import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { getPaymentProviderLabel, getPaymentStatusLabel } from '@/shared/lib/commerceLabels';
+import { useOrderLifecycle } from '@/shared/hooks/useOrderLifecycle';
+import { canStartOrRetryOnlinePayment, getCancelledPaidMessage, isCancelledOrderWithPaidPayment } from '@/shared/lib/orderPaymentLifecycle';
 import { isMutationProcessingError, isPaymentAlreadyProcessedError, isUncertainMutationFailure } from '@/shared/lib/idempotentMutation';
 import { PAYMENT_PROVIDERS, PAYMENT_STATUSES } from '@/shared/types/payment.types';
 import { formatDate } from '@/shared/utils/formatDate';
@@ -44,9 +46,17 @@ export const PaypalReturnPage = () => {
   const providerToken = searchParams.get('token') ?? '';
   const capturePayment = useCapturePayment();
   const paymentQuery = usePaypalReturnPolling(orderId);
+  const orderQuery = useOrderLifecycle(orderId);
   const [hasTriggeredCapture, setHasTriggeredCapture] = useState(false);
 
   const payment = paymentQuery.data;
+  const order = orderQuery.data;
+  const lifecycle = order
+    ? { orderStatus: order.status, paymentMethod: order.paymentMethod, orderPaymentStatus: order.paymentStatus, paymentStatus: payment?.status }
+    : null;
+  const canCapture = lifecycle ? canStartOrRetryOnlinePayment(lifecycle) : false;
+  const isLatePaid = lifecycle ? isCancelledOrderWithPaidPayment(lifecycle) : false;
+  const cancelledPaidMessage = lifecycle ? getCancelledPaidMessage(lifecycle) : null;
   const paymentErrorCode = useMemo(
     () => (paymentQuery.error instanceof Error && 'code' in paymentQuery.error ? String((paymentQuery.error as { code?: string }).code) : ''),
     [paymentQuery.error],
@@ -61,7 +71,7 @@ export const PaypalReturnPage = () => {
   }, [orderId]);
 
   useEffect(() => {
-    if (!orderId || !providerToken || hasTriggeredCapture) {
+    if (!orderId || !providerToken || hasTriggeredCapture || orderQuery.isLoading || orderQuery.isError || !order || !canCapture) {
       return;
     }
 
@@ -80,7 +90,7 @@ export const PaypalReturnPage = () => {
         },
       },
     );
-  }, [capturePayment, hasTriggeredCapture, orderId, paymentQuery, providerToken]);
+  }, [canCapture, capturePayment, hasTriggeredCapture, order, orderId, orderQuery.isError, orderQuery.isLoading, paymentQuery, providerToken]);
 
   if (!orderId) {
     return (
@@ -176,12 +186,17 @@ export const PaypalReturnPage = () => {
   const status = payment?.status;
   const providerLabel = getPaymentProviderLabel(payment?.provider ?? payment?.transactions[0]?.provider ?? PAYMENT_PROVIDERS.PAYPAL);
   const isSuccess = status === PAYMENT_STATUSES.PAID;
+  const isOrderCancelled = order?.status === 'CANCELLED';
   const isFailed = isFailedStatus(status);
   const isCapturing = capturePayment.isPending;
   const isChecking = !isCapturing && (isProcessingStatus(status) || paymentQuery.isPolling || (!payment && (paymentQuery.isLoading || paymentQuery.isFetching)));
   const isPendingAfterTimeout = !isSuccess && !isFailed && paymentQuery.maxAttemptsReached;
-  const title = isSuccess
-    ? 'Thanh toán PayPal thành công'
+  const title = isLatePaid
+    ? 'Đã nhận tiền, đơn hàng đã hủy.'
+    : isOrderCancelled && !isSuccess
+      ? 'Đơn hàng đã hủy, không tiếp tục thanh toán.'
+      : isSuccess
+        ? 'Thanh toán PayPal đã được ghi nhận'
     : isFailed
       ? 'Thanh toán PayPal chưa hoàn tất hoặc đã bị hủy.'
       : hasBlockingCaptureError
@@ -191,8 +206,14 @@ export const PaypalReturnPage = () => {
           : isPendingAfterTimeout
             ? 'Thanh toán PayPal đang được xử lý'
             : 'Đang xác nhận thanh toán PayPal...';
-  const description = isSuccess
-    ? 'Hệ thống đã xác nhận thanh toán từ backend. Đơn hàng của bạn đã được cập nhật.'
+  const description = isLatePaid
+    ? cancelledPaidMessage
+    : isOrderCancelled && !isSuccess
+      ? 'Đơn hàng đã hết hạn và bị hủy. Capture đã được dừng; không tiếp tục thanh toán hoặc giả định đơn sẽ được giao.'
+    : isSuccess
+      ? orderQuery.isError
+        ? 'Backend ghi nhận thanh toán PAID nhưng chưa thể xác minh trạng thái đơn. Vui lòng kiểm tra chi tiết đơn trước khi giả định xử lý giao hàng đã bắt đầu.'
+        : 'Backend đã xác nhận thanh toán. Xem trạng thái đơn hiện tại để biết tiến trình xử lý.'
     : isFailed
       ? 'Backend chưa xác nhận thanh toán thành công cho đơn hàng này.'
       : hasBlockingCaptureError
@@ -209,14 +230,17 @@ export const PaypalReturnPage = () => {
     <>
       <PageSEO description="Verify the latest PayPal payment status for your order." noIndex path={routes.paymentPaypalReturn} title="PayPal Payment Return" />
       <Container className="space-y-8 pb-16 pt-28 md:space-y-10 md:pb-20 md:pt-32">
-        {paymentQuery.isLoading && !payment ? <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Đang xác nhận thanh toán PayPal..." /> : null}
+        {paymentQuery.isLoading && !payment || orderQuery.isLoading ? <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Đang xác minh đơn và thanh toán PayPal..." /> : null}
+        {orderQuery.isError ? (
+          <ErrorCard action={<Button onClick={() => void orderQuery.refetch()}>Kiểm tra trạng thái đơn</Button>} className="border-border bg-surface" description="Đã dừng capture cho đến khi trạng thái đơn được xác minh. Vui lòng kiểm tra lại trước khi tiếp tục." title="Không tải được trạng thái đơn" />
+        ) : null}
         <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_380px]">
           <section className="space-y-6">
             <div className="border border-border bg-surface px-6 py-8 md:px-8 md:py-10">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">PayPal return</p>
-                  <h1 className="mt-4 font-display text-[3.5rem] leading-none text-text-primary md:text-[4.5rem]">{title}</h1>
+                  <h1 className="mt-4 font-sans text-[2rem] font-semibold leading-tight text-text-primary md:text-4xl">{title}</h1>
                   <p className="mt-4 text-sm uppercase tracking-[0.08em] text-text-secondary">{providerLabel}</p>
                 </div>
                 {status ? (

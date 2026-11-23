@@ -23,6 +23,8 @@ import {
   shouldReuseIdempotencyKey,
 } from '@/shared/lib/idempotentMutation';
 import { useUiStore } from '@/shared/stores/uiStore';
+import { useOrderLifecycle } from '@/shared/hooks/useOrderLifecycle';
+import { canStartOrRetryOnlinePayment, getCancelledPaidMessage, isCancelledOrderWithPaidPayment } from '@/shared/lib/orderPaymentLifecycle';
 import { PAYMENT_PROVIDERS, PAYMENT_STATUSES, normalizePaymentProvider, type PaymentProvider } from '@/shared/types/payment.types';
 import { createIdempotencyKey } from '@/shared/utils/createIdempotencyKey';
 import { formatDate } from '@/shared/utils/formatDate';
@@ -85,12 +87,27 @@ export const PaymentResultPage = () => {
   const requestedProvider = normalizePaymentProvider(searchParams.get('provider'));
   const addToast = useUiStore((state) => state.addToast);
   const paymentQuery = usePaymentResultPolling(orderId);
+  const orderQuery = useOrderLifecycle(orderId);
   const initiatePayment = useInitiatePayment();
   const [pendingAttempt, setPendingAttempt] = useState<PendingPaymentAttempt | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [hasAttemptedAutoInitiate, setHasAttemptedAutoInitiate] = useState(false);
 
   const payment = paymentQuery.data;
+  const orderLifecycle = orderQuery.data;
+  const lifecycle = orderLifecycle
+    ? {
+        orderStatus: orderLifecycle.status,
+        paymentMethod: orderLifecycle.paymentMethod,
+        orderPaymentStatus: orderLifecycle.paymentStatus,
+        paymentStatus: payment?.status,
+      }
+    : null;
+  const canManagePayment = lifecycle ? canStartOrRetryOnlinePayment(lifecycle) : false;
+  const isOrderCancelled = orderLifecycle?.status === 'CANCELLED';
+  const isLatePaid = lifecycle ? isCancelledOrderWithPaidPayment(lifecycle) : false;
+  const isPaymentEnded = payment?.status === PAYMENT_STATUSES.CANCELLED || payment?.status === PAYMENT_STATUSES.EXPIRED;
+  const cancelledPaidMessage = lifecycle ? getCancelledPaidMessage(lifecycle) : null;
   const pendingPaypalPayment = readPendingPaypalPayment();
   const notFoundCode = useMemo(
     () => (paymentQuery.error instanceof Error && 'code' in paymentQuery.error ? String((paymentQuery.error as { code?: string }).code) : ''),
@@ -149,7 +166,7 @@ export const PaymentResultPage = () => {
   };
 
   const initiate = useCallback((providerOverride?: PaymentProvider) => {
-    if (!orderId || initiatePayment.isPending) {
+    if (!orderId || initiatePayment.isPending || !canManagePayment) {
       return;
     }
 
@@ -274,6 +291,7 @@ export const PaymentResultPage = () => {
     location.pathname,
     location.search,
     navigate,
+    canManagePayment,
   ]);
 
   const isNotFound = notFoundCode === 'PAYMENT_NOT_FOUND';
@@ -281,26 +299,21 @@ export const PaymentResultPage = () => {
   const paymentRedirectUrl = payment ? getPaymentRedirectUrl(payment) : undefined;
   const canResumePayment =
     payment &&
-    payment.status !== PAYMENT_STATUSES.PAID &&
-    payment.status !== PAYMENT_STATUSES.REFUNDED &&
-    payment.status !== PAYMENT_STATUSES.PARTIALLY_REFUNDED &&
+    canManagePayment &&
+    isProcessingStatus(payment.status) &&
     Boolean(paymentRedirectUrl);
   const canReinitiatePayment =
-    Boolean(paymentProvider && payment) &&
-    (payment?.status ?? null) !== PAYMENT_STATUSES.PAID &&
-    (payment?.status ?? null) !== PAYMENT_STATUSES.REFUNDED &&
-    (payment?.status ?? null) !== PAYMENT_STATUSES.PARTIALLY_REFUNDED &&
+    Boolean(paymentProvider && payment && canManagePayment) &&
+    payment?.status === PAYMENT_STATUSES.FAILED &&
     !paymentRedirectUrl;
   const canChooseProviderForExistingPayment =
-    Boolean(payment) &&
+    Boolean(payment && isProcessingStatus(payment.status)) &&
+    canManagePayment &&
     !paymentProvider &&
-    (payment?.status ?? null) !== PAYMENT_STATUSES.PAID &&
-    (payment?.status ?? null) !== PAYMENT_STATUSES.REFUNDED &&
-    (payment?.status ?? null) !== PAYMENT_STATUSES.PARTIALLY_REFUNDED &&
     !paymentRedirectUrl;
 
   useEffect(() => {
-    if (!isNotFound || !orderId || initiatePayment.isPending || hasAttemptedAutoInitiate) {
+    if (!isNotFound || !orderId || !canManagePayment || initiatePayment.isPending || hasAttemptedAutoInitiate) {
       return;
     }
 
@@ -314,7 +327,7 @@ export const PaymentResultPage = () => {
 
     setHasAttemptedAutoInitiate(true);
     initiate();
-  }, [hasAttemptedAutoInitiate, initiate, initiatePayment.isPending, isNotFound, orderId, requestedProvider]);
+  }, [canManagePayment, hasAttemptedAutoInitiate, initiate, initiatePayment.isPending, isNotFound, orderId, requestedProvider]);
 
   if (!orderId) {
     return (
@@ -340,7 +353,7 @@ export const PaymentResultPage = () => {
     <>
       <PageSEO description="Review the latest payment status for your order." noIndex path={routes.paymentResult} title="Payment Result" />
       <Container className="space-y-8 pb-16 pt-28 md:space-y-10 md:pb-20 md:pt-32">
-        {paymentQuery.isLoading ? <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Loading payment result..." /> : null}
+        {paymentQuery.isLoading || orderQuery.isLoading ? <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Loading order and payment status..." /> : null}
         {isRedirecting ? <LoadingOverlay label={`Đang chuyển hướng sang ${paymentProviderLabel}...`} /> : null}
         {paymentQuery.isError && !isNotFound && !isOrderMissing ? (
           <ErrorCard
@@ -348,6 +361,14 @@ export const PaymentResultPage = () => {
             className="border-border bg-surface"
             description="The payment record could not be loaded from the current service."
             title="Payment lookup failed"
+          />
+        ) : null}
+        {orderQuery.isError && !isOrderMissing ? (
+          <ErrorCard
+            action={<Button onClick={() => void orderQuery.refetch()}>Check order status again</Button>}
+            className="border-border bg-surface"
+            description="Payment actions are paused until the current order status can be verified."
+            title="Order status unavailable"
           />
         ) : null}
         {paymentQuery.isError && isOrderMissing ? (
@@ -362,15 +383,15 @@ export const PaymentResultPage = () => {
             title="Order not found."
           />
         ) : null}
-        {paymentQuery.isError && isNotFound ? (
+        {paymentQuery.isError && isNotFound && orderLifecycle && !orderQuery.isError ? (
           <EmptyState
             action={
               <div className="flex flex-wrap justify-center gap-3">
-                {paymentProvider ? (
+                {canManagePayment && paymentProvider ? (
                   <Button disabled={initiatePayment.isPending} onClick={() => initiate()}>
                     {initiatePayment.isPending ? 'Initiating payment...' : `Start ${paymentProviderLabel} payment`}
                   </Button>
-                ) : (
+                ) : canManagePayment ? (
                   <>
                     <Button disabled={initiatePayment.isPending} onClick={() => initiate(PAYMENT_PROVIDERS.PAYPAL)}>
                       {initiatePayment.isPending ? 'Initiating payment...' : 'Start PayPal payment'}
@@ -379,19 +400,19 @@ export const PaymentResultPage = () => {
                       {initiatePayment.isPending ? 'Initiating payment...' : 'Start MoMo payment'}
                     </Button>
                   </>
-                )}
+                ) : null}
                 <Link className={buttonStyles({ variant: 'ghost' })} to={routePaths.orderDetail(orderId)}>
                   Back to order
                 </Link>
               </div>
             }
             className="border-border bg-surface px-6 py-16"
-            description={
-              paymentProvider
-                ? 'No payment record exists for this order yet. Start payment to create the first transaction.'
-                : 'No payment record exists for this order yet. Choose MoMo or PayPal to create the first transaction.'
-            }
-            title="Payment not found."
+            description={cancelledPaidMessage ?? (canManagePayment
+              ? paymentProvider
+                ? 'No payment record exists yet. Start the selected online payment to create the first transaction.'
+                : 'No payment record exists yet. Choose MoMo or PayPal to create the first transaction.'
+              : 'This order is no longer awaiting online payment. Review its current status in the order details.')}
+            title={cancelledPaidMessage ? 'Payment received, order cancelled.' : canManagePayment ? 'Payment not found.' : 'Payment cannot be started for this order.'}
           />
         ) : null}
         {payment ? (
@@ -401,12 +422,20 @@ export const PaymentResultPage = () => {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Payment result</p>
-                    <h1 className="mt-4 font-display text-[3.5rem] leading-none text-text-primary md:text-[4.5rem]">
-                      {payment.status === PAYMENT_STATUSES.PAID
-                        ? 'Payment Completed.'
+                    <h1 className="mt-4 font-sans text-[2rem] font-semibold leading-tight text-text-primary md:text-4xl">
+                      {isLatePaid
+                        ? 'Payment received, order cancelled.'
+                        : isOrderCancelled
+                          ? 'Order cancelled. Payment cannot continue.'
+                        : payment.status === PAYMENT_STATUSES.PAID
+                          ? orderQuery.isError
+                            ? 'Payment recorded, order status unavailable.'
+                            : 'Payment Completed.'
                         : payment.status === PAYMENT_STATUSES.FAILED
                           ? 'Payment Failed.'
-                          : 'Payment Processing.'}
+                          : isPaymentEnded
+                            ? 'Payment attempt ended.'
+                            : 'Payment Processing.'}
                     </h1>
                     <p className="mt-4 text-sm uppercase tracking-[0.08em] text-text-secondary">{getPaymentProviderLabel(payment.provider ?? payment.transactions[0]?.provider ?? paymentProvider)}</p>
                   </div>
@@ -419,10 +448,18 @@ export const PaymentResultPage = () => {
                 </div>
 
                 <p className="mt-5 max-w-2xl text-sm leading-7 text-text-secondary">
-                  {payment.status === PAYMENT_STATUSES.PAID
-                    ? 'Your payment has been confirmed. The order archive is updated and ready for the next fulfillment step.'
+                  {isLatePaid
+                    ? cancelledPaidMessage
+                    : isOrderCancelled
+                      ? 'This order expired and was cancelled. Do not continue payment or assume it will be fulfilled.'
+                    : payment.status === PAYMENT_STATUSES.PAID
+                      ? orderQuery.isError
+                        ? 'The payment service reports PAID, but the order status could not be verified. Check the order details before assuming fulfillment has started.'
+                        : 'The Backend confirms payment. Review the order status for the current fulfillment state.'
                     : payment.status === PAYMENT_STATUSES.FAILED
                       ? `The gateway reported a failed ${paymentProviderLabel} transaction. You can retry payment from this page without creating a duplicate record.`
+                      : isPaymentEnded
+                        ? 'This payment attempt is closed. Start another attempt only if the Backend still reports the order as awaiting payment.'
                       : paymentQuery.maxAttemptsReached
                         ? 'The payment is still processing. Automatic polling has paused, but you can check again manually at any time.'
                         : 'We are polling the latest payment status and will stop automatically when the gateway settles it.'}

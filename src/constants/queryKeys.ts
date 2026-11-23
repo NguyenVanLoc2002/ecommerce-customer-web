@@ -30,6 +30,7 @@ export const queryKeys = {
   orders: {
     list: ['orders', 'list'] as const,
     detail: (orderId: string) => ['orders', 'detail', orderId] as const,
+    lifecycle: (orderId: string) => ['orders', 'lifecycle', orderId] as const,
   },
   reviews: {
     mine: ['reviews', 'mine'] as const,
