@@ -120,6 +120,7 @@ const installOrderAndPayment = async (page: Page, paymentStatus: string) => {
 };
 
 const takeEvidence = async (page: Page, fileName: string, viewportWidth: number) => {
+  if (!process.env.E2E_CAPTURE_HOLD_EVIDENCE) return;
   mkdirSync(evidenceDirectory, { recursive: true });
   await page.setViewportSize({ width: viewportWidth, height: viewportWidth > 900 ? 1000 : 900 });
   await page.screenshot({ path: resolve(evidenceDirectory, fileName), fullPage: true });
@@ -133,8 +134,9 @@ test('late PAID payment stays separate from a cancelled order and has no payment
   await installOrderAndPayment(page, 'PAID');
   await page.goto(`/payment/result?orderId=${orderId}`);
 
-  await expect(page.getByRole('heading', { name: 'Payment received, order cancelled.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Đã nhận tiền, đơn hàng đã hủy.' })).toBeVisible();
   await expect(page.getByText(/đối soát và hoàn tiền thủ công/i)).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Tóm tắt đơn hàng' })).toContainText('Cancelled');
   await expect(page.getByText(/ready for the next fulfillment step/i)).toHaveCount(0);
   await expect(page.getByRole('button', { name: /retry|create .* payment|continue to/i })).toHaveCount(0);
 
@@ -161,14 +163,14 @@ test('MoMo return and PayPal cancel keep a late payment out of fulfillment', asy
   await installOrderAndPayment(page, 'PAID');
 
   await page.goto(`/payment/momo/return?orderId=${orderId}`);
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Đã nhận tiền, đơn hàng đã hủy.' })).toBeVisible();
   await expect(page.getByText(/LATE_SUCCESS_AFTER_CANCEL/)).toHaveCount(0);
   await takeEvidence(page, 'momo-return-desktop.png', 1280);
   await takeEvidence(page, 'momo-return-mobile.png', 390);
 
   await page.goto(`/payment/paypal/cancel?orderId=${orderId}`);
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Thá»­ láº¡i thanh toÃ¡n/i })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Đã nhận tiền, đơn hàng đã hủy.' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Thử lại thanh toán/i })).toHaveCount(0);
   await takeEvidence(page, 'paypal-cancel-desktop.png', 1280);
   await takeEvidence(page, 'paypal-cancel-mobile.png', 390);
 });
@@ -233,4 +235,101 @@ test('COD confirmation explains the Admin hold without claiming fulfillment conf
 
   await takeEvidence(page, 'checkout-confirmation-desktop.png', 1280);
   await takeEvidence(page, 'checkout-confirmation-mobile.png', 390);
+});
+
+test('payment routes show separate server statuses and fit desktop and mobile', async ({ page }) => {
+  const evidence = process.env.E2E_CAPTURE_PAYMENT_EVIDENCE;
+  await page.route(`**/api/v1/orders/${orderId}`, (route) =>
+    route.fulfill({
+      json: apiEnvelope({
+        ...cancelledOrder('PENDING'),
+        status: 'AWAITING_PAYMENT',
+        items: cancelledOrder('PENDING').items.map((item) => ({
+          ...item,
+          productImageUrl: '/artifacts/stitch-review/images/photo-0.jpg',
+        })),
+      }),
+    }),
+  );
+  let captureCount = 0;
+  await page.route(`**/api/v1/payments/order/${orderId}/capture`, (route) => {
+    captureCount += 1;
+    return route.fulfill({ json: apiEnvelope(paidPayment('PENDING')) });
+  });
+  const screens = [
+    ['payment-result', '/payment/result', ''],
+    ['momo-return', '/payment/momo/return', '&resultCode=0'],
+    ['paypal-return', '/payment/paypal/return', '&token=review-provider-token'],
+    ['paypal-cancel', '/payment/paypal/cancel', ''],
+  ];
+  for (const [screen, path, query] of screens) {
+    const provider = screen === 'momo-return' || screen === 'payment-result' ? 'MOMO' : 'PAYPAL';
+    await page.route(`**/api/v1/payments/order/${orderId}`, (route) =>
+      route.fulfill({ json: apiEnvelope({ ...paidPayment('PENDING'), provider }) }),
+    );
+    for (const [device, width] of [['desktop', 1280], ['mobile', 390]] as const) {
+      await page.setViewportSize({ width, height: device === 'desktop' ? 1000 : 900 });
+      await page.goto(`${path}?orderId=${orderId}${query}`);
+      await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+      await expect(page.getByText('Awaiting Payment', { exact: true })).toBeVisible();
+      await expect(page.getByText('Pending', { exact: true })).toBeVisible();
+      await expect(page.getByText('Paid', { exact: true })).toHaveCount(0);
+      await expect(page.getByText(/2\.210\.000/).first()).toBeVisible();
+      if (screen === 'payment-result' || screen === 'paypal-return') {
+        const details = page.getByRole('heading', { name: 'Thông tin giao dịch' });
+        const refresh = page.getByRole('button', { name: /làm mới trạng thái|kiểm tra lại kết quả/i });
+        await expect(details).toBeVisible();
+        await expect(refresh).toBeVisible();
+        const detailsBox = await details.boundingBox();
+        const refreshBox = await refresh.boundingBox();
+        expect(detailsBox?.y ?? Infinity).toBeLessThan(refreshBox?.y ?? 0);
+      }
+      if (screen === 'paypal-cancel') {
+        const actions = page.getByRole('heading', { name: 'Thao tác tiếp theo' }).locator('..');
+        await expect(actions.getByRole('link').first()).toHaveAccessibleName(/thử lại thanh toán/i);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+      if (evidence) {
+        await page.evaluate(() => document.fonts.ready);
+        await page.screenshot({ animations: 'disabled', path: resolve(evidence, `${screen}-${device}.png`), fullPage: true });
+      }
+    }
+  }
+  expect(captureCount).toBe(2);
+
+  await page.goto(`/payment/paypal/return?orderId=${orderId}`);
+  await expect(page.getByRole('heading', { name: 'Thiếu token PayPal' })).toBeVisible();
+  expect(captureCount).toBe(2);
+
+  await page.goto('/payment/momo/return');
+  await expect(page.getByRole('heading', { name: 'Thiếu mã đơn hàng' })).toBeVisible();
+
+  if (evidence) {
+    for (const [screen, path] of screens.slice(1)) {
+      await page.goto(`/artifacts/stitch-review/journeys.html#${path}`);
+      await page.evaluate(() => document.fonts.ready);
+      await page.screenshot({ animations: 'disabled', path: resolve(evidence, `${screen}-design-mobile.png`), fullPage: true });
+    }
+  }
+});
+
+test('payment result renders terminal states and a recoverable API error', async ({ page }) => {
+  await page.route(`**/api/v1/orders/${orderId}`, (route) =>
+    route.fulfill({ json: apiEnvelope({ ...cancelledOrder('PENDING'), status: 'AWAITING_PAYMENT' }) }),
+  );
+  for (const [status, label] of [['FAILED', 'Failed'], ['CANCELLED', 'Cancelled'], ['EXPIRED', 'Expired']]) {
+    await page.route(`**/api/v1/payments/order/${orderId}`, (route) =>
+      route.fulfill({ json: apiEnvelope(paidPayment(status)), status: 200 }),
+    );
+    await page.goto(`/payment/result?orderId=${orderId}`);
+    await expect(page.getByText(label, { exact: true })).toBeVisible();
+    await expect(page.getByText('Awaiting Payment', { exact: true })).toBeVisible();
+    await expect(page.getByText('Paid', { exact: true })).toHaveCount(0);
+  }
+  await page.route(`**/api/v1/payments/order/${orderId}`, (route) =>
+    route.fulfill({ json: { ...apiEnvelope(null), success: false, code: 'INTERNAL_SERVER_ERROR' }, status: 500 }),
+  );
+  await page.goto(`/payment/result?orderId=${orderId}`);
+  await expect(page.getByRole('alert')).toContainText('Payment lookup failed');
+  await expect(page.getByRole('button', { name: 'Retry', exact: true })).toBeVisible();
 });
