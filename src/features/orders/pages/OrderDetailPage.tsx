@@ -1,32 +1,29 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import { routePaths } from '@/constants/routes';
+import { routePaths, routes } from '@/constants/routes';
 import { useCancelOrder, useOrderDetail } from '@/features/orders/hooks/useOrders';
 import { usePaymentLifecycle } from '@/shared/hooks/usePaymentLifecycle';
-import { OrderSummaryPanel } from '@/shared/components/commerce/OrderSummaryPanel';
 import { OrderStatusBadge } from '@/shared/components/commerce/OrderStatusBadge';
 import { OrderStatusStepper } from '@/shared/components/commerce/OrderStatusStepper';
 import { EmptyState } from '@/shared/components/feedback/EmptyState';
 import { ErrorCard } from '@/shared/components/feedback/ErrorCard';
 import { LoadingOverlay } from '@/shared/components/feedback/LoadingOverlay';
+import { BreadcrumbNav } from '@/shared/components/layout/BreadcrumbNav';
 import { Container } from '@/shared/components/layout/Container';
 import { ConfirmDialog } from '@/shared/components/overlays/ConfirmDialog';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { isAuthenticationError } from '@/shared/lib/authErrors';
-import { getPaymentMethodLabel, getPaymentMethodNote, getPaymentStatusLabel } from '@/shared/lib/commerceLabels';
+import { getPaymentMethodLabel, getPaymentStatusLabel } from '@/shared/lib/commerceLabels';
 import { getCancelledPaidMessage, getCheckoutHoldMessage } from '@/shared/lib/orderPaymentLifecycle';
 import { useUiStore } from '@/shared/stores/uiStore';
 import { formatAddress } from '@/shared/utils/formatAddress';
 import { formatDate } from '@/shared/utils/formatDate';
-import { formatMoney } from '@/shared/utils/formatMoney';
+import { formatVnd } from '@/shared/utils/formatVnd';
 import { ORDER_STATUSES, PAYMENT_METHODS } from '@/shared/types/enums';
 import { PAYMENT_STATUSES } from '@/shared/types/payment.types';
-
-const actionLinkClassName =
-  'text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary underline decoration-border underline-offset-4 transition-colors hover:decoration-text-primary';
 
 export const OrderDetailPage = () => {
   const location = useLocation();
@@ -66,7 +63,7 @@ export const OrderDetailPage = () => {
     order?.status === ORDER_STATUSES.SHIPPED ||
     order?.status === ORDER_STATUSES.DELIVERED ||
     order?.status === ORDER_STATUSES.COMPLETED;
-  const reviewActionVisible = order?.status === ORDER_STATUSES.DELIVERED || order?.status === ORDER_STATUSES.COMPLETED;
+  const reviewActionVisible = order?.status === ORDER_STATUSES.COMPLETED;
 
   return (
     <>
@@ -77,6 +74,13 @@ export const OrderDetailPage = () => {
         title="Order Detail"
       />
       <Container className="space-y-8 pb-16 pt-28 md:space-y-10 md:pb-20 md:pt-32">
+        <BreadcrumbNav items={[
+          { label: 'Trang chủ', href: routes.home },
+          { label: 'Tài khoản', href: routes.profile },
+          { label: 'Đơn hàng', href: routes.orders },
+          { label: order ? '#' + order.code : 'Chi tiết đơn hàng' },
+        ]} />
+        {!order ? <h1 className="text-2xl font-bold">Chi tiết đơn hàng</h1> : null}
         {orderQuery.isLoading ? <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Loading order detail..." /> : null}
         {orderQuery.isError ? (
           <ErrorCard
@@ -86,7 +90,7 @@ export const OrderDetailPage = () => {
             title="Order detail unavailable"
           />
         ) : null}
-        {!orderQuery.isLoading && !order ? (
+        {!orderQuery.isLoading && !orderQuery.isError && !order ? (
           <EmptyState
             className="border-border bg-surface px-6 py-16"
             description="The requested order could not be found in the current customer order set."
@@ -95,13 +99,13 @@ export const OrderDetailPage = () => {
         ) : null}
         {order ? (
           <>
-            <div className="flex flex-col gap-5 border-b border-border pb-8 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-col gap-5 rounded-md border border-border bg-surface p-5 md:p-8 lg:flex-row lg:items-center lg:justify-between">
               <div>
+                <h1 className="mb-3 break-words text-xl font-bold tracking-tight md:text-2xl">Đơn hàng #{order.code}</h1>
                 <div className="flex flex-wrap items-center gap-3">
                   <OrderStatusBadge status={order.status} />
                   <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">{formatDate(order.createdAt)}</span>
                 </div>
-                <h1 className="mt-4 break-words text-2xl font-semibold leading-tight text-text-primary md:text-3xl">Đơn hàng #{order.code}</h1>
                 <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">
                   Cập nhật {formatDate(order.updatedAt)}. Xem trạng thái vận chuyển, hóa đơn hoặc chi tiết đơn hàng.
                 </p>
@@ -122,7 +126,7 @@ export const OrderDetailPage = () => {
                     Thanh toán
                   </Link>
                 ) : null}
-                <Link className={buttonStyles({ variant: 'ghost' })} to={routePaths.orderInvoice(order.id)}>
+                <Link className={buttonStyles({ variant: 'primary' })} to={routePaths.orderInvoice(order.id)}>
                   Hóa đơn
                 </Link>
                 {order.canCancel ? (
@@ -133,189 +137,87 @@ export const OrderDetailPage = () => {
               </div>
             </div>
 
-            <OrderStatusStepper status={order.status} />
-
             {cancelledPaidMessage || checkoutHoldMessage ? (
               <div aria-live="polite" className={`border px-5 py-4 text-sm leading-7 ${cancelledPaidMessage ? 'border-danger/20 bg-danger/5 text-text-primary' : 'border-warning/20 bg-warning/5 text-text-primary'}`} role="status">
                 {cancelledPaidMessage ?? checkoutHoldMessage}
               </div>
             ) : null}
 
-            <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_380px]">
-              <section className="space-y-4">
-                <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Items</p>
-                  <div className="mt-6 space-y-5">
+            <div className="grid items-start gap-8 lg:grid-cols-12">
+              <div className="min-w-0 space-y-6 lg:col-span-7">
+                <section className="rounded bg-surface p-5 shadow-sm md:p-8">
+                  <div className="flex items-center gap-2"><h2 className="text-sm font-bold uppercase tracking-wide">Sản phẩm trong đơn</h2><span className="text-sm text-text-secondary">({order.items.length})</span></div>
+                  <ul className="mt-5 divide-y divide-border">
                     {order.items.map((item) => (
-                      <article className="grid gap-4 border-b border-border pb-5 last:border-b-0 last:pb-0 md:grid-cols-[104px_minmax(0,1fr)_auto]" key={item.id}>
-                        <img
-                          alt={item.primaryImage.alt}
-                          className="aspect-[4/5] w-full bg-surface-soft object-cover"
-                          height={item.primaryImage.height}
-                          loading="lazy"
-                          src={item.primaryImage.src}
-                          width={item.primaryImage.width}
-                        />
-                        <div>
-                          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">{item.brandName}</p>
-                          <h2 className="mt-3 font-display text-[1.5rem] leading-none text-text-primary">{item.productName}</h2>
-                          <p className="mt-3 text-sm uppercase tracking-[0.08em] text-text-secondary">
-                            {item.color} / {item.size} / Qty {item.quantity}
-                          </p>
-                          <p className="mt-2 text-xs uppercase tracking-[0.16em] text-outline">{item.sku}</p>
+                      <li className="grid grid-cols-[72px_minmax(0,1fr)] items-start gap-x-4 gap-y-2 py-5 md:grid-cols-[112px_minmax(0,1fr)_auto] md:gap-x-6 md:py-7" key={item.id}>
+                        <img alt={item.primaryImage.alt} className="row-span-2 aspect-[4/5] w-full rounded bg-surface-soft object-cover md:row-span-1" height={item.primaryImage.height} loading="lazy" src={item.primaryImage.src} width={item.primaryImage.width} />
+                        <div className="min-w-0 break-words">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">{item.brandName}</p>
+                          <h3 className="mt-1 font-semibold">{item.productName}</h3>
+                          <p className="mt-2 text-sm text-text-secondary">Màu {item.color} · Cỡ {item.size}</p>
+                          <p className="mt-1 font-mono text-xs text-text-secondary">{item.sku} · SL {item.quantity}</p>
                         </div>
-                        <div className="text-left md:text-right">
-                          <p className="text-sm text-text-primary">{formatMoney(item.subtotal)}</p>
-                          <p className="mt-2 text-sm text-text-secondary">{formatMoney(item.unitPrice)} each</p>
-                        </div>
-                      </article>
+                        <p className="col-start-2 text-sm font-bold md:col-start-auto md:text-right">{formatVnd(item.subtotal)}</p>
+                      </li>
                     ))}
+                  </ul>
+                </section>
+                <OrderStatusStepper status={order.status} />
+                {order.customerNote.trim() ? (
+                  <section className="rounded bg-surface-soft p-5">
+                    <h2 className="text-sm font-semibold">Ghi chú của khách hàng</h2>
+                    <p className="mt-2 whitespace-pre-wrap break-words text-sm text-text-secondary">{order.customerNote}</p>
+                  </section>
+                ) : null}
+              </div>
+
+              <div className="min-w-0 space-y-6 lg:col-span-5">
+                <section className="rounded bg-surface p-5 shadow-sm md:p-8">
+                  <h2 className="text-sm font-bold uppercase tracking-wide">Chi tiết thanh toán</h2>
+                  <dl className="mt-5 space-y-4 text-sm">
+                    <div className="flex justify-between gap-3"><dt>Tạm tính</dt><dd>{formatVnd(order.subTotal)}</dd></div>
+                    <div className="flex justify-between gap-3"><dt>Ưu đãi {order.voucherCode}</dt><dd>{formatVnd(order.discountTotal ? -order.discountTotal : 0)}</dd></div>
+                    <div className="flex justify-between gap-3"><dt>Phí vận chuyển</dt><dd>{formatVnd(order.shippingFee)}</dd></div>
+                    <div className="flex justify-between gap-3 border-t border-border pt-4 font-bold"><dt>Tổng thanh toán</dt><dd className="text-lg">{formatVnd(order.grandTotal)}</dd></div>
+                  </dl>
+                  <div className="mt-5 flex flex-wrap justify-between gap-2 rounded bg-surface-soft p-3 text-sm">
+                    <span className="text-text-secondary">Phương thức thanh toán</span>
+                    <span className="font-semibold">{getPaymentMethodLabel(order.paymentMethod)}</span>
                   </div>
                 </section>
-
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Shipping address</p>
-                      <Link className={actionLinkClassName} to={routePaths.orderTracking(order.id)}>
-                        View shipment
-                      </Link>
+                <section className="space-y-4 rounded bg-surface p-5 shadow-sm md:p-8">
+                  <h2 className="text-sm font-bold uppercase tracking-wide">Thông tin nhận hàng</h2>
+                  <div>
+                    <p className="font-semibold">{order.shippingAddress.receiverName}</p>
+                    <p className="mt-1 text-sm text-text-secondary">{order.shippingAddress.phoneNumber}</p>
+                  </div>
+                  <p className="break-words text-sm text-text-secondary">{formatAddress(order.shippingAddress)}</p>
+                  {order.carrierName ? <p className="text-sm font-medium">{order.carrierName}</p> : null}
+                </section>
+                <section className="space-y-3 rounded bg-surface p-5 shadow-sm md:p-8">
+                  <h2 className="text-sm font-bold uppercase tracking-wide">Trạng thái thanh toán</h2>
+                  {order.paymentStatus ? <p className="text-sm">Order payment status: {getPaymentStatusLabel(order.paymentStatus)}</p> : null}
+                  {paymentQuery.data ? <p className="text-sm">Payment record: {getPaymentStatusLabel(paymentQuery.data.status)}</p> : null}
+                  {paymentQuery.isLoading ? <p role="status" className="text-sm text-text-secondary">Đang tải giao dịch…</p> : null}
+                  {paymentQuery.isError && !(paymentQuery.error instanceof Error && 'code' in paymentQuery.error && paymentQuery.error.code === 'PAYMENT_NOT_FOUND') ? (
+                    <div className="space-y-2">
+                      <p className="text-sm text-danger" role="status">Chưa tải được giao dịch.</p>
+                      <Button onClick={() => void paymentQuery.refetch()} variant="secondary">Thử lại</Button>
                     </div>
-                    <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{order.shippingAddress.receiverName}</h2>
-                    <p className="mt-4 text-sm uppercase tracking-[0.08em] text-text-secondary">{order.shippingAddress.phoneNumber}</p>
-                    <p className="mt-3 text-sm leading-7 text-text-secondary">{formatAddress(order.shippingAddress)}</p>
-                  </section>
-
-                  <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Payment method</p>
-                      <Link className={actionLinkClassName} to={routePaths.orderInvoice(order.id)}>
-                        Print invoice
-                      </Link>
-                    </div>
-                    <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{getPaymentMethodLabel(order.paymentMethod)}</h2>
-                    <p className="mt-4 text-sm leading-7 text-text-secondary">
-                      {cancelledPaidMessage
-                        ? 'Payment was received after the order was cancelled. The order will not enter fulfillment; the payment requires manual reconciliation and refund handling.'
-                        : getPaymentMethodNote(order.paymentMethod)}
-                    </p>
-                    {order.paymentStatus ? (
-                      <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
-                        Order payment status: {getPaymentStatusLabel(order.paymentStatus)}
-                      </p>
-                    ) : null}
-                    {paymentQuery.isLoading ? <p aria-live="polite" className="mt-3 text-sm text-text-secondary">Đang tải trạng thái giao dịch...</p> : null}
-                    {paymentQuery.data ? (
-                      <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
-                        Payment record: {getPaymentStatusLabel(paymentQuery.data.status)}
-                      </p>
-                    ) : null}
-                    {paymentQuery.isError && !(paymentQuery.error instanceof Error && 'code' in paymentQuery.error && paymentQuery.error.code === 'PAYMENT_NOT_FOUND') ? (
-                      <div className="mt-3 space-y-2" role="status">
-                        <p className="text-sm text-danger">Chưa tải được lịch sử trạng thái giao dịch. Trạng thái đơn ở trên vẫn lấy từ Order API.</p>
-                        <Button onClick={() => void paymentQuery.refetch()} size="sm" variant="secondary">Tải lại trạng thái thanh toán</Button>
-                      </div>
-                    ) : null}
-                  </section>
-                </div>
-
-                <div className="grid gap-4 lg:grid-cols-2">
-                  {reviewActionVisible ? (
-                    <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Review</p>
-                      <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Share your notes</h2>
-                      <p className="mt-4 text-sm leading-7 text-text-secondary">
-                        Revisit the fit, finish, and material quality of this delivered order directly from the archive.
-                      </p>
-                      <Link className={`${actionLinkClassName} mt-5 inline-flex`} to={routePaths.orderReview(order.id)}>
-                        Write review
-                      </Link>
-                    </section>
                   ) : null}
-
-                  {paymentActionVisible ? (
-                    <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Payment</p>
-                      <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Complete payment</h2>
-                      <p className="mt-4 text-sm leading-7 text-text-secondary">
-                        This online order is awaiting payment. The checkout hold lasts up to 30 minutes; payment actions remain available only while the Backend reports that the order is still awaiting payment.
-                      </p>
-                      <Link className={`${actionLinkClassName} mt-5 inline-flex`} to={routePaths.paymentResult(order.id)}>
-                        Pay now
-                      </Link>
-                    </section>
-                  ) : null}
-
                   {onlinePaymentPending ? (
-                    <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Payment</p>
-                      <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Online payment processing</h2>
-                      <p className="mt-4 text-sm leading-7 text-text-secondary">
-                        Thanh toán online đang được xử lý.
-                      </p>
-                      <Link className={`${actionLinkClassName} mt-5 inline-flex`} to={routePaths.paymentResult(order.id)}>
-                        View payment status
-                      </Link>
-                    </section>
+                    <Link className={buttonStyles({ variant: 'secondary' })} to={routePaths.paymentResult(order.id)}>Xem trạng thái thanh toán</Link>
                   ) : null}
-
-                  {shipmentActionVisible ? (
-                    <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Shipment</p>
-                      <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Track the handoff</h2>
-                      <p className="mt-4 text-sm leading-7 text-text-secondary">
-                        Follow the shipment timeline, current carrier status, and the latest delivery milestones for this order.
-                      </p>
-                      <Link className={`${actionLinkClassName} mt-5 inline-flex`} to={routePaths.orderTracking(order.id)}>
-                        Track shipment
-                      </Link>
-                    </section>
-                  ) : null}
-
-                  <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Carrier snapshot</p>
-                    <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{order.carrierName ?? 'Carrier not selected'}</h2>
-                    <p className="mt-4 text-sm leading-7 text-text-secondary">
-                      {order.carrierName
-                        ? `${order.carrierCode ?? order.carrierName}${order.carrierProviderType ? ` / ${order.carrierProviderType}` : ''}.`
-                        : 'This order was created without a selected carrier, so shipping remained at the backend fallback value.'}
-                    </p>
-                  </section>
-
-                  <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Invoice</p>
-                    <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Invoice actions</h2>
-                    <p className="mt-4 text-sm leading-7 text-text-secondary">
-                      Open the printable invoice view or return to the archive for broader transaction history.
-                    </p>
-                    <Link className={`${actionLinkClassName} mt-5 inline-flex`} to={routePaths.orderInvoice(order.id)}>
-                      Download invoice
-                    </Link>
-                  </section>
-                </div>
-
-                <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Customer note</p>
-                  <p className="mt-4 text-sm leading-7 text-text-secondary">{order.customerNote.trim().length > 0 ? order.customerNote : 'No note provided for this order.'}</p>
                 </section>
-              </section>
-
-              <OrderSummaryPanel
-                supplementary={
-                  <div className="space-y-3 text-sm leading-7 text-text-secondary">
-                    <p>Voucher code {order.voucherCode ?? 'not applied'}.</p>
-                    <p>{order.carrierName ? `Carrier ${order.carrierName}.` : 'Carrier not selected.'}</p>
-                  </div>
-                }
-                totals={order}
-              />
+              </div>
             </div>
           </>
         ) : null}
       </Container>
       {order ? (
         <ConfirmDialog
-          cancelLabel="Keep order"
+          cancelLabel="Giữ đơn hàng"
+          confirmLoading={cancelOrder.isPending}
           confirmLabel={cancelOrder.isPending ? 'Cancelling...' : 'Cancel order'}
           description="This releases the pending order in the current flow and updates its status to Cancelled."
           onClose={() => setConfirmOpen(false)}

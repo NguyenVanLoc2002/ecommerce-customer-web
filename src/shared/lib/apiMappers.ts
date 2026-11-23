@@ -276,6 +276,7 @@ const toOrderItem = (item: OrderItemResponse): OrderItem => {
     sku: item.sku ?? '',
     color: color || 'Default',
     size: size || 'One Size',
+    variantName: item.variantName ?? undefined,
     quantity: item.quantity,
     unitPrice: effectivePrice,
     subtotal: item.lineTotal,
@@ -348,7 +349,8 @@ export const toCommerceOrderFromListItem = (order: OrderListItemResponse): Comme
   paymentStatus: order.paymentStatus ?? undefined,
   customerNote: '',
   voucherCode: undefined,
-  items: [],
+  items: order.itemsPreview?.map(toOrderItem) ?? [],
+  remainingItemLines: order.remainingItemLines,
   shippingAddress: {
     id: order.id,
     receiverName: '',

@@ -64,6 +64,7 @@ export interface OrderItem {
   productName: string;
   brandName: string;
   variantId: string;
+  variantName?: string;
   sku: string;
   color: string;
   size: string;
@@ -88,6 +89,7 @@ export interface CommerceOrder extends CartTotals {
   customerNote: string;
   voucherCode?: string;
   items: OrderItem[];
+  remainingItemLines?: number;
   shippingAddress: CustomerAddress;
   canCancel: boolean;
 }
@@ -151,6 +153,8 @@ export interface OrderListItemResponse {
   status: OrderStatus;
   paymentMethod: PaymentMethod | null;
   paymentStatus: string | null;
+  itemsPreview?: OrderItemResponse[];
+  remainingItemLines?: number;
   totalItems: number;
   totalAmount: number;
   createdAt: string;

@@ -1,7 +1,7 @@
-import { ArrowLeft } from 'lucide-react';
+import { Copy, Truck } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 
-import { routePaths } from '@/constants/routes';
+import { routePaths, routes } from '@/constants/routes';
 import { ShipmentAlertBanner } from '@/features/shipment/components/ShipmentAlertBanner';
 import { ShipmentProgressBar } from '@/features/shipment/components/ShipmentProgressBar';
 import { ShipmentTimeline } from '@/features/shipment/components/ShipmentTimeline';
@@ -9,13 +9,14 @@ import { SkeletonTimeline } from '@/features/shipment/components/SkeletonTimelin
 import { useShipmentByOrderId } from '@/features/shipment/hooks/useShipment';
 import { EmptyState } from '@/shared/components/feedback/EmptyState';
 import { ErrorCard } from '@/shared/components/feedback/ErrorCard';
+import { BreadcrumbNav } from '@/shared/components/layout/BreadcrumbNav';
 import { Container } from '@/shared/components/layout/Container';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { useUiStore } from '@/shared/stores/uiStore';
 import { formatDate } from '@/shared/utils/formatDate';
-import { formatMoney } from '@/shared/utils/formatMoney';
+import { formatVnd } from '@/shared/utils/formatVnd';
 
 const codeButtonClassName =
   'inline-flex items-center border border-border px-4 py-2 font-mono text-sm text-text-primary transition-colors hover:border-text-primary';
@@ -62,14 +63,19 @@ export const ShipmentTrackingPage = () => {
     <>
       <PageSEO description="Track the current shipment timeline and delivery progress for your order." noIndex path={routePaths.orderTracking(orderId || 'order')} title="Shipment Tracking" />
       <Container className="space-y-8 pb-16 pt-28 md:space-y-10 md:pb-20 md:pt-32">
-        <div className="border-b border-border pb-8">
-          <Link className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary" to={routePaths.orderDetail(orderId)}>
-            <ArrowLeft className="h-4 w-4" />
-            Quay lại đơn hàng
-          </Link>
-          <p className="mt-6 text-sm font-medium text-brand-primary">Đơn hàng / Vận chuyển</p>
-          <h1 className="mt-3 text-2xl font-semibold leading-tight text-text-primary md:text-3xl">Theo dõi vận chuyển</h1>
-        </div>
+        <BreadcrumbNav items={[
+          { label: 'Trang chủ', href: routes.home },
+          { label: 'Đơn hàng', href: routes.orders },
+          { label: shipment?.orderCode ?? 'Chi tiết đơn', href: routePaths.orderDetail(orderId) },
+          { label: 'Theo dõi vận đơn' },
+        ]} />
+        <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
+          <div>
+            <h1 className="text-2xl font-light tracking-tight md:text-3xl">Theo dõi hành trình đơn hàng</h1>
+            {shipment ? <p className="mt-2 text-sm text-text-secondary">Đơn hàng #{shipment.orderCode}</p> : null}
+          </div>
+          <Link className={buttonStyles({ variant: 'secondary' })} to={routePaths.orderDetail(orderId)}>Xem chi tiết đơn hàng</Link>
+        </header>
 
         {shipmentQuery.isLoading ? <SkeletonTimeline /> : null}
         {shipmentQuery.isError && !isShipmentMissing && !isOrderMissing ? (
@@ -106,69 +112,58 @@ export const ShipmentTrackingPage = () => {
         ) : null}
 
         {shipment ? (
-          <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_380px]">
-            <section className="space-y-6">
-              <div className="border border-border bg-surface px-6 py-8 md:px-8 md:py-10">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Shipment summary</p>
-                    <h2 className="mt-4 font-display text-[3rem] leading-none text-text-primary md:text-[4rem]">{shipment.carrier}</h2>
-                  </div>
-                  <div className={`inline-flex items-center border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] ${shipmentToneClasses[shipment.status]}`}>
-                    {shipment.status.replace(/_/g, ' ')}
-                  </div>
-                </div>
-
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <button className={codeButtonClassName} onClick={() => void copyCode(shipment.shipmentCode, 'Shipment code')} type="button">
-                    {shipment.shipmentCode}
-                  </button>
+          <div className="space-y-8">
+            <div className="grid divide-y divide-border overflow-hidden rounded bg-surface shadow-sm md:grid-cols-3 md:divide-x md:divide-y-0">
+              <div className="space-y-2 p-5 md:p-6">
+                <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Trạng thái giao hàng</p>
+                <p className={`inline-flex items-center gap-2 rounded border px-2 py-1 text-sm ${shipmentToneClasses[shipment.status]}`}>
+                  <Truck aria-hidden="true" className="size-4" />
+                  {shipment.status.replace(/_/g, ' ')}
+                </p>
+              </div>
+              <div className="space-y-2 p-5 md:p-6">
+                <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Đơn vị vận chuyển</p>
+                <p className="font-semibold">{shipment.carrier}</p>
+                <button className={codeButtonClassName} onClick={() => void copyCode(shipment.shipmentCode, 'Shipment code')} type="button">
+                  <Copy aria-hidden="true" className="mr-2 size-4" />{shipment.shipmentCode}
+                </button>
+              </div>
+              <div className="space-y-2 p-5 md:p-6">
+                <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">Mã theo dõi</p>
+                {shipment.trackingNumber ? (
                   <button className={codeButtonClassName} onClick={() => void copyCode(shipment.trackingNumber, 'Tracking number')} type="button">
-                    {shipment.trackingNumber}
+                    <Copy aria-hidden="true" className="mr-2 size-4" />{shipment.trackingNumber}
                   </button>
-                </div>
-
-                <div className="mt-8">
+                ) : <p className="text-sm text-text-secondary">Chưa có mã theo dõi</p>}
+              </div>
+            </div>
+            <ShipmentAlertBanner shipment={shipment} />
+            <div className="grid items-start gap-8 lg:grid-cols-12">
+              <section className="min-w-0 overflow-hidden rounded bg-surface shadow-sm lg:col-span-8">
+                <h2 className="border-b border-border px-5 py-5 text-lg font-medium md:px-8">Hành trình vận chuyển</h2>
+                <ShipmentTimeline events={shipment.events} />
+                <div className="border-t border-border p-5 md:p-8">
                   <ShipmentProgressBar status={shipment.status} />
                 </div>
-              </div>
-
-              <ShipmentAlertBanner shipment={shipment} />
-
-              <section className="space-y-4">
-                <div className="border border-border bg-surface px-5 py-5 md:px-6">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Timeline</p>
-                  <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Shipment events</h2>
-                </div>
-                <ShipmentTimeline events={shipment.events} />
               </section>
-            </section>
-
-            <aside className="space-y-4">
-              <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Delivery</p>
-                <p className="mt-3 font-display text-[2rem] leading-none text-text-primary">
-                  {shipment.deliveredAt ? 'Delivered' : shipment.estimatedDeliveryDate ? 'Estimated arrival' : 'Awaiting update'}
-                </p>
-                <p className="mt-4 text-sm leading-7 text-text-secondary">
-                  {shipment.deliveredAt
-                    ? formatDate(shipment.deliveredAt, { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-                    : shipment.estimatedDeliveryDate
-                      ? formatDate(shipment.estimatedDeliveryDate, { month: 'long', day: 'numeric', year: 'numeric' })
-                      : 'The carrier has not confirmed an estimated delivery window yet.'}
-                </p>
-              </section>
-
-              <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Shipment note</p>
-                <p className="mt-4 text-sm leading-7 text-text-secondary">{shipment.note ?? 'No shipment note available.'}</p>
-                <p className="mt-4 text-sm leading-7 text-text-secondary">Shipping fee {formatMoney(shipment.shippingFee)}</p>
-              </section>
-
-              <Link className={buttonStyles({ fullWidth: true, variant: 'ghost' })} to={routePaths.orderDetail(orderId)}>
-                Back to order detail
-              </Link>
-            </aside>
+              <aside className="min-w-0 space-y-5 lg:col-span-4">
+                <section className="rounded bg-surface p-5 shadow-sm md:p-6">
+                  <h2 className="text-sm font-bold uppercase tracking-wide">{shipment.deliveredAt ? 'Đã giao' : 'Dự kiến giao hàng'}</h2>
+                  <p className="mt-3 text-sm text-text-secondary">
+                    {shipment.deliveredAt || shipment.estimatedDeliveryDate
+                      ? formatDate(shipment.deliveredAt ?? shipment.estimatedDeliveryDate ?? '')
+                      : 'Đang chờ thông tin từ đơn vị vận chuyển.'}
+                  </p>
+                  <p className="mt-3 border-t border-border pt-3 text-sm">Phí vận chuyển {formatVnd(shipment.shippingFee)}</p>
+                </section>
+                {shipment.note ? (
+                  <section className="rounded bg-surface p-5 shadow-sm">
+                    <h2 className="text-sm font-bold uppercase tracking-wide">Ghi chú vận chuyển</h2>
+                    <p className="mt-3 whitespace-pre-wrap break-words text-sm text-text-secondary">{shipment.note}</p>
+                  </section>
+                ) : null}
+              </aside>
+            </div>
           </div>
         ) : null}
       </Container>
