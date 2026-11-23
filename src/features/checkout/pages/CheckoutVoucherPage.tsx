@@ -14,13 +14,7 @@ import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { useUiStore } from '@/shared/stores/uiStore';
-import { formatMoney } from '@/shared/utils/formatMoney';
-
-const sampleOffers = [
-  { code: 'FIRSTLOOK', title: 'First order preview', detail: 'Preview a welcoming discount for a first edit.' },
-  { code: 'EDITOR25', title: 'Editorial set', detail: 'Preview a larger incentive on higher-value selections.' },
-  { code: 'ACCESSORY10', title: 'Accessory pairing', detail: 'Available when an accessory is already in the bag.' },
-] as const;
+import { formatVnd } from '@/shared/utils/formatVnd';
 
 export const CheckoutVoucherPage = () => {
   const navigate = useNavigate();
@@ -65,15 +59,14 @@ export const CheckoutVoucherPage = () => {
   return (
     <>
       <PageSEO description="Preview voucher eligibility before reviewing the order." noIndex path={routes.checkoutVoucher} title="Checkout Voucher" />
-      <Container className="space-y-8 py-8 md:space-y-10 md:py-10">
+      <Container className="max-w-6xl space-y-6 py-5 md:space-y-8 md:py-8">
         <CheckoutStepper currentStep="voucher" />
-        <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-8">
           <section className="space-y-6">
-            <div className="space-y-4 border-b border-border pb-8">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Step 03</p>
-              <h1 className="font-display text-[3.25rem] leading-none text-text-primary md:text-[4.25rem]">Apply Rewards &amp; Vouchers</h1>
+            <div className="space-y-2 border-b border-border pb-4">
+              <h1 className="text-xl font-medium tracking-tight text-text-primary md:text-3xl">Mã giảm giá &amp; Khuyến mãi</h1>
                 <p className="max-w-2xl text-sm leading-7 text-text-secondary">
-                Enter a code to refresh the cart-aware order preview. The server calculates the discount, shipping, and total.
+                Nhập mã ưu đãi để kiểm tra mức giảm cho đơn hàng.
               </p>
             </div>
             {cartQuery.isLoading ? <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Loading voucher preview..." /> : null}
@@ -87,15 +80,7 @@ export const CheckoutVoucherPage = () => {
                 }}
               />
             </div>
-            <div className="grid gap-4 md:grid-cols-3">
-              {sampleOffers.map((offer) => (
-                <div className="border border-border bg-surface px-4 py-5" key={offer.code}>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">{offer.code}</p>
-                  <h2 className="mt-3 font-display text-[1.5rem] leading-none text-text-primary">{offer.title}</h2>
-                  <p className="mt-3 text-sm leading-7 text-text-secondary">{offer.detail}</p>
-                </div>
-              ))}
-            </div>
+            <p className="text-sm leading-6 text-text-secondary">Only a code accepted in the current server order preview is applied. You can continue without a code.</p>
             {voucherCode && orderPreview?.voucherCode ? (
               <div aria-live="polite" className="border border-brand-primary bg-surface px-5 py-5 md:px-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
@@ -104,7 +89,7 @@ export const CheckoutVoucherPage = () => {
                     <h2 className="mt-3 text-2xl font-semibold leading-tight text-text-primary">{orderPreview.voucherCode}</h2>
                   </div>
                   <p className="text-sm font-semibold text-text-primary">
-                    Discount {formatMoney(orderPreview.discountAmount)}
+                    Discount {formatVnd(orderPreview.discountAmount)}
                   </p>
                 </div>
                 <p className="mt-4 text-sm leading-7 text-text-secondary">Your cart discount and order total below come from the current server preview.</p>
@@ -127,17 +112,17 @@ export const CheckoutVoucherPage = () => {
                           ? 'Totals are calculated by the server from your active cart and selected delivery option.'
                           : 'The server will calculate the discount and delivery once your address and carrier are selected.'
               }
-              eyebrow="Order value"
+              items={cart.items}
               footer={
                 <div className="space-y-3">
                   <Button fullWidth onClick={() => navigate(routes.checkoutReview)} size="lg">
-                    Continue to review
+                    Xem lại đơn hàng
                   </Button>
                   <Button fullWidth onClick={() => navigate(routes.checkoutPayment)} variant="ghost">
-                    Return to payment
+                    Quay lại thanh toán
                   </Button>
                   <Button fullWidth onClick={() => navigate(routes.checkoutReview)} variant="ghost">
-                    Skip this step
+                    Tiếp tục không dùng mã
                   </Button>
                 </div>
               }
@@ -154,7 +139,7 @@ export const CheckoutVoucherPage = () => {
                   </p>
                 </div>
               }
-              title="Summary"
+              title="Đơn hàng của bạn"
               totals={summaryTotals}
               valueOverrides={previewValueOverrides}
               variant="checkout"

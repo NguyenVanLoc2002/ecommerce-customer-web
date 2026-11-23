@@ -1,3 +1,4 @@
+import { formatVnd } from '@/shared/utils/formatVnd';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -39,7 +40,7 @@ export const CheckoutConfirmationPage = () => {
     return (
       <>
         <PageSEO description="Order placed successfully. Review the confirmation details and continue to order history." noIndex path={routes.checkoutConfirmation} title="Order Confirmation" />
-        <Container className="py-10">
+        <Container className="mx-auto max-w-5xl px-5 py-10 md:px-12 md:py-14">
           <EmptyState
             action={
               <Link className={buttonStyles({})} to={routes.orders}>
@@ -47,8 +48,8 @@ export const CheckoutConfirmationPage = () => {
               </Link>
             }
             className="border-border bg-surface px-6 py-16"
-            description="Place an order from the checkout review step to see confirmation here."
-            title="No confirmed order yet."
+            description="Đơn hàng sẽ xuất hiện ở đây sau khi hệ thống xác nhận tạo đơn thành công."
+            title="Chưa có đơn hàng để xác nhận"
           />
         </Container>
       </>
@@ -100,18 +101,18 @@ export const CheckoutConfirmationPage = () => {
           })),
         }}
       />
-      <Container className="space-y-8 py-8 md:space-y-10 md:py-10">
-        <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <Container className="mx-auto max-w-3xl space-y-6 px-5 py-6 md:py-10">
+        <div className="space-y-8">
           <section className="space-y-6">
-            <div className="border border-border bg-surface px-6 py-8 md:px-8 md:py-10">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Order status</p>
-              <h1 className="mt-4 font-sans text-[2rem] font-semibold leading-tight text-text-primary md:text-4xl">{confirmationTitle}</h1>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">
-                {cancelledPaidMessage ??
-                  holdMessage ??
-                  `Created ${formatDate(confirmationOrder.createdAt)} with ${paymentProviderLabel}. Current order status comes from the Backend.`}
+            <div className="rounded-sm border border-border bg-surface px-6 py-8 text-center md:px-10 md:py-12">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">Fashion Shop · Xác nhận đơn</p>
+              <h1 className="mt-4 text-xl font-semibold tracking-tight text-text-primary md:text-3xl">{confirmationTitle}</h1>
+              <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-text-secondary">
+                {cancelledPaidMessage ?? holdMessage ?? (
+                  <>Đơn {confirmationOrder.code} được tạo lúc {formatDate(confirmationOrder.createdAt)}. Trạng thái hiện tại: {confirmationOrder.status}.</>
+                )}
               </p>
-              <div className="mt-6 flex flex-wrap items-center gap-3">
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
                 <OrderStatusBadge status={confirmationOrder.status} />
                 <button
                   className="border border-border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary transition-colors hover:border-text-primary"
@@ -132,14 +133,14 @@ export const CheckoutConfirmationPage = () => {
                   {copied ? 'Copied' : confirmationOrder.code}
                 </button>
               </div>
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 {requiresOnlinePayment ? (
                   <Button onClick={() => navigate(routePaths.paymentResult(confirmationOrder.id, paymentProvider))} size="lg">
                     {paymentActionLabel}
                   </Button>
                 ) : null}
-                <Button onClick={() => navigate(routePaths.orderDetail(confirmationOrder.id))} size="lg">
-                  View full order
+                  <Button onClick={() => navigate(routePaths.orderDetail(confirmationOrder.id))} size="lg">
+                  Xem chi tiết đơn hàng
                 </Button>
                 <Button
                   onClick={() => {
@@ -149,51 +150,50 @@ export const CheckoutConfirmationPage = () => {
                   size="lg"
                   variant="ghost"
                 >
-                  Continue exploring
+                  Tiếp tục mua sắm
                 </Button>
               </div>
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
               <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Next steps</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Thông tin đơn hàng</p>
                 <ul className="mt-4 space-y-3 text-sm leading-7 text-text-secondary">
-                  <li>Your order is available in the order archive.</li>
-                  <li>Payment and fulfillment progress follow the latest Backend order status.</li>
-                  <li>Open the order details to check current actions and transaction history.</li>
+                  <li>Trạng thái đơn hàng: {confirmationOrder.status}.</li>
+                  <li>Phương thức thanh toán: {paymentProviderLabel}.</li>
+                  <li>Mã đơn hàng: <span className="font-mono">{confirmationOrder.code}</span>.</li>
                 </ul>
               </section>
               <section className="border border-border bg-surface px-5 py-5 md:px-6">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Delivery address</p>
-                <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{confirmationOrder.shippingAddress.receiverName}</h2>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Thông tin giao hàng</p>
+                <h2 className="mt-2 text-base font-semibold text-text-primary">{confirmationOrder.shippingAddress.receiverName}</h2>
                 <p className="mt-4 text-sm uppercase tracking-[0.08em] text-text-secondary">{confirmationOrder.shippingAddress.phoneNumber}</p>
                 <p className="mt-3 text-sm leading-7 text-text-secondary">{formatAddress(confirmationOrder.shippingAddress)}</p>
               </section>
             </div>
 
             <section className="border border-border bg-surface px-5 py-5 md:px-6">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Shipping carrier</p>
-              <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{confirmationOrder.carrierName ?? 'Carrier not selected'}</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Đơn vị vận chuyển</p>
+              <h2 className="mt-2 text-base font-semibold text-text-primary">{confirmationOrder.carrierName ?? 'Carrier not selected'}</h2>
               <p className="mt-4 text-sm leading-7 text-text-secondary">
                 {confirmationOrder.carrierName
                   ? `${confirmationOrder.carrierCode ?? confirmationOrder.carrierName}${confirmationOrder.carrierProviderType ? ` / ${confirmationOrder.carrierProviderType}` : ''}.`
-                  : 'This order was created without a selected carrier. Shipping follows the Backend order total.'}
+                  : 'This order was created without a selected carrier. Shipping follows the server order response.'}
               </p>
             </section>
 
             <section className="border border-border bg-surface px-5 py-5 md:px-6">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Your selection</p>
-              <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">Sản phẩm trong đơn</p>
+              <div className="mt-6 divide-y divide-border">
                 {confirmationOrder.items.map((item) => (
-                  <img
+                  <div className="grid grid-cols-[56px_minmax(0,1fr)_auto] items-start gap-3 py-3" key={item.id}><img
                     alt={item.primaryImage.alt}
                     className="aspect-[4/5] w-full bg-surface-soft object-cover"
                     height={item.primaryImage.height}
-                    key={item.id}
                     loading="lazy"
                     src={item.primaryImage.src}
                     width={item.primaryImage.width}
-                  />
+                  /><div><p className="text-sm font-medium">{item.productName}</p><p className="mt-1 text-xs text-text-secondary">{[item.color, item.size].filter(Boolean).join(' / ')} · SL {item.quantity}</p></div><p className="text-sm">{formatVnd(item.subtotal)}</p></div>
                 ))}
               </div>
             </section>
@@ -201,10 +201,11 @@ export const CheckoutConfirmationPage = () => {
           <OrderSummaryPanel
             supplementary={
               <div className="space-y-3 text-sm leading-7 text-text-secondary">
-                <p>Order code {confirmationOrder.code} is recorded in your archive.</p>
-                <p>{confirmationOrder.carrierName ? `Persisted carrier: ${confirmationOrder.carrierName}.` : 'Persisted carrier: not selected.'}</p>
+                <p>Mã đơn hàng <span className="font-mono">{confirmationOrder.code}</span>.</p>
+                <p>Thanh toán: {getPaymentMethodLabel(confirmationOrder.paymentMethod)} · {confirmationOrder.paymentStatus ?? 'Chưa có trạng thái thanh toán'}.</p>
               </div>
             }
+            title="Tóm tắt đơn hàng"
             totals={confirmationOrder}
           />
         </div>

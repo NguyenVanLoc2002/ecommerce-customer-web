@@ -8,18 +8,19 @@ type OrderSummaryPanelProps = {
   note?: string;
   footer?: ReactNode;
   supplementary?: ReactNode;
+  title?: string;
   isTotalsUpdating?: boolean;
   valueOverrides?: CartSummaryValueOverrides;
 };
 
-export const OrderSummaryPanel = ({ footer, isTotalsUpdating = false, note, supplementary, totals, valueOverrides }: OrderSummaryPanelProps) => (
+export const OrderSummaryPanel = ({ footer, isTotalsUpdating = false, note, supplementary, title = 'Order summary', totals, valueOverrides }: OrderSummaryPanelProps) => (
   <CartSummary
-    description={note ?? 'Backend parity note: voucher codes are stored but not applied to totals in the current contract.'}
-    eyebrow="Order total"
+    description={note}
+    eyebrow=""
     footer={footer}
     isTotalsUpdating={isTotalsUpdating}
     supplementary={supplementary}
-    title="Summary"
+    title={title}
     totals={totals}
     valueOverrides={valueOverrides}
     variant="order"

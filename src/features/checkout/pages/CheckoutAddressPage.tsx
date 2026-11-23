@@ -79,15 +79,14 @@ export const CheckoutAddressPage = () => {
   return (
     <>
       <PageSEO description="Choose the customer delivery address for this order." noIndex path={routes.checkoutAddress} title="Checkout Address" />
-      <Container className="space-y-8 py-8 md:space-y-10 md:py-10">
+      <Container className="max-w-6xl space-y-6 py-5 md:space-y-8 md:py-8">
         <CheckoutStepper currentStep="address" />
-        <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-8">
           <section className="space-y-6">
-            <div className="space-y-4 border-b border-border pb-8">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Step 01</p>
-              <h1 className="font-display text-[3.25rem] leading-none text-text-primary md:text-[4.25rem]">Shipping Destination</h1>
+            <div className="space-y-2 border-b border-border pb-4">
+              <h1 className="text-xl font-medium tracking-tight text-text-primary md:text-3xl">Địa chỉ giao hàng</h1>
               <p className="max-w-2xl text-sm leading-7 text-text-secondary">
-                Select the address for delivery before continuing through the secure checkout flow.
+                Chọn địa chỉ nhận hàng và đơn vị vận chuyển.
               </p>
             </div>
             {addressesQuery.isLoading || cartQuery.isLoading ? (
@@ -122,7 +121,7 @@ export const CheckoutAddressPage = () => {
                             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">{address.label}</p>
                             {address.isDefault ? <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary">Default</span> : null}
                           </div>
-                          <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">{address.receiverName}</h2>
+                          <h2 className="mt-2 text-base font-semibold leading-snug text-text-primary">{address.receiverName}</h2>
                           <p className="mt-3 text-sm uppercase tracking-[0.08em] text-text-secondary">{address.phoneNumber}</p>
                           <p className="mt-3 max-w-xl text-sm leading-7 text-text-secondary">{formatAddress(address)}</p>
                         </div>
@@ -132,7 +131,7 @@ export const CheckoutAddressPage = () => {
                           className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline transition-colors hover:text-text-primary"
                           to={routePaths.profileAddressEdit(address.id, 'checkout')}
                         >
-                          Edit address
+                          Chỉnh sửa
                         </Link>
                       </div>
                     </div>
@@ -143,7 +142,7 @@ export const CheckoutAddressPage = () => {
                 className="flex min-h-[132px] items-center justify-center border border-dashed border-border px-5 py-8 text-center text-[11px] font-bold uppercase tracking-[0.22em] text-text-primary transition-colors hover:border-text-primary"
                 to={routePaths.profileAddressNew('checkout')}
               >
-                Add new address
+                Thêm địa chỉ mới
               </Link>
             </div>
             {selectedAddressId ? (
@@ -180,14 +179,14 @@ export const CheckoutAddressPage = () => {
                         : previewError
                           ? 'The live shipping quote failed. Retry the quote before placing the order.'
                           : orderPreview
-                            ? 'Live totals now come from POST /orders/preview and will refresh when the cart, address, voucher, or carrier changes.'
+                            ? 'Phí vận chuyển được cập nhật theo địa chỉ và đơn vị giao hàng đã chọn.'
                             : 'Waiting for the live backend shipping quote.'
               }
-              eyebrow="Secure checkout"
+              items={cart.items}
               footer={
                 <div className="space-y-3">
                   <Button disabled={!selectedAddressId || cart.staleItemCount > 0} fullWidth onClick={() => navigate(routes.checkoutPayment)} size="lg">
-                    Continue to payment
+                    Tiếp tục
                   </Button>
                   <Link className={buttonStyles({ fullWidth: true, variant: 'ghost' })} to={routes.cart}>
                     Return to bag
@@ -207,7 +206,7 @@ export const CheckoutAddressPage = () => {
                   </p>
                 </div>
               }
-              title="Order value"
+              title="Đơn hàng của bạn"
               totals={summaryTotals}
               valueOverrides={previewValueOverrides}
               variant="checkout"
