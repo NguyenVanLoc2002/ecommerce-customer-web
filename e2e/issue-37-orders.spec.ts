@@ -138,6 +138,7 @@ test('order lifecycle and review screens render at desktop and mobile widths', a
       await page.goto(path, { waitUntil: 'domcontentloaded' });
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await expect(page.getByText(content, { exact: true })).toBeVisible();
+      if (screen === 'detail') await expect(page.getByText('Đang tải giao dịch…')).toHaveCount(0);
       await page.evaluate(() => document.fonts.ready);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
       await page.screenshot({ path: resolve(evidenceDirectory, screen + '-' + device + '.png'), fullPage: true });

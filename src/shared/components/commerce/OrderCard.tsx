@@ -1,3 +1,4 @@
+import { Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { routePaths } from '@/constants/routes';
@@ -13,28 +14,28 @@ type OrderCardProps = {
 };
 
 export const OrderCard = ({ order }: OrderCardProps) => (
-  <article className="overflow-hidden rounded-md border border-border bg-surface">
-    <header className="flex flex-wrap items-center gap-x-8 gap-y-3 bg-surface-soft px-4 py-4 md:px-6">
+  <article className="overflow-hidden rounded bg-surface shadow-sm">
+    <header className="flex flex-wrap items-center gap-x-6 gap-y-3 bg-surface-muted px-4 py-4 md:gap-x-8 md:px-6">
       <div>
-        <p className="text-xs text-text-secondary">Mã đơn hàng</p>
+        <p className="text-xs uppercase tracking-wide text-text-secondary">Mã đơn hàng</p>
         <h2 className="break-all font-semibold"><Link to={routePaths.orderDetail(order.id)}>#{order.code}</Link></h2>
       </div>
       <div>
-        <p className="text-xs text-text-secondary">Ngày đặt</p>
+        <p className="text-xs uppercase tracking-wide text-text-secondary">Ngày đặt</p>
         <p className="text-sm">{formatDate(order.createdAt)}</p>
       </div>
       <div>
-        <p className="text-xs text-text-secondary">Thanh toán</p>
+        <p className="text-xs uppercase tracking-wide text-text-secondary">Thanh toán</p>
         <p className="text-sm">{getPaymentMethodLabel(order.paymentMethod)}</p>
       </div>
       <div className="md:ml-auto"><OrderStatusBadge status={order.status} /></div>
     </header>
-    <p className="px-4 pt-4 text-sm text-text-secondary md:px-6">{order.totalItems} sản phẩm</p>
+    <p className="px-4 py-4 text-sm text-text-secondary md:px-6 md:py-5">{order.totalItems} sản phẩm</p>
     <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-border px-4 py-4 md:px-6">
       <p className="text-sm text-text-secondary">Tổng giá trị <strong className="ml-2 text-lg text-text-primary">{formatVnd(order.grandTotal)}</strong></p>
       <div className="flex flex-wrap gap-2">
-        <Link className={buttonStyles({ variant: 'secondary' })} to={routePaths.orderTracking(order.id)}>Theo dõi vận đơn</Link>
-        <Link className={buttonStyles({})} to={routePaths.orderDetail(order.id)}>Xem chi tiết</Link>
+        <Link className={buttonStyles({ variant: 'secondary' })} to={routePaths.orderTracking(order.id)}><Truck aria-hidden="true" className="size-4" />Theo dõi vận đơn</Link>
+        <Link className={buttonStyles({ className: 'border-text-primary bg-text-primary' })} to={routePaths.orderDetail(order.id)}>Xem chi tiết</Link>
       </div>
     </footer>
   </article>

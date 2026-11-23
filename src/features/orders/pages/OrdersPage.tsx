@@ -46,19 +46,19 @@ export const OrdersPage = () => {
   return (
     <>
       <PageSEO description="Browse customer order history, current statuses, and cancel eligible orders." noIndex path={routes.orders} title="Orders" />
-      <Container className="space-y-6 pb-16 pt-24 md:pb-20 md:pt-28">
-        <header className="space-y-5 border-b border-border pb-6">
+      <Container className="space-y-8 pb-16 pt-24 md:space-y-10 md:pb-24 md:pt-28">
+        <header className="space-y-3 border-b border-border pb-7">
           <BreadcrumbNav items={[{ label: "Trang chủ", href: routes.home }, { label: "Tài khoản", href: routes.profile }, { label: "Đơn hàng" }]} />
-          <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary">Lịch sử giao dịch và vận chuyển</p>
-          <h1 className="text-3xl font-semibold md:text-4xl">Đơn hàng của bạn</h1>
+          <p className="pt-4 text-xs font-semibold uppercase tracking-widest text-text-secondary">Lịch sử giao dịch và vận chuyển</p>
+          <h1 className="text-3xl font-light tracking-tight md:text-4xl">Đơn hàng của bạn</h1>
         </header>
         <div aria-label="Lọc đơn hàng theo trạng thái" className="overflow-x-auto py-1">
-          <div className="flex min-w-max gap-2" role="group">
+          <div className="flex flex-wrap gap-2" role="group">
             {filterOptions.map((option) => (
               <button
                 aria-pressed={activeFilter === option.key}
-                className={`min-h-11 border px-4 py-2 text-sm font-medium transition-colors ${
-                  activeFilter === option.key ? 'border-brand-primary bg-brand-primary text-surface' : 'border-border bg-surface text-text-secondary hover:border-brand-primary hover:text-text-primary'
+                className={`min-h-11 rounded px-4 py-2 text-xs font-semibold uppercase tracking-wide transition-colors ${
+                  activeFilter === option.key ? 'bg-text-primary text-surface' : 'bg-surface-muted text-text-secondary hover:bg-surface-soft hover:text-text-primary'
                 }`}
                 key={option.key}
                 onClick={() => setActiveFilter(option.key)}
@@ -85,7 +85,7 @@ export const OrdersPage = () => {
             title="Chưa có đơn hàng trong mục này"
           />
         ) : null}
-        <div className="mt-6 space-y-4">
+        <div className="space-y-6">
           {filteredOrders.map((order) => (
             <OrderCard key={order.id} order={order} />
           ))}
