@@ -193,7 +193,7 @@ export const PaypalReturnPage = () => {
           ? 'Đang hoàn tất thanh toán PayPal...'
           : isPendingAfterTimeout
             ? 'Thanh toán PayPal đang được xử lý'
-            : 'Fashion Shop đang xác minh kết quả PayPal qua máy chủ trước khi ghi nhận thanh toán.';
+            : 'Đang xác minh giao dịch PayPal';
   const description = isLatePaid
     ? cancelledPaidMessage
     : isOrderCancelled && !isSuccess
@@ -212,17 +212,17 @@ export const PaypalReturnPage = () => {
           ? 'Thanh toán PayPal đang được xử lý. Vui lòng kiểm tra lại đơn hàng sau ít phút.'
           : isCapturing
             ? 'Đang hoàn tất thanh toán PayPal...'
-            : 'Đang xác nhận thanh toán PayPal...';
+            : 'Fashion Shop đang xác minh kết quả PayPal qua máy chủ trước khi ghi nhận thanh toán.';
 
   return (
-    <PaymentPageLayout path={routes.paymentPaypalReturn} title="Xác thực thanh toán PayPal" orderCode={payment?.orderCode ?? order?.orderCode}>
+    <PaymentPageLayout path={routes.paymentPaypalReturn} title="Xác thực thanh toán PayPal" description="Fashion Shop xác minh giao dịch với PayPal và cập nhật trạng thái đơn hàng từ máy chủ.">
       {paymentQuery.isLoading && !payment || orderQuery.isLoading ? <LoadingOverlay className="min-h-24 rounded-lg border-border bg-surface" inline label="Đang xác minh đơn và thanh toán PayPal..." /> : null}
       {orderQuery.isError ? (
         <ErrorCard action={<Button onClick={() => void orderQuery.refetch()}>Kiểm tra trạng thái đơn</Button>} className="border-border bg-surface" description="Đã dừng capture cho đến khi trạng thái đơn được xác minh. Vui lòng kiểm tra lại trước khi tiếp tục." title="Không tải được trạng thái đơn" />
       ) : null}
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-8">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2.08fr)_minmax(0,1fr)] lg:gap-8">
         <section className="min-w-0 space-y-5">
-          <div className="rounded-lg border border-border bg-surface p-5 md:p-8 lg:p-10">
+          <div className="rounded-lg border border-border border-t-4 border-t-brand-primary bg-surface p-5 md:p-8 lg:p-10">
             <div className="flex flex-wrap items-start justify-between gap-4" role="status">
               <div>
                 <h2 className="text-xl font-semibold leading-tight text-text-primary md:text-2xl">{title}</h2>
@@ -246,12 +246,11 @@ export const PaypalReturnPage = () => {
             {isChecking ? (
               <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Lần kiểm tra {paymentQuery.attemptCount} / 15</p>
             ) : null}
-          </div>
 
           {payment ? (
-            <section className="min-w-0 rounded-lg border border-border bg-surface p-5 md:p-8">
-              <h2 className="mb-5 text-sm font-semibold uppercase tracking-wide">Thông tin giao dịch</h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            <section className="mt-7 min-w-0 border-t border-border pt-6">
+              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide">Thông tin giao dịch</h3>
+              <div className="grid gap-3 [&>div]:grid [&>div]:gap-2 [&>div]:rounded [&>div]:bg-surface-muted [&>div]:p-3 sm:[&>div]:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] sm:[&>div]:items-baseline [&>div>p:last-child]:mt-0">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Mã đơn hàng</p>
                   <p className="mt-3 break-all font-mono text-sm text-text-primary">{payment.orderCode}</p>
@@ -279,26 +278,24 @@ export const PaypalReturnPage = () => {
               </div>
             </section>
           ) : null}
-          <section className="min-w-0 rounded-lg border border-border bg-surface p-5 md:p-8">
-            <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Thao tác tiếp theo</h2>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <div className="mt-8 grid gap-3 sm:grid-cols-2">
               {hasBlockingCaptureError || isChecking || isPendingAfterTimeout ? (
-                <Button disabled={paymentQuery.isFetching || isCapturing} fullWidth onClick={() => void paymentQuery.refetch()}>
-                  Kiểm tra lại
+                <Button disabled={paymentQuery.isFetching || isCapturing} fullWidth className="!border-text-primary !bg-text-primary hover:!opacity-90" onClick={() => void paymentQuery.refetch()}>
+                  Kiểm tra lại kết quả
                 </Button>
               ) : null}
-              <Link className={buttonStyles({ fullWidth: true })} to={routePaths.orderDetail(orderId)}>
+              <Link className={buttonStyles({ fullWidth: true, className: '!border-text-primary !bg-text-primary hover:!opacity-90' })} to={routePaths.orderDetail(orderId)}>
                 Xem đơn hàng
               </Link>
               <Link className={buttonStyles({ fullWidth: true, variant: 'ghost' })} to={routes.products}>
                 Tiếp tục mua sắm
               </Link>
             </div>
-          </section>
+          </div>
         </section>
 
         <aside className="min-w-0 space-y-4">
-          {!orderQuery.isError && order ? <PaymentOrderSummary order={order} /> : null}
+          {!orderQuery.isError && order ? <PaymentOrderSummary order={order} title="Sản phẩm trong phiên" /> : null}
         </aside>
       </div>
     </PaymentPageLayout>

@@ -12,7 +12,7 @@ import { PaymentPageLayout } from '@/features/payment/components/PaymentPageLayo
 import { OrderStatusBadge } from '@/shared/components/commerce/OrderStatusBadge';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
-import { getPaymentProviderLabel, getPaymentStatusLabel } from '@/shared/lib/commerceLabels';
+import { getPaymentStatusLabel } from '@/shared/lib/commerceLabels';
 import { PAYMENT_STATUSES } from '@/shared/types/payment.types';
 import { formatDate } from '@/shared/utils/formatDate';
 import { formatVnd } from '@/shared/utils/formatVnd';
@@ -123,7 +123,6 @@ export const MomoReturnPage = () => {
   }
 
   const status = payment?.status;
-  const providerLabel = getPaymentProviderLabel(payment?.provider ?? payment?.transactions[0]?.provider ?? 'MOMO');
   const isSuccess = status === PAYMENT_STATUSES.PAID;
   const isOrderCancelled = order?.status === 'CANCELLED';
   const isProcessing = isProcessingStatus(status) || (!payment && (paymentQuery.isLoading || paymentQuery.isFetching));
@@ -139,7 +138,7 @@ export const MomoReturnPage = () => {
       ? 'Thanh toán chưa hoàn tất hoặc đã bị hủy.'
       : isPendingAfterTimeout
         ? 'Thanh toán MoMo đang được xử lý'
-        : 'Fashion Shop đang kiểm tra trạng thái MoMo từ máy chủ. Việc quay lại từ MoMo chưa xác nhận giao dịch.';
+        : 'Đang kiểm tra giao dịch MoMo';
   const description = isLatePaid
     ? cancelledPaidMessage
     : isOrderCancelled
@@ -152,21 +151,20 @@ export const MomoReturnPage = () => {
       ? 'Backend chưa xác nhận thanh toán thành công cho đơn hàng này.'
       : isPendingAfterTimeout
         ? 'Thanh toán MoMo đang được xử lý. Vui lòng kiểm tra lại đơn hàng sau ít phút.'
-        : 'Đang kiểm tra trạng thái thanh toán...';
+        : 'Fashion Shop đang kiểm tra trạng thái MoMo từ máy chủ. Việc quay lại từ MoMo chưa xác nhận giao dịch.';
 
   return (
-    <PaymentPageLayout path={routes.paymentMomoReturn} title="Kết quả thanh toán MoMo" orderCode={payment?.orderCode ?? order?.orderCode}>
+    <PaymentPageLayout path={routes.paymentMomoReturn} title="Đang đồng bộ giao dịch với cổng MoMo" description="Kiểm tra trạng thái giao dịch MoMo do máy chủ Fashion Shop xác nhận.">
       {paymentQuery.isLoading && !payment || orderQuery.isLoading ? <LoadingOverlay className="min-h-24 rounded-lg border-border bg-surface" inline label="Đang kiểm tra trạng thái đơn và thanh toán..." /> : null}
       {orderQuery.isError ? (
         <ErrorCard action={<Button onClick={() => void orderQuery.refetch()}>Kiểm tra trạng thái đơn</Button>} className="border-border bg-surface" description="Chưa xác minh được đơn có còn hiệu lực hay không. Dữ liệu thanh toán vẫn có thể xem bên dưới." title="Không tải được trạng thái đơn" />
       ) : null}
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-8">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.43fr)_minmax(0,1fr)] lg:gap-8">
         <section className="min-w-0 space-y-5">
           <div className="rounded-lg border border-border bg-surface p-5 md:p-8 lg:p-10">
             <div className="flex flex-wrap items-start justify-between gap-4" role="status">
               <div>
                 <h2 className="text-xl font-semibold leading-tight text-text-primary md:text-2xl">{title}</h2>
-                <p className="mt-4 text-sm uppercase tracking-[0.08em] text-text-secondary">{providerLabel}</p>
               </div>
               {status ? (
                 <div className={`inline-flex items-center gap-2 border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] ${statusToneClasses[status] ?? 'border-border bg-surface-muted text-text-primary'}`}>
@@ -178,42 +176,39 @@ export const MomoReturnPage = () => {
               ) : null}
             </div>
 
-            <p className="mt-5 rounded bg-surface-muted p-4 text-sm leading-7 text-text-secondary md:p-5">{description}</p>
-
-            {isProcessing ? (
-              <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
-                Lần kiểm tra {paymentQuery.attemptCount} / 15
-              </p>
+            {isProcessing && !paymentQuery.maxAttemptsReached ? (
+              <div className="mt-5">
+                <p className="mb-2 text-xs text-text-secondary">Lần kiểm tra {paymentQuery.attemptCount} / 15</p>
+                <progress aria-label="Số lần kiểm tra giao dịch MoMo" className="block h-1.5 w-full overflow-hidden rounded [&::-webkit-progress-bar]:bg-surface-soft [&::-webkit-progress-value]:bg-brand-primary [&::-moz-progress-bar]:bg-brand-primary" max={15} value={paymentQuery.attemptCount} />
+              </div>
             ) : null}
-          </div>
-
-          <section className="min-w-0 rounded-lg border border-border bg-surface p-5 md:p-8">
-            <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Thao tác tiếp theo</h2>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <p className="mt-7 rounded bg-surface-muted p-4 text-sm leading-7 text-text-secondary md:p-5">{description}</p>            <div className="mt-8 grid gap-3 sm:grid-cols-2">
               {isProcessing || isPendingAfterTimeout ? (
-                <Button disabled={paymentQuery.isFetching} fullWidth onClick={() => void paymentQuery.refetch()}>
-                  Kiểm tra lại
+                <Button disabled={paymentQuery.isFetching} fullWidth className="!border-text-primary !bg-text-primary hover:!opacity-90" onClick={() => void paymentQuery.refetch()}>
+                  Làm mới trạng thái
                 </Button>
               ) : null}
-              <Link className={buttonStyles({ fullWidth: true })} to={routePaths.orderDetail(orderId)}>
+              <Link className={buttonStyles({ fullWidth: true, className: '!border-text-primary !bg-text-primary hover:!opacity-90' })} to={routePaths.orderDetail(orderId)}>
                 Xem đơn hàng
               </Link>
               <Link className={buttonStyles({ fullWidth: true, variant: 'ghost' })} to={routes.products}>
                 Tiếp tục mua sắm
               </Link>
             </div>
-          </section>
+
+          </div>
+
         </section>
 
-        <aside className="min-w-0 space-y-4">
-            <section aria-label="Trạng thái đơn hàng" className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-surface-muted p-5 md:p-8" role="status">
+        <aside className="min-w-0 rounded-lg bg-surface-muted p-5 md:p-8">
+            <section aria-label="Trạng thái đơn hàng" className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4" role="status">
               <h2 className="text-sm font-semibold text-text-primary">Trạng thái đơn hàng</h2>
               {!orderQuery.isError && order ? <OrderStatusBadge status={order.status} /> : <span className="text-sm text-text-secondary">Chưa xác minh</span>}
             </section>
           {payment ? (
-            <section className="min-w-0 rounded-lg border border-border bg-surface p-5 md:p-8">
-              <h2 className="mb-5 text-sm font-semibold uppercase tracking-wide">Thông tin giao dịch</h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            <section className="mt-5 min-w-0">
+              <h2 className="mb-5 text-sm font-semibold uppercase tracking-wide">Thông tin giao dịch xác minh</h2>
+              <div className="grid gap-5 [&>div]:flex [&>div]:items-baseline [&>div]:justify-between [&>div]:gap-4 [&>div>p:last-child]:mt-0 [&>div>p:last-child]:text-right">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Mã đơn hàng</p>
                   <p className="mt-3 break-all font-mono text-sm text-text-primary">{payment.orderCode}</p>

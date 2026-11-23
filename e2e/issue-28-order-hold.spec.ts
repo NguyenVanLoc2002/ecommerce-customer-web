@@ -134,7 +134,7 @@ test('late PAID payment stays separate from a cancelled order and has no payment
   await installOrderAndPayment(page, 'PAID');
   await page.goto(`/payment/result?orderId=${orderId}`);
 
-  await expect(page.getByRole('heading', { name: 'Payment received, order cancelled.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Đã nhận tiền, đơn hàng đã hủy.' })).toBeVisible();
   await expect(page.getByText(/đối soát và hoàn tiền thủ công/i)).toBeVisible();
   await expect(page.getByRole('region', { name: 'Tóm tắt đơn hàng' })).toContainText('Cancelled');
   await expect(page.getByText(/ready for the next fulfillment step/i)).toHaveCount(0);
@@ -275,6 +275,19 @@ test('payment routes show separate server statuses and fit desktop and mobile', 
       await expect(page.getByText('Pending', { exact: true })).toBeVisible();
       await expect(page.getByText('Paid', { exact: true })).toHaveCount(0);
       await expect(page.getByText(/2\.210\.000/).first()).toBeVisible();
+      if (screen === 'payment-result' || screen === 'paypal-return') {
+        const details = page.getByRole('heading', { name: 'Thông tin giao dịch' });
+        const refresh = page.getByRole('button', { name: /làm mới trạng thái|kiểm tra lại kết quả/i });
+        await expect(details).toBeVisible();
+        await expect(refresh).toBeVisible();
+        const detailsBox = await details.boundingBox();
+        const refreshBox = await refresh.boundingBox();
+        expect(detailsBox?.y ?? Infinity).toBeLessThan(refreshBox?.y ?? 0);
+      }
+      if (screen === 'paypal-cancel') {
+        const actions = page.getByRole('heading', { name: 'Thao tác tiếp theo' }).locator('..');
+        await expect(actions.getByRole('link').first()).toHaveAccessibleName(/thử lại thanh toán/i);
+      }
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
       if (evidence) {
         await page.evaluate(() => document.fonts.ready);

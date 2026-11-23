@@ -31,7 +31,7 @@ import { formatDate } from '@/shared/utils/formatDate';
 import { formatVnd } from '@/shared/utils/formatVnd';
 
 const codeButtonClassName =
-  'inline-flex items-center border border-border px-4 py-2 font-mono text-sm text-text-primary transition-colors hover:border-text-primary';
+  'min-h-11 max-w-full break-all text-left font-mono text-sm text-text-primary underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2';
 const PAYMENT_STATUS_UNKNOWN_MESSAGE =
   'Thanh toán có thể vẫn đang được xử lý. Vui lòng kiểm tra lại trạng thái đơn hàng hoặc thử lại sau.';
 
@@ -347,7 +347,7 @@ export const PaymentResultPage = () => {
   }
 
   return (
-    <PaymentPageLayout path={routes.paymentResult} title="Kết quả xử lý giao dịch đơn hàng" orderCode={payment?.orderCode ?? orderLifecycle?.orderCode}>
+    <PaymentPageLayout breadcrumbTitle="Kết quả" compactMobileHeading={Boolean(payment)} path={routes.paymentResult} title="Kết quả xử lý giao dịch đơn hàng" orderCode={payment?.orderCode ?? orderLifecycle?.orderCode}>
       {paymentQuery.isLoading || orderQuery.isLoading ? <LoadingOverlay className="min-h-24 rounded-lg border-border bg-surface" inline label="Loading order and payment status..." /> : null}
       {isRedirecting ? <LoadingOverlay label={`Đang chuyển hướng sang ${paymentProviderLabel}...`} /> : null}
       {paymentQuery.isError && !isNotFound && !isOrderMissing ? (
@@ -407,31 +407,31 @@ export const PaymentResultPage = () => {
               ? 'No payment record exists yet. Start the selected online payment to create the first transaction.'
               : 'No payment record exists yet. Choose MoMo or PayPal to create the first transaction.'
             : 'This order is no longer awaiting online payment. Review its current status in the order details.')}
-          title={cancelledPaidMessage ? 'Payment received, order cancelled.' : canManagePayment ? 'Payment not found.' : 'Payment cannot be started for this order.'}
+          title={cancelledPaidMessage ? 'Đã nhận tiền, đơn hàng đã hủy.' : canManagePayment ? 'Payment not found.' : 'Payment cannot be started for this order.'}
         />
       ) : null}
       {payment ? (
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-8">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-12">
           <section className="min-w-0 space-y-5">
             <div className="rounded-lg border border-border bg-surface p-5 md:p-8 lg:p-10">
-              <div className="flex flex-wrap items-start justify-between gap-4" role="status">
+              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5" role="status">
                 <div>
-                  <h2 className="text-xl font-semibold leading-tight text-text-primary md:text-2xl">
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-text-secondary">Trạng thái máy chủ</p>
+                  <h2 className="text-lg font-semibold leading-tight text-text-primary md:text-xl">
                     {isLatePaid
-                      ? 'Payment received, order cancelled.'
+                      ? 'Đã nhận tiền, đơn hàng đã hủy.'
                       : isOrderCancelled
-                        ? 'Order cancelled. Payment cannot continue.'
+                        ? 'Đơn hàng đã hủy, không thể tiếp tục thanh toán.'
                       : payment.status === PAYMENT_STATUSES.PAID
                         ? orderQuery.isError
-                          ? 'Payment recorded, order status unavailable.'
-                          : 'Payment Completed.'
+                          ? 'Đã nhận tiền, chưa xác minh được trạng thái đơn.'
+                          : 'Thanh toán thành công.'
                       : payment.status === PAYMENT_STATUSES.FAILED
-                        ? 'Payment Failed.'
+                        ? 'Thanh toán thất bại.'
                         : isPaymentEnded
-                          ? 'Payment attempt ended.'
-                          : 'Payment Processing.'}
+                          ? 'Phiên thanh toán đã kết thúc.'
+                          : 'Đang xử lý giao dịch đơn hàng'}
                   </h2>
-                  <p className="mt-4 text-sm uppercase tracking-[0.08em] text-text-secondary">{getPaymentProviderLabel(payment.provider ?? payment.transactions[0]?.provider ?? paymentProvider)}</p>
                 </div>
                 <div className={`inline-flex items-center gap-2 border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] ${statusToneClasses[payment.status]}`}>
                   {payment.status === PAYMENT_STATUSES.PAID ? <CheckCircle2 className="h-4 w-4" /> : null}
@@ -441,89 +441,59 @@ export const PaymentResultPage = () => {
                 </div>
               </div>
 
-              <p className="mt-5 rounded bg-surface-muted p-4 text-sm leading-7 text-text-secondary md:p-5">
+              <p className="mt-6 rounded border border-border bg-surface-muted p-4 text-sm leading-7 text-text-primary md:p-5">
                 {isLatePaid
                   ? cancelledPaidMessage
                   : isOrderCancelled
-                    ? 'This order expired and was cancelled. Do not continue payment or assume it will be fulfilled.'
+                    ? 'Đơn đã hủy. Bạn có thể kiểm tra kết quả cuối cùng trong chi tiết đơn hàng.'
                   : payment.status === PAYMENT_STATUSES.PAID
                     ? orderQuery.isError
-                      ? 'The payment service reports PAID, but the order status could not be verified. Check the order details before assuming fulfillment has started.'
-                      : 'The Backend confirms payment. Review the order status for the current fulfillment state.'
+                      ? 'Hệ thống đã ghi nhận thanh toán. Vui lòng kiểm tra lại trạng thái đơn hàng.'
+                      : 'Hệ thống đã xác nhận thanh toán. Xem chi tiết đơn để theo dõi tình trạng xử lý.'
                   : payment.status === PAYMENT_STATUSES.FAILED
-                    ? `The gateway reported a failed ${paymentProviderLabel} transaction. You can retry payment from this page without creating a duplicate record.`
+                    ? `Giao dịch qua ${paymentProviderLabel} thất bại. Bạn có thể thử lại khi đơn còn chờ thanh toán.`
                     : isPaymentEnded
-                      ? 'This payment attempt is closed. Start another attempt only if the Backend still reports the order as awaiting payment.'
+                      ? 'Phiên thanh toán đã kết thúc. Bạn có thể thử lại khi đơn còn chờ thanh toán.'
                     : paymentQuery.maxAttemptsReached
-                      ? 'The payment is still processing. Automatic polling has paused, but you can check again manually at any time.'
+                      ? 'Giao dịch vẫn đang xử lý. Bạn có thể làm mới để kiểm tra trạng thái mới nhất.'
                       : 'Fashion Shop đang kiểm tra trạng thái giao dịch từ máy chủ. Việc quay lại từ cổng thanh toán chưa xác nhận giao dịch.'}
               </p>
 
-              <div className="mt-6 flex flex-wrap items-baseline justify-between gap-3 border-t border-border pt-5">
+              <h3 className="mt-7 text-xs font-semibold uppercase tracking-wide">Thông tin giao dịch</h3>
+              <dl className="mt-3 grid gap-x-6 text-sm sm:grid-cols-2 sm:gap-y-4">
+                <div className="flex min-h-11 min-w-0 items-center justify-between gap-3 border-b border-border sm:block sm:pb-3">
+                  <dt className="text-text-secondary">Mã đơn hàng</dt>
+                  <dd className="min-w-0 text-right sm:mt-1 sm:text-left">
+                    <button aria-label={`Sao chép mã đơn hàng ${payment.orderCode}`} className={codeButtonClassName} onClick={() => void copyCode(payment.orderCode, 'Mã đơn hàng')} type="button">{payment.orderCode}</button>
+                  </dd>
+                </div>
+                <div className="flex min-h-11 min-w-0 items-center justify-between gap-3 border-b border-border sm:block sm:pb-3">
+                  <dt className="text-text-secondary">Mã tham chiếu giao dịch</dt>
+                  <dd className="min-w-0 text-right sm:mt-1 sm:text-left">
+                    <button aria-label={`Sao chép mã thanh toán ${payment.paymentCode}`} className={codeButtonClassName} onClick={() => void copyCode(payment.paymentCode, 'Mã thanh toán')} type="button">{payment.paymentCode}</button>
+                  </dd>
+                </div>
+                <div className="flex min-h-11 min-w-0 items-center justify-between gap-3 border-b border-border sm:block sm:pb-3">
+                  <dt className="text-text-secondary">Phương thức thanh toán</dt>
+                  <dd className="min-w-0 text-right font-medium sm:mt-1 sm:text-left">{getPaymentProviderLabel(payment.provider ?? payment.transactions[0]?.provider ?? paymentProvider)}</dd>
+                </div>
+                <div className="flex min-h-11 min-w-0 items-center justify-between gap-3 border-b border-border sm:block sm:pb-3">
+                  <dt className="text-text-secondary">Thời gian khởi tạo</dt>
+                  <dd className="min-w-0 text-right font-medium sm:mt-1 sm:text-left">{formatDate(payment.createdAt)}</dd>
+                </div>
+              </dl>
+              <div className="mt-5 flex flex-wrap items-baseline justify-between gap-3">
                 <span className="text-sm text-text-secondary">Tổng thanh toán</span>
                 <strong className="text-xl">{formatVnd(payment.amount)}</strong>
               </div>
-
-              <div className="mt-8 flex flex-wrap gap-3">
-                <button aria-label={`Sao chép mã thanh toán ${payment.paymentCode}`} className={codeButtonClassName} onClick={() => void copyCode(payment.paymentCode, 'Mã thanh toán')} type="button">
-                  {payment.paymentCode}
-                </button>
-                <button aria-label={`Sao chép mã đơn hàng ${payment.orderCode}`} className={codeButtonClassName} onClick={() => void copyCode(payment.orderCode, 'Mã đơn hàng')} type="button">
-                  {payment.orderCode}
-                </button>
-              </div>
-            </div>
-
-            {payment.transactions.length > 0 ? (
-              <section className="min-w-0 rounded-lg border border-border bg-surface p-5 md:p-8">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Lịch sử giao dịch</h2>
-                </div>
-                {isProcessingStatus(payment.status) && !paymentQuery.maxAttemptsReached ? (
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Lần kiểm tra {paymentQuery.attemptCount} / 8</p>
-                ) : null}
-              </div>
-              <div className="mt-6 space-y-4">
-                {payment.transactions.map((transaction) => (
-                  <article className="grid gap-4 border-b border-border pb-4 last:border-b-0 last:pb-0 md:grid-cols-[minmax(0,1fr)_180px]" key={transaction.id}>
-                    <div>
-                      <p className="break-all font-mono text-sm text-text-primary">{transaction.transactionCode}</p>
-                      <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
-                        {getPaymentStatusLabel(transaction.status)} / {getPaymentProviderLabel(transaction.provider)}
-                      </p>
-                      <p className="mt-3 text-sm leading-7 text-text-secondary">{transaction.note ?? 'No transaction note provided.'}</p>
-                    </div>
-                    <div className="text-left md:text-right">
-                      <p className="text-sm text-text-primary">{formatVnd(transaction.amount)}</p>
-                      <p className="mt-2 text-sm text-text-secondary">
-                        {formatDate(transaction.createdAt, {
-                          month: 'long',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-            ) : null}
-            <section className="min-w-0 rounded-lg border border-border bg-surface p-5 md:p-8">
-              <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Thao tác tiếp theo</h2>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="mt-7 grid gap-3 border-t border-border pt-6 sm:grid-cols-2">
                 {isProcessingStatus(payment.status) ? (
-                  <Button disabled={paymentQuery.isFetching} fullWidth onClick={() => void paymentQuery.refetch()}>
-                    Check again
+                  <Button disabled={paymentQuery.isFetching} fullWidth className="!border-text-primary !bg-text-primary hover:!opacity-90" onClick={() => void paymentQuery.refetch()}>
+                    Làm mới trạng thái
                   </Button>
                 ) : null}
-                <Link className={buttonStyles({ fullWidth: true })} to={routePaths.orderDetail(payment.orderId)}>
-                  View order
-                </Link>
-                <Link className={buttonStyles({ fullWidth: true, variant: 'ghost' })} to={routes.products}>
-                  Continue shopping
+                <Link className={buttonStyles({ fullWidth: true, variant: isProcessingStatus(payment.status) ? 'secondary' : 'primary' })} to={routePaths.orderDetail(payment.orderId)}>
+                  Xem chi tiết đơn hàng
                 </Link>
                 {canResumePayment ? (
                   <Button
@@ -534,7 +504,7 @@ export const PaymentResultPage = () => {
                     }}
                     variant="secondary"
                   >
-                    Continue to {getPaymentProviderLabel(payment.provider ?? payment.transactions[0]?.provider ?? paymentProvider)}
+                    Tiếp tục qua {getPaymentProviderLabel(payment.provider ?? payment.transactions[0]?.provider ?? paymentProvider)}
                   </Button>
                 ) : null}
                 {canChooseProviderForExistingPayment ? (
@@ -557,11 +527,51 @@ export const PaymentResultPage = () => {
                   </Button>
                 ) : null}
               </div>
+              <Link className="mt-5 inline-flex min-h-11 items-center text-sm underline underline-offset-4" to={routes.home}>Quay về trang chủ</Link>
+            </div>
+
+            {payment.transactions.length > 0 ? (
+              <section className="min-w-0 rounded-lg border border-border bg-surface p-5 md:p-8">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h2 className="mt-3 font-display text-[2rem] leading-none text-text-primary">Lịch sử giao dịch</h2>
+                </div>
+                {isProcessingStatus(payment.status) && !paymentQuery.maxAttemptsReached ? (
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Lần kiểm tra {paymentQuery.attemptCount} / 8</p>
+                ) : null}
+              </div>
+              <div className="mt-6 space-y-4">
+                {payment.transactions.map((transaction) => (
+                  <article className="grid gap-4 border-b border-border pb-4 last:border-b-0 last:pb-0 md:grid-cols-[minmax(0,1fr)_180px]" key={transaction.id}>
+                    <div>
+                      <p className="break-all font-mono text-sm text-text-primary">{transaction.transactionCode}</p>
+                      <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.18em] text-outline">
+                        {getPaymentStatusLabel(transaction.status)} / {getPaymentProviderLabel(transaction.provider)}
+                      </p>
+                      {transaction.note ? <p className="mt-3 text-sm leading-7 text-text-secondary">{transaction.note}</p> : null}
+                    </div>
+                    <div className="text-left md:text-right">
+                      <p className="text-sm text-text-primary">{formatVnd(transaction.amount)}</p>
+                      <p className="mt-2 text-sm text-text-secondary">
+                        {formatDate(transaction.createdAt, {
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
             </section>
+            ) : null}
+
           </section>
 
           <aside className="min-w-0 space-y-4">
-              {!orderQuery.isError && orderLifecycle ? <PaymentOrderSummary order={orderLifecycle} /> : null}
+              {!orderQuery.isError && orderLifecycle ? <PaymentOrderSummary order={orderLifecycle} showDelivery title="Kiện hàng" /> : null}
           </aside>
         </div>
       ) : null}

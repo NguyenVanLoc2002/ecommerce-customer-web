@@ -1,3 +1,4 @@
+import { Info } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
@@ -77,16 +78,18 @@ export const PaypalCancelPage = () => {
   }
 
   return (
-    <PaymentPageLayout path={routes.paymentPaypalCancel} title="Hủy phiên thanh toán PayPal" orderCode={payment?.orderCode ?? order?.orderCode}>
+    <PaymentPageLayout path={routes.paymentPaypalCancel} headingInContent title="Hủy phiên thanh toán PayPal">
       {paymentQuery.isLoading || orderQuery.isLoading ? <LoadingOverlay className="min-h-24 rounded-lg border-border bg-surface" inline label="Đang kiểm tra trạng thái đơn và thanh toán..." /> : null}
       {orderQuery.isError ? (
         <ErrorCard action={<Button onClick={() => void orderQuery.refetch()}>Kiểm tra trạng thái đơn</Button>} className="border-border bg-surface" description="Chưa thể xác nhận đơn còn hiệu lực. Không thể tiếp tục thanh toán cho đến khi trạng thái được tải." title="Không tải được trạng thái đơn" />
       ) : null}
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-8">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-12">
         <section className="min-w-0 space-y-5">
-          <div className="rounded-lg border border-border bg-surface p-5 md:p-8 lg:p-10" role="status">
-            <h2 className="text-xl font-semibold leading-tight text-text-primary md:text-2xl">{isLatePaid ? 'Đã nhận tiền, đơn hàng đã hủy.' : payment?.status === 'PAID' ? 'Thanh toán PayPal đã được ghi nhận' : 'Bạn đã rời PayPal.'}</h2>
-            <p className="mt-5 rounded bg-surface-muted p-4 text-sm leading-7 text-text-secondary md:p-5">
+          <div className="flex items-start gap-4 rounded-lg border border-border bg-surface p-5 md:gap-5 md:p-8 lg:p-10">
+            <Info aria-hidden="true" className="size-10 shrink-0 rounded-full bg-surface-soft p-2.5 text-brand-primary md:size-12" />
+            <div className="min-w-0" role="status">
+            <h1 className="text-2xl font-semibold leading-tight text-text-primary lg:text-[2rem]">{isLatePaid ? 'Đã nhận tiền, đơn hàng đã hủy.' : payment?.status === 'PAID' ? 'Thanh toán PayPal đã được ghi nhận' : 'Bạn vừa dừng giao dịch trên cổng PayPal'}</h1>
+            <p className="mt-3 text-sm leading-7 text-text-secondary md:text-base">
               {isLatePaid
                 ? cancelledPaidMessage
                 : payment?.status === 'PAID'
@@ -95,19 +98,20 @@ export const PaypalCancelPage = () => {
                   ? 'Bạn đã rời PayPal trước khi hoàn tất. Đơn vẫn đang chờ thanh toán online, có thời hạn giữ hàng tối đa 30 phút. Kiểm tra trạng thái hiện tại trước khi thử lại.'
                   : 'Việc rời PayPal không xác nhận thanh toán. Đơn hàng không còn chờ thanh toán hoặc trạng thái chưa được xác minh; hãy xem chi tiết đơn trước khi tiếp tục.'}
             </p>
+            </div>
           </div>
 
           <section className="min-w-0 rounded-lg border border-border bg-surface p-5 md:p-8">
-            <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Thao tác tiếp theo</h2>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <Link className={buttonStyles({ fullWidth: true })} to={routePaths.orderDetail(orderId)}>
-                Xem đơn hàng
-              </Link>
+            <h2 className="text-base font-semibold uppercase tracking-wide">Thao tác tiếp theo</h2>
+            <div className="mt-5 grid gap-3">
               {canRetryPayment ? (
-                <Link className={buttonStyles({ fullWidth: true, variant: 'secondary' })} to={routePaths.paymentResult(orderId, PAYMENT_PROVIDERS.PAYPAL)}>
-                  Thử lại thanh toán
+                <Link className={buttonStyles({ fullWidth: true, className: '!border-text-primary !bg-text-primary hover:!opacity-90' })} to={routePaths.paymentResult(orderId, PAYMENT_PROVIDERS.PAYPAL)}>
+                  Thử lại thanh toán{payment ? ` · ${formatVnd(payment.amount)}` : null}
                 </Link>
               ) : null}
+              <Link className={buttonStyles({ fullWidth: true, variant: canRetryPayment ? 'secondary' : 'primary' })} to={routePaths.orderDetail(orderId)}>
+                Xem đơn hàng
+              </Link>
               <Link className={buttonStyles({ fullWidth: true, variant: 'ghost' })} to={routes.products}>
                 Tiếp tục mua sắm
               </Link>

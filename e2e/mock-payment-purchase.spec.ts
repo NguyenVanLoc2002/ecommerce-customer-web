@@ -214,7 +214,7 @@ test.describe('Mock payment purchase journey', () => {
       expect(unwrap<Payment>(await paymentResponse.json()).status).toBe('PAID');
 
       await page.goto(`/payment/result?orderId=${createdOrder.id}&provider=MOCK`);
-      await expect(page.getByRole('heading', { name: 'Payment Completed.' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Thanh toán thành công.' })).toBeVisible();
 
       const restockProbeResponse = await customerApi.post('cart/items', {
         data: { variantId: selectedItem.variantId, quantity: 1 },
