@@ -23,7 +23,7 @@ const paymentOptions = [
   {
     value: PAYMENT_METHODS.COD,
     title: 'Cash on delivery',
-    description: 'Pay when your order arrives. The order remains cancelable until fulfillment begins.',
+    description: 'Pay for your order when it is delivered.',
   },
   {
     value: PAYMENT_METHODS.ONLINE,
@@ -111,7 +111,7 @@ export const CheckoutPaymentPage = () => {
           <section className="space-y-6">
             <div className="space-y-4 border-b border-border pb-8">
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Step 02</p>
-              <h1 className="font-display text-[3.25rem] leading-none text-text-primary md:text-[4.25rem]">Payment Method</h1>
+              <h1 className="font-display text-3xl leading-tight text-text-primary md:text-[2.5rem]">Payment Method</h1>
               <p className="max-w-2xl text-sm leading-7 text-text-secondary">
                 Choose how you want to complete the order, then add any delivery note that should travel with it.
               </p>

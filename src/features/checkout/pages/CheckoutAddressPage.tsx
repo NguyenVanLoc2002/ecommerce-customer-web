@@ -85,7 +85,7 @@ export const CheckoutAddressPage = () => {
           <section className="space-y-6">
             <div className="space-y-4 border-b border-border pb-8">
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Step 01</p>
-              <h1 className="font-display text-[3.25rem] leading-none text-text-primary md:text-[4.25rem]">Shipping Destination</h1>
+              <h1 className="font-display text-3xl leading-tight text-text-primary md:text-[2.5rem]">Shipping Destination</h1>
               <p className="max-w-2xl text-sm leading-7 text-text-secondary">
                 Select the address for delivery before continuing through the secure checkout flow.
               </p>
