@@ -486,6 +486,10 @@ Order item fields:
   - controller default `size=20`
 - Response: `ApiResponse<PagedResponse<OrderListItemResponse>>`
 
+- `itemsPreview` contains up to three order item snapshots in stable creation order.
+- `remainingItemLines` counts omitted lines. `totalItems` continues to count all purchased units.
+
+
 ### `GET /orders/{id}`
 - Access: authenticated
 - Response: `ApiResponse<OrderResponse>`

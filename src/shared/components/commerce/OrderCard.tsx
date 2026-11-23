@@ -30,7 +30,29 @@ export const OrderCard = ({ order }: OrderCardProps) => (
       </div>
       <div className="md:ml-auto"><OrderStatusBadge status={order.status} /></div>
     </header>
-    <p className="px-4 py-4 text-sm text-text-secondary md:px-6 md:py-5">{order.totalItems} sản phẩm</p>
+    {order.items.length ? (
+      <ul aria-label="Sản phẩm trong đơn" className="divide-y divide-border px-4 py-1 md:px-6 md:py-2">
+        {order.items.map((item) => (
+          <li className="grid grid-cols-[68px_minmax(0,1fr)] items-center gap-x-4 gap-y-2 py-4 sm:grid-cols-[80px_minmax(0,1fr)_auto] md:py-5" key={item.id}>
+            <img alt={item.primaryImage.alt} className="row-span-2 aspect-[5/7] w-full rounded bg-surface-soft object-cover sm:row-span-1" height={item.primaryImage.height} loading="lazy" src={item.primaryImage.src} width={item.primaryImage.width} />
+            <div className="min-w-0 break-words">
+              <p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">{item.brandName}</p>
+              <p className="mt-1 font-semibold">{item.productName}</p>
+              {item.variantName ? <p className="mt-1 text-sm text-text-secondary">Phân loại: {item.variantName}</p> : null}
+              <p className="mt-1 text-sm text-text-secondary">Số lượng: {item.quantity}</p>
+            </div>
+            <p className="col-start-2 text-sm font-semibold sm:col-start-auto sm:text-right">{formatVnd(item.subtotal)}</p>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p className="px-4 py-4 text-sm text-text-secondary md:px-6">{order.totalItems} sản phẩm</p>
+    )}
+    {(order.remainingItemLines ?? 0) > 0 ? (
+      <Link className="inline-flex min-h-11 items-center px-4 text-sm font-medium text-brand-primary underline underline-offset-4 md:px-6" to={routePaths.orderDetail(order.id)}>
+        Xem thêm {order.remainingItemLines} dòng sản phẩm
+      </Link>
+    ) : null}
     <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-border px-4 py-4 md:px-6">
       <p className="text-sm text-text-secondary">Tổng giá trị <strong className="ml-2 text-lg text-text-primary">{formatVnd(order.grandTotal)}</strong></p>
       <div className="flex flex-wrap gap-2">

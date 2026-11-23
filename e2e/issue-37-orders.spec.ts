@@ -105,7 +105,17 @@ test('order lifecycle and review screens render at desktop and mobile widths', a
     const path = new URL(route.request().url()).pathname.slice('/api/v1'.length);
     if (path === '/auth/refresh-token' || path === '/me') return route.fallback();
     let data: unknown;
-    if (path === '/orders') data = paged([order]);
+    if (path === '/orders') data = paged([{
+      ...order,
+      totalItems: 4,
+      totalAmount: 4990000,
+      itemsPreview: [
+        { ...order.items[0], productImageUrl: '/src/features/home/assets/home-editorial-approved.jpg' },
+        { ...order.items[0], id: 'item-preview-2', productName: 'Quần dài xếp ly', variantName: 'Than chì / M', productImageUrl: '/src/features/home/assets/home-hero-approved.jpg', lineTotal: 990000 },
+        { ...order.items[0], id: 'item-preview-3', productName: 'Áo blazer dáng suông', variantName: 'Xám đá / M', lineTotal: 1290000 },
+      ],
+      remainingItemLines: 1,
+    }]);
     if (path === '/orders/' + orderId) data = order;
     if (path === '/reviews/my') data = paged([review]);
     if (path === '/reviews' && route.request().method() === 'POST') {
@@ -138,6 +148,12 @@ test('order lifecycle and review screens render at desktop and mobile widths', a
       await page.goto(path, { waitUntil: 'domcontentloaded' });
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await expect(page.getByText(content, { exact: true })).toBeVisible();
+      if (screen === 'orders') {
+        const products = page.getByRole('list', { name: 'Sản phẩm trong đơn' });
+        await expect(products.getByRole('listitem')).toHaveCount(3);
+        await expect(products.getByText('Quần dài xếp ly')).toBeVisible();
+        await expect(page.getByRole('link', { name: 'Xem thêm 1 dòng sản phẩm' })).toHaveAttribute('href', '/orders/' + orderId);
+      }
       if (screen === 'detail') await expect(page.getByText('Đang tải giao dịch…')).toHaveCount(0);
       await page.evaluate(() => document.fonts.ready);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
