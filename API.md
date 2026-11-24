@@ -407,6 +407,23 @@ Cart item shape:
 
 ## 13. Order Endpoints
 
+### Return policy and replacement orders
+
+Backend contract confirmed against [backend PR #80](https://github.com/NguyenVanLoc2002/ecommerce-backend/pull/80).
+
+- Product detail exposes `returnPolicy`. Checkout preview exposes `returnPolicies[]` as `{ variantId, policy }` so restrictions can be shown before checkout. The values are `STANDARD`, `SEALED_ONLY`, `REVIEW_REQUIRED`, and `CUSTOMIZED_FINAL_SALE`.
+- Admin-created replacements may appear in order history. They use `paymentMethod: EXCHANGE` and `paymentStatus: NOT_REQUIRED`, with `replacementForOrderId` on order detail. Keep these values out of payment selection. The replacement has no Payment record, voucher redemption, or sales invoice.
+- Return notifications use `RETURN_UPDATED`. A return request leaves the original order and its delivery history intact.
+
+#### `POST /orders/{orderId}/returns`
+
+An authenticated customer can submit a request against an owned order after delivery. Send `Idempotency-Key` and a body with `reason`, `note`, and `items` containing `orderItemId` and `quantity`. Reasons are `DEFECTIVE`, `WRONG_ITEM`, `MISSING_ITEM`, `NOT_AS_DESCRIBED`, and `CHANGED_MIND`. For `CHANGED_MIND`, send `originalCondition` and, for sealed-only items, `unopened`. Eligibility uses the order-item snapshot.
+
+The submission window is 14 days from delivery. A delivered order without a timestamp enters `PENDING_DELIVERY_VERIFICATION`. The response is `ApiResponse<ReturnResponse>` with `id`, `orderId`, `status`, `reason`, `note`, `createdAt`, and `items`. A matching retry returns the existing request.
+
+Refund preparation is an Admin action. PayPal confirmation, COD maker-checker, and historical reconciliation remain pending. This endpoint does not promise a refund or settlement date.
+
+
 Create order request:
 - `shippingAddressId` required
 - `carrierId` optional; backend resolves the selected carrier and calculates shipping
@@ -811,7 +828,7 @@ Lifecycle values verified from backend enums (keep distinct domains, not one sha
 | Field | Values |
 | --- | --- |
 | Order `status` | `PENDING`, `AWAITING_PAYMENT`, `CONFIRMED`, `PROCESSING`, `SHIPPED`, `DELIVERED`, `COMPLETED`, `CANCELLED`, `REFUNDED` |
-| Order `paymentStatus` | `PENDING`, `PAID`, `PARTIALLY_REFUNDED`, `FAILED`, `REFUNDED`, `CANCELLED` |
+| Order `paymentStatus` | `PENDING`, `PAID`, `PARTIALLY_REFUNDED`, `FAILED`, `REFUNDED`, `CANCELLED`, `NOT_REQUIRED` |
 | Payment record `status` | `PENDING`, `INITIATED`, `PAID`, `FAILED`, `REFUNDED`, `PARTIALLY_REFUNDED`, `CANCELLED` |
 | Shipment `status` | `PENDING`, `PICKING`, `IN_TRANSIT`, `OUT_FOR_DELIVERY`, `DELIVERED`, `FAILED`, `RETURNED` |
 
