@@ -21,7 +21,8 @@ export const useCancelOrder = () => {
 
   return useMutation({
     mutationFn: (orderId: string) => ordersService.cancelOrder(orderId),
-    onSuccess: (_, orderId) => {
+    onSuccess: (order, orderId) => {
+      queryClient.setQueryData(queryKeys.orders.detail(orderId), order);
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders.list });
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(orderId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.cart.detail });
