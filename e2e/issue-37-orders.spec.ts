@@ -183,3 +183,40 @@ test('order lifecycle and review screens render at desktop and mobile widths', a
   await expect(page.getByText('Invoice not issued yet')).toBeVisible();
   await expect(page.getByRole('button', { name: 'In hóa đơn' })).toBeDisabled();
 });
+
+for (const cancellationSucceeds of [true, false]) {
+  test(cancellationSucceeds ? 'offers reorder after confirmed cancellation' : 'refreshes order after a cancellation conflict', async ({ page }) => {
+    await installAuthenticatedSession(page);
+    let currentOrder = { ...order, status: 'PENDING', paymentMethod: 'COD', paymentStatus: 'PENDING', canCancel: true };
+    await page.route('**/api/v1/**', (route) => {
+      const path = new URL(route.request().url()).pathname.slice('/api/v1'.length);
+      if (path === '/auth/refresh-token' || path === '/me') return route.fallback();
+      if (path === '/orders/' + orderId) return route.fulfill({ json: apiEnvelope(currentOrder) });
+      if (path === '/orders/my/' + orderId + '/cancel' && route.request().method() === 'POST') {
+        currentOrder = { ...currentOrder, status: cancellationSucceeds ? 'CANCELLED' : 'CONFIRMED', canCancel: false };
+        if (cancellationSucceeds) return route.fulfill({ json: apiEnvelope(currentOrder) });
+        return route.fulfill({ status: 409, json: { success: false, code: 'ORDER_CANNOT_CANCEL' } });
+      }
+      if (path === '/payments/order/' + orderId) {
+        return route.fulfill({ status: 404, json: { success: false, code: 'PAYMENT_NOT_FOUND' } });
+      }
+      return route.fulfill({ json: apiEnvelope(paged([])) });
+    });
+
+    await page.goto('/orders/' + orderId, { waitUntil: 'domcontentloaded' });
+    const reorderLink = page.getByRole('link', { name: 'Chọn sản phẩm để đặt lại' });
+    await expect(reorderLink).toHaveCount(0);
+    await expect(page.getByText('Sửa địa chỉ trong tài khoản', { exact: false })).toBeVisible();
+    await page.getByRole('button', { name: 'Hủy đơn hàng', exact: true }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Hủy đơn hàng', exact: true }).click();
+
+    if (cancellationSucceeds) {
+      await expect(reorderLink).toBeVisible();
+      await expect(reorderLink).toHaveAttribute('href', '/products');
+    } else {
+      await expect(page.getByText('Nếu cần thay đổi đơn này, hãy liên hệ bộ phận hỗ trợ.')).toBeVisible();
+      await expect(reorderLink).toHaveCount(0);
+    }
+    await expect(page.getByRole('button', { name: 'Hủy đơn hàng', exact: true })).toHaveCount(0);
+  });
+}

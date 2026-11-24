@@ -63,6 +63,11 @@ export const OrderDetailPage = () => {
     order?.status === ORDER_STATUSES.SHIPPED ||
     order?.status === ORDER_STATUSES.DELIVERED ||
     order?.status === ORDER_STATUSES.COMPLETED;
+  const isCancelled = order?.status === ORDER_STATUSES.CANCELLED;
+  const paidOnlineOrder =
+    order?.paymentMethod === PAYMENT_METHODS.ONLINE &&
+    (order.paymentStatus === PAYMENT_STATUSES.PAID || paymentQuery.data?.status === PAYMENT_STATUSES.PAID);
+  const canCancel = Boolean(order?.canCancel && !isCancelled && !paidOnlineOrder && !orderQuery.isError);
   const reviewActionVisible = order?.status === ORDER_STATUSES.COMPLETED;
 
   return (
@@ -129,13 +134,31 @@ export const OrderDetailPage = () => {
                 <Link className={buttonStyles({ variant: 'primary' })} to={routePaths.orderInvoice(order.id)}>
                   Hóa đơn
                 </Link>
-                {order.canCancel ? (
+                {canCancel ? (
                   <Button onClick={() => setConfirmOpen(true)} variant="secondary">
                     Hủy đơn hàng
                   </Button>
                 ) : null}
               </div>
             </div>
+
+            <section aria-labelledby="order-change-heading" className="space-y-2 rounded-md border border-border bg-surface p-5">
+              <h2 className="text-sm font-semibold" id="order-change-heading">Thay đổi đơn hàng</h2>
+              <p className="max-w-[70ch] text-sm leading-6 text-text-secondary">
+                {isCancelled
+                  ? 'Để đặt lại, hãy chọn sản phẩm và kiểm tra địa chỉ, giá, phí vận chuyển, ưu đãi và tồn kho khi thanh toán đơn mới.'
+                  : 'Sửa địa chỉ trong tài khoản không cập nhật đơn đã đặt. Nếu cần đổi người nhận, địa chỉ hoặc sản phẩm, hãy kiểm tra lựa chọn bên dưới.'}
+              </p>
+              {isCancelled ? (
+                <Link className={buttonStyles({ variant: 'secondary' })} to={routes.products}>Chọn sản phẩm để đặt lại</Link>
+              ) : (
+                <p className="text-sm text-text-secondary">
+                  {canCancel
+                    ? 'Bạn có thể hủy đơn này rồi đặt đơn mới.'
+                    : 'Nếu cần thay đổi đơn này, hãy liên hệ bộ phận hỗ trợ.'}
+                </p>
+              )}
+            </section>
 
             {cancelledPaidMessage || checkoutHoldMessage ? (
               <div aria-live="polite" className={`border px-5 py-4 text-sm leading-7 ${cancelledPaidMessage ? 'border-danger/20 bg-danger/5 text-text-primary' : 'border-warning/20 bg-warning/5 text-text-primary'}`} role="status">
@@ -218,17 +241,17 @@ export const OrderDetailPage = () => {
         <ConfirmDialog
           cancelLabel="Giữ đơn hàng"
           confirmLoading={cancelOrder.isPending}
-          confirmLabel={cancelOrder.isPending ? 'Cancelling...' : 'Cancel order'}
-          description="This releases the pending order in the current flow and updates its status to Cancelled."
+          confirmLabel={cancelOrder.isPending ? 'Đang hủy…' : 'Hủy đơn hàng'}
+          description="Sau khi hệ thống xác nhận hủy, bạn có thể đặt đơn mới. Giá, ưu đãi và tồn kho sẽ được kiểm tra lại."
           onClose={() => setConfirmOpen(false)}
           onConfirm={() =>
             cancelOrder.mutate(order.id, {
-              onSuccess: () => {
+              onSuccess: (updatedOrder) => {
                 setConfirmOpen(false);
                 addToast({
-                  tone: 'success',
-                  title: 'Order cancelled',
-                  description: `${order.code} is now marked as cancelled.`,
+                  tone: updatedOrder.status === ORDER_STATUSES.CANCELLED ? 'success' : 'info',
+                  title: updatedOrder.status === ORDER_STATUSES.CANCELLED ? 'Đã hủy đơn hàng' : 'Đang kiểm tra trạng thái đơn hàng',
+                  description: order.code,
                 });
               },
               onError: (error) => {
@@ -242,16 +265,18 @@ export const OrderDetailPage = () => {
                   return;
                 }
 
+                setConfirmOpen(false);
+                void orderQuery.refetch();
                 addToast({
                   tone: 'danger',
-                  title: 'Cancellation failed',
-                  description: error instanceof Error ? error.message : 'Try again.',
+                  title: 'Chưa xác nhận được kết quả hủy',
+                  description: 'Hãy kiểm tra trạng thái đơn trước khi đặt lại.',
                 });
               },
             })
           }
-          open={confirmOpen}
-          title="Cancel this order?"
+          open={confirmOpen && canCancel}
+          title="Hủy đơn hàng này?"
         />
       ) : null}
     </>
