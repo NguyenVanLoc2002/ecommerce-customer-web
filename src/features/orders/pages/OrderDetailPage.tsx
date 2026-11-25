@@ -1,9 +1,12 @@
+import { Truck } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
 import { useCancelOrder, useOrderDetail } from '@/features/orders/hooks/useOrders';
 import { usePaymentLifecycle } from '@/shared/hooks/usePaymentLifecycle';
+import { useShipmentByOrderId } from '@/shared/hooks/useShipment';
+import { ShipmentAlertBanner } from '@/shared/components/commerce/ShipmentAlertBanner';
 import { OrderStatusBadge } from '@/shared/components/commerce/OrderStatusBadge';
 import { OrderStatusStepper } from '@/shared/components/commerce/OrderStatusStepper';
 import { EmptyState } from '@/shared/components/feedback/EmptyState';
@@ -35,6 +38,8 @@ export const OrderDetailPage = () => {
   const paymentQuery = usePaymentLifecycle(orderId);
   const cancelOrder = useCancelOrder();
   const order = orderQuery.data;
+  const shipmentQuery = useShipmentByOrderId(order?.id ?? '', orderQuery.isSuccess);
+  const shipment = shipmentQuery.isSuccess && orderQuery.isSuccess ? shipmentQuery.data : null;
   const onlinePaymentPending =
     order?.paymentMethod === PAYMENT_METHODS.ONLINE &&
     order.status === ORDER_STATUSES.AWAITING_PAYMENT &&
@@ -58,11 +63,6 @@ export const OrderDetailPage = () => {
     order.paymentStatus !== PAYMENT_STATUSES.PAID &&
     paymentQuery.data?.status !== PAYMENT_STATUSES.PAID &&
     !onlinePaymentPending;
-  const shipmentActionVisible =
-    order?.status === ORDER_STATUSES.PROCESSING ||
-    order?.status === ORDER_STATUSES.SHIPPED ||
-    order?.status === ORDER_STATUSES.DELIVERED ||
-    order?.status === ORDER_STATUSES.COMPLETED;
   const isCancelled = order?.status === ORDER_STATUSES.CANCELLED;
   const paidOnlineOrder =
     order?.paymentMethod === PAYMENT_METHODS.ONLINE &&
@@ -116,9 +116,9 @@ export const OrderDetailPage = () => {
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
-                {shipmentActionVisible ? (
-                  <Link className={buttonStyles({ variant: 'ghost' })} to={routePaths.orderTracking(order.id)}>
-                    Theo dõi vận chuyển
+                {shipment ? (
+                  <Link className={buttonStyles({ variant: 'secondary' })} to={routePaths.orderTracking(order.id)}>
+                    <Truck aria-hidden="true" className="size-4 shrink-0" /> Theo dõi vận chuyển
                   </Link>
                 ) : null}
                 {reviewActionVisible ? (
@@ -141,6 +141,8 @@ export const OrderDetailPage = () => {
                 ) : null}
               </div>
             </div>
+
+            {shipment ? <ShipmentAlertBanner shipment={shipment} /> : null}
 
             <section aria-labelledby="order-change-heading" className="space-y-2 rounded-md border border-border bg-surface p-5">
               <h2 className="text-sm font-semibold" id="order-change-heading">Thay đổi đơn hàng</h2>
@@ -216,6 +218,18 @@ export const OrderDetailPage = () => {
                   </div>
                   <p className="break-words text-sm text-text-secondary">{formatAddress(order.shippingAddress)}</p>
                   {order.carrierName ? <p className="text-sm font-medium">{order.carrierName}</p> : null}
+                  {shipmentQuery.isLoading ? (
+                    <p className="text-sm text-text-secondary" role="status">Đang tải vận đơn…</p>
+                  ) : null}
+                  {shipmentQuery.isSuccess && shipmentQuery.data === null ? (
+                    <p className="text-sm text-text-secondary">Chưa tạo vận đơn.</p>
+                  ) : null}
+                  {shipmentQuery.isError ? (
+                    <div className="space-y-2">
+                      <p className="text-sm text-danger" role="status">Chưa tải được vận đơn.</p>
+                      <Button disabled={shipmentQuery.isFetching} onClick={() => void shipmentQuery.refetch()} variant="secondary">Thử lại</Button>
+                    </div>
+                  ) : null}
                 </section>
                 <section className="space-y-3 rounded bg-surface p-5 shadow-sm md:p-8">
                   <h2 className="text-sm font-bold uppercase tracking-wide">Trạng thái thanh toán</h2>

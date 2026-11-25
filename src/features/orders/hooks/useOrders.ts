@@ -25,6 +25,7 @@ export const useCancelOrder = () => {
       queryClient.setQueryData(queryKeys.orders.detail(orderId), order);
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders.list });
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(orderId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.shipments.byOrder(orderId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.cart.detail });
     },
   });
