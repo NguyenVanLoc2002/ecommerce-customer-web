@@ -1,0 +1,27 @@
+.account-workspace .account-primary-action {
+  border-color: rgb(var(--color-text-primary));
+  background-color: rgb(var(--color-text-primary));
+  font-size: 0.875rem;
+  letter-spacing: normal;
+}
+
+.account-workspace .account-primary-action:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.account-workspace .account-secondary-action {
+  font-size: 0.875rem;
+  letter-spacing: normal;
+}
+
+.account-workspace .account-secondary-action:not(:disabled):not(:hover) {
+  border-color: transparent;
+  background-color: rgb(var(--color-surface-muted));
+  color: rgb(var(--color-text-primary));
+}
+
+@media (max-width: 767px) {
+  html:has(.account-workspace) {
+    scroll-padding-block: 5.5rem;
+  }
+}

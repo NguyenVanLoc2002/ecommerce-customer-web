@@ -97,6 +97,7 @@ export const toAuthResponse = (response: ApiAuthResponse, profile?: ApiUserProfi
 
 export const toUserProfile = (profile: ApiUserProfileResponse): UserProfile => ({
   ...toAuthUser(profile),
+  emailVerified: profile.emailVerified,
   gender: profile.gender ?? undefined,
   birthDate: profile.birthDate ?? undefined,
   createdAt: profile.createdAt,
@@ -293,7 +294,7 @@ const toOrderShippingAddress = (order: OrderResponse) => ({
   district: order.shippingDistrict,
   city: order.shippingCity,
   postalCode: order.shippingPostalCode ?? '',
-  addressType: 'HOME' as const,
+  addressType: 'SHIPPING' as const,
   isDefault: false,
   label: '',
   fullAddress: buildFullAddress({
@@ -360,7 +361,7 @@ export const toCommerceOrderFromListItem = (order: OrderListItemResponse): Comme
     district: '',
     city: '',
     postalCode: '',
-    addressType: 'HOME' as const,
+    addressType: 'SHIPPING' as const,
     isDefault: false,
     label: '',
     fullAddress: '',

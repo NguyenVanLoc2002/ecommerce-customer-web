@@ -37,8 +37,9 @@ export const ORDER_STATUSES = {
 export type OrderStatus = (typeof ORDER_STATUSES)[keyof typeof ORDER_STATUSES];
 
 export const ADDRESS_TYPES = {
-  HOME: 'HOME',
-  OFFICE: 'OFFICE',
+  SHIPPING: 'SHIPPING',
+  BILLING: 'BILLING',
+  BOTH: 'BOTH',
 } as const;
 
 export type AddressType = (typeof ADDRESS_TYPES)[keyof typeof ADDRESS_TYPES];

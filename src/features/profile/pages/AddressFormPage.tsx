@@ -1,28 +1,27 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { Building2, House, MapPin, Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
-import { useAddress, useCreateAddress, useDeleteAddress, useUpdateAddress } from '@/shared/hooks/useAddresses';
-import { useUnsavedChangesPrompt } from '@/shared/hooks/useUnsavedChangesPrompt';
+import { DeleteAddressDialog } from '@/features/profile/components/DeleteAddressDialog';
 import { addressSchema, type AddressSchemaInput } from '@/features/profile/services/addressSchemas';
+import { addressTypeLabels } from '@/features/profile/services/addressTypeLabels';
 import { EmptyState } from '@/shared/components/feedback/EmptyState';
 import { ErrorCard } from '@/shared/components/feedback/ErrorCard';
 import { LoadingOverlay } from '@/shared/components/feedback/LoadingOverlay';
-import { AccountShell } from '@/shared/components/layout/AccountShell';
-import { Container } from '@/shared/components/layout/Container';
-import { ConfirmDialog } from '@/shared/components/overlays/ConfirmDialog';
+import { AccountWorkspace } from '@/shared/components/layout/AccountWorkspace';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
+import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { Checkbox } from '@/shared/components/ui/Checkbox';
 import { Input } from '@/shared/components/ui/Input';
-import { Select } from '@/shared/components/ui/Select';
+import { useAddress, useCreateAddress, useUpdateAddress } from '@/shared/hooks/useAddresses';
+import { useUnsavedChangesPrompt } from '@/shared/hooks/useUnsavedChangesPrompt';
+import type { ServiceError } from '@/shared/lib/serviceError';
 import { useUiStore } from '@/shared/stores/uiStore';
 import { ADDRESS_TYPES } from '@/shared/types/enums';
-import type { CreateAddressRequest, UpdateAddressRequest } from '@/shared/types/address.types';
-import type { ServiceError } from '@/shared/lib/serviceError';
 
 const addressDefaults: AddressSchemaInput = {
   receiverName: '',
@@ -32,256 +31,185 @@ const addressDefaults: AddressSchemaInput = {
   district: '',
   city: '',
   postalCode: '',
-  addressType: ADDRESS_TYPES.HOME,
+  addressType: ADDRESS_TYPES.SHIPPING,
   isDefault: false,
   label: '',
 };
 
-const RETURN_TO_CHECKOUT = 'checkout';
+const addressTypeOptions = [
+  { value: ADDRESS_TYPES.SHIPPING, Icon: House },
+  { value: ADDRESS_TYPES.BILLING, Icon: Building2 },
+  { value: ADDRESS_TYPES.BOTH, Icon: MapPin },
+];
 
-export const AddressFormPage = () => {
-  const { id = '' } = useParams();
+const inputClassName = 'bg-surface-muted';
+
+const AddressEditor = ({ id }: { id: string }) => {
   const isEditMode = Boolean(id);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const addToast = useUiStore((state) => state.addToast);
   const createAddress = useCreateAddress();
   const updateAddress = useUpdateAddress();
-  const deleteAddress = useDeleteAddress();
   const addressQuery = useAddress(id);
+  const [continueTo, setContinueTo] = useState<string | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const returnTo = searchParams.get('returnTo') === RETURN_TO_CHECKOUT ? RETURN_TO_CHECKOUT : null;
-  const backTarget = returnTo === RETURN_TO_CHECKOUT ? routePaths.checkoutAddress() : routes.profileAddresses;
+  const closeDelete = useCallback(() => setConfirmDeleteOpen(false), []);
+  const returnToCheckout = searchParams.get('returnTo') === 'checkout';
+  const backTarget = returnToCheckout ? routePaths.checkoutAddress() : routes.profileAddresses;
+  const address = addressQuery.data;
+  const addressError = addressQuery.error as ServiceError | null;
+  const notFound = isEditMode && (
+    addressError?.code === 'ADDRESS_NOT_FOUND' || addressError?.status === 404 || (addressQuery.isSuccess && !address)
+  );
   const {
-    formState: { errors, isDirty },
+    formState: { errors, isDirty, isSubmitting },
     handleSubmit,
     register,
     reset,
     setError,
-    watch,
   } = useForm<AddressSchemaInput>({
     resolver: zodResolver(addressSchema),
     defaultValues: addressDefaults,
   });
 
-  useUnsavedChangesPrompt(isDirty);
+  useUnsavedChangesPrompt(isDirty && !continueTo);
 
   useEffect(() => {
-    if (!addressQuery.data) {
-      return;
+    if (continueTo) navigate(continueTo);
+  }, [continueTo, navigate]);
+
+  useEffect(() => {
+    if (address) {
+      const { receiverName, phoneNumber, streetAddress, ward, district, city, postalCode, addressType, isDefault, label } = address;
+      reset({ receiverName, phoneNumber, streetAddress, ward, district, city, postalCode, addressType, isDefault, label });
     }
-
-    reset({
-      receiverName: addressQuery.data.receiverName,
-      phoneNumber: addressQuery.data.phoneNumber,
-      streetAddress: addressQuery.data.streetAddress,
-      ward: addressQuery.data.ward,
-      district: addressQuery.data.district,
-      city: addressQuery.data.city,
-      postalCode: addressQuery.data.postalCode,
-      addressType: addressQuery.data.addressType,
-      isDefault: addressQuery.data.isDefault,
-      label: addressQuery.data.label,
-    });
-  }, [addressQuery.data, reset]);
-
-  const currentValues = watch();
-  const pageTitle = isEditMode ? 'Edit Address' : 'Add Address';
-  const seoPath = isEditMode ? routePaths.profileAddressEdit(id || 'address') : routes.profileAddressNew;
-
-  const submitLabel = useMemo(() => {
-    if (createAddress.isPending || updateAddress.isPending) {
-      return isEditMode ? 'Saving...' : 'Creating...';
-    }
-
-    return isEditMode ? 'Save address' : 'Create address';
-  }, [createAddress.isPending, isEditMode, updateAddress.isPending]);
-
-  const handleSuccess = (addressId: string, receiverName: string) => {
-    addToast({
-      tone: 'success',
-      title: isEditMode ? 'Address updated' : 'Address created',
-      description: `${receiverName}'s destination is ready to use.`,
-    });
-
-    navigate(returnTo === RETURN_TO_CHECKOUT ? routePaths.checkoutAddress(addressId) : routes.profileAddresses);
-  };
+  }, [address, reset]);
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
 
-    const payload: CreateAddressRequest | UpdateAddressRequest = {
-      receiverName: values.receiverName,
-      phoneNumber: values.phoneNumber,
-      streetAddress: values.streetAddress,
-      ward: values.ward,
-      district: values.district,
-      city: values.city,
-      postalCode: values.postalCode,
-      addressType: values.addressType,
-      isDefault: values.isDefault,
-      label: values.label,
-    };
-
     try {
-      const address = isEditMode
-        ? await updateAddress.mutateAsync({
-            addressId: id,
-            payload,
-          })
-        : await createAddress.mutateAsync(payload as CreateAddressRequest);
+      const saved = isEditMode
+        ? await updateAddress.mutateAsync({ addressId: id, payload: values })
+        : await createAddress.mutateAsync(values);
 
-      reset({
-        receiverName: address.receiverName,
-        phoneNumber: address.phoneNumber,
-        streetAddress: address.streetAddress,
-        ward: address.ward,
-        district: address.district,
-        city: address.city,
-        postalCode: address.postalCode,
-        addressType: address.addressType,
-        isDefault: address.isDefault,
-        label: address.label,
-      });
-
-      handleSuccess(address.id, address.receiverName);
+      reset(values);
+      addToast({ tone: 'success', title: isEditMode ? 'Đã cập nhật địa chỉ' : 'Đã thêm địa chỉ mới' });
+      setContinueTo(returnToCheckout ? routePaths.checkoutAddress(saved.id) : routes.profileAddresses);
     } catch (error) {
       const serviceError = error as ServiceError;
-      if (serviceError.fieldErrors) {
-        Object.entries(serviceError.fieldErrors).forEach(([field, message]) => {
+      Object.entries(serviceError.fieldErrors ?? {}).forEach(([field, message]) => {
+        if (Object.prototype.hasOwnProperty.call(addressDefaults, field)) {
           setError(field as keyof AddressSchemaInput, { message });
-        });
-      }
-
-      setFormError(serviceError.message);
+        }
+      });
+      setFormError(error instanceof Error ? error.message : 'Không thể lưu địa chỉ. Vui lòng thử lại.');
     }
   });
 
+  const title = isEditMode ? 'Chỉnh sửa địa chỉ nhận hàng' : 'Thêm địa chỉ nhận hàng mới';
+  const backLabel = returnToCheckout ? 'Quay lại thanh toán' : 'Quay lại sổ địa chỉ';
+
   return (
     <>
-      <PageSEO description="Create or edit a saved customer delivery destination." noIndex path={seoPath} title={pageTitle} />
-      <Container className="pb-16 pt-28 md:pb-20 md:pt-32">
-        <AccountShell
-          actions={
-            isEditMode ? (
-              <Button onClick={() => setConfirmDeleteOpen(true)} variant="danger">
-                <Trash2 className="h-4 w-4" />
-                Delete
-              </Button>
-            ) : undefined
-          }
-          description={returnTo === RETURN_TO_CHECKOUT ? 'Lưu địa chỉ nhận hàng để quay lại bước thanh toán.' : 'Thêm hoặc cập nhật địa chỉ nhận hàng cho các đơn tiếp theo.'}
-          eyebrow={returnTo === RETURN_TO_CHECKOUT ? 'Thanh toán / Địa chỉ' : 'Tài khoản / Địa chỉ'}
-          title={pageTitle}
-        >
-          <Link className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary" to={backTarget}>
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Link>
-
-          {isEditMode && addressQuery.isLoading ? <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Loading address..." /> : null}
-          {isEditMode && addressQuery.isError ? (
-            <ErrorCard
-              action={<Button onClick={() => void addressQuery.refetch()}>Retry</Button>}
-              className="border-border bg-surface"
-              description="The saved destination could not be loaded for editing."
-              title="Address unavailable"
-            />
-          ) : null}
-          {isEditMode && !addressQuery.isLoading && !addressQuery.isError && !addressQuery.data ? (
-            <EmptyState
-              className="border-border bg-surface px-6 py-16"
-              description="This destination is no longer available in your address book."
-              title="Address not found."
-            />
-          ) : null}
-
-          {(!isEditMode || addressQuery.data) && !addressQuery.isLoading ? (
-            <form className="space-y-7 border border-border bg-surface p-5 md:p-7" onSubmit={onSubmit}>
-              <div className="grid gap-6 md:grid-cols-2">
-                <Input error={errors.receiverName?.message} id="receiverName" label="Receiver name" {...register('receiverName')} />
-                <Input error={errors.phoneNumber?.message} id="phoneNumber" label="Phone number" {...register('phoneNumber')} />
+      <PageSEO description="Thêm hoặc cập nhật địa chỉ nhận hàng tại Fashion Shop." noIndex path={isEditMode ? routePaths.profileAddressEdit(id) : routes.profileAddressNew} title={title} />
+      <AccountWorkspace
+        breadcrumbParent={{ label: 'Sổ địa chỉ', to: routes.profileAddresses }}
+        description={returnToCheckout ? 'Lưu địa chỉ nhận hàng để tiếp tục thanh toán.' : 'Lưu thông tin người nhận và địa chỉ giao hàng.'}
+        headingInPanel
+        title={title}
+      >
+        {isEditMode && addressQuery.isLoading ? <LoadingOverlay className="min-h-[320px] border-none" inline label="Đang tải địa chỉ…" /> : null}
+        {notFound ? (
+          <EmptyState
+            action={<Link className={buttonStyles({})} to={backTarget}>{backLabel}</Link>}
+            description="Địa chỉ này không còn trong sổ địa chỉ của bạn."
+            title="Không tìm thấy địa chỉ"
+          />
+        ) : null}
+        {isEditMode && addressQuery.isError && !notFound ? (
+          <ErrorCard
+            action={<Button onClick={() => void addressQuery.refetch()}>Thử lại</Button>}
+            className="m-5"
+            description="Vui lòng thử tải lại địa chỉ đã lưu."
+            title="Không thể tải địa chỉ"
+          />
+        ) : null}
+        {(!isEditMode || (address && !addressQuery.isError)) ? (
+          <form aria-busy={isSubmitting} onSubmit={onSubmit}>
+            <fieldset className="min-w-0 space-y-6 p-5 sm:p-8" disabled={isSubmitting}>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Input aria-required="true" autoComplete="section-delivery shipping name" className={inputClassName} error={errors.receiverName?.message} label="Họ và tên người nhận" placeholder="Nhập tên người nhận" {...register('receiverName')} />
+                <Input aria-required="true" autoComplete="section-delivery shipping tel" className={inputClassName} error={errors.phoneNumber?.message} label="Số điện thoại liên hệ" placeholder="Nhập số điện thoại" type="tel" {...register('phoneNumber')} />
               </div>
-
-              <Input error={errors.streetAddress?.message} id="streetAddress" label="Street address" {...register('streetAddress')} />
-
-              <div className="grid gap-6 md:grid-cols-3">
-                <Input error={errors.ward?.message} id="ward" label="Ward" {...register('ward')} />
-                <Input error={errors.district?.message} id="district" label="District" {...register('district')} />
-                <Input error={errors.city?.message} id="city" label="City" {...register('city')} />
+              <div className="grid gap-5 sm:grid-cols-3">
+                <Input aria-required="true" autoComplete="section-delivery shipping address-level1" className={inputClassName} error={errors.city?.message} label="Tỉnh / Thành phố" {...register('city')} />
+                <Input aria-required="true" autoComplete="section-delivery shipping address-level2" className={inputClassName} error={errors.district?.message} label="Quận / Huyện" {...register('district')} />
+                <Input aria-required="true" autoComplete="section-delivery shipping address-level3" className={inputClassName} error={errors.ward?.message} label="Phường / Xã" {...register('ward')} />
               </div>
-
-              <div className="grid gap-6 md:grid-cols-2">
-                <Input error={errors.postalCode?.message} id="postalCode" label="Postal code" {...register('postalCode')} />
-                <Select error={errors.addressType?.message} id="addressType" label="Address type" {...register('addressType')}>
-                  <option value={ADDRESS_TYPES.HOME}>Home</option>
-                  <option value={ADDRESS_TYPES.OFFICE}>Office</option>
-                </Select>
+              <div className="grid gap-5 sm:grid-cols-3">
+                <div className="sm:col-span-2">
+                  <Input aria-required="true" autoComplete="section-delivery shipping address-line1" className={inputClassName} error={errors.streetAddress?.message} label="Số nhà, tòa nhà, tên đường" placeholder="Nhập địa chỉ cụ thể" {...register('streetAddress')} />
+                </div>
+                <Input autoComplete="section-delivery shipping postal-code" className={inputClassName} error={errors.postalCode?.message} label="Mã bưu chính (tùy chọn)" {...register('postalCode')} />
               </div>
-
-              <Input
-                error={errors.label?.message}
-                hint="Optional short label, for example Residence or Studio."
-                id="label"
-                label="Label"
-                {...register('label')}
-              />
-
+              <fieldset className="min-w-0">
+                <legend className="mb-2 text-sm font-medium">Loại địa chỉ</legend>
+                <div className="flex flex-wrap gap-2">
+                  {addressTypeOptions.map(({ value, Icon }) => (
+                    <label className="cursor-pointer" key={value}>
+                      <input
+                        aria-describedby={errors.addressType ? 'address-type-error' : undefined}
+                        aria-invalid={Boolean(errors.addressType)}
+                        className="peer sr-only"
+                        type="radio"
+                        value={value}
+                        {...register('addressType')}
+                      />
+                      <span className="flex min-h-11 items-center gap-2 rounded-button border border-border bg-surface-muted px-3 text-sm text-text-secondary peer-checked:border-brand-primary peer-checked:bg-brand-subtle peer-checked:text-brand-primary peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-primary peer-disabled:opacity-70">
+                        <Icon aria-hidden="true" className="h-4 w-4" />
+                        {addressTypeLabels[value]}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {errors.addressType ? <p className="mt-2 text-sm text-danger" id="address-type-error" role="alert">{errors.addressType.message}</p> : null}
+              </fieldset>
+              <Input className={inputClassName} error={errors.label?.message} label="Nhãn địa chỉ (tùy chọn)" placeholder="Ví dụ: Nhà riêng, Văn phòng" {...register('label')} />
               <Checkbox
-                checked={currentValues.isDefault}
-                description="Default addresses appear first and are preselected where possible."
+                className="accent-brand-primary"
+                description="Địa chỉ này được ưu tiên khi chọn địa chỉ nhận hàng tại bước thanh toán."
                 error={errors.isDefault?.message}
-                id="isDefault"
-                label="Make this my default delivery address"
+                label="Đặt làm địa chỉ mặc định"
                 {...register('isDefault')}
               />
-
-              {formError ? <p className="text-sm text-danger">{formError}</p> : null}
-
-              <div className="flex flex-wrap items-center gap-3 border-t border-border pt-6">
-                <Button disabled={createAddress.isPending || updateAddress.isPending} size="lg" type="submit">
-                  {submitLabel}
+              {formError ? <p className="text-sm text-danger" role="alert">{formError}</p> : null}
+            </fieldset>
+            <div className="flex flex-col-reverse flex-wrap gap-3 border-t border-border bg-surface-muted p-5 sm:flex-row sm:items-center sm:p-8">
+              <Button className="!text-sm !tracking-normal" disabled={isSubmitting} onClick={() => navigate(backTarget)} variant="ghost">{backLabel}</Button>
+              {isEditMode ? (
+                <Button className="sm:ml-auto !text-danger !text-sm !tracking-normal" disabled={isSubmitting} onClick={() => setConfirmDeleteOpen(true)} variant="ghost">
+                  <Trash2 aria-hidden="true" className="h-4 w-4" />
+                  Xóa địa chỉ
                 </Button>
-                <Button onClick={() => navigate(backTarget)} size="lg" variant="ghost">
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          ) : null}
-        </AccountShell>
-      </Container>
-
-      <ConfirmDialog
-        cancelLabel="Keep address"
-        confirmLabel={deleteAddress.isPending ? 'Deleting...' : 'Delete address'}
-        description="This saved destination will be removed from your customer account."
-        onClose={() => setConfirmDeleteOpen(false)}
-        onConfirm={() =>
-          deleteAddress.mutate(id, {
-            onSuccess: () => {
-              addToast({
-                tone: 'success',
-                title: 'Address deleted',
-                description: 'The saved destination was removed successfully.',
-              });
-              setConfirmDeleteOpen(false);
-              navigate(backTarget);
-            },
-            onError: (error) => {
-              addToast({
-                tone: 'danger',
-                title: 'Address delete failed',
-                description: error instanceof Error ? error.message : 'Try again.',
-              });
-            },
-          })
-        }
-        open={confirmDeleteOpen}
-        title="Delete this address?"
-      />
+              ) : null}
+              <Button className={isEditMode ? 'account-primary-action' : 'account-primary-action sm:ml-auto'} loading={isSubmitting} type="submit">Lưu địa chỉ</Button>
+            </div>
+          </form>
+        ) : null}
+      </AccountWorkspace>
+      {confirmDeleteOpen && address ? (
+        <DeleteAddressDialog address={address} onClose={closeDelete} onDeleted={() => setContinueTo(backTarget)} />
+      ) : null}
     </>
   );
+};
+
+export const AddressFormPage = () => {
+  const { id = '' } = useParams();
+  return <AddressEditor id={id} key={id} />;
 };
 
 export default AddressFormPage;

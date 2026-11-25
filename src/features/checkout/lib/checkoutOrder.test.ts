@@ -81,7 +81,7 @@ test('buildOrderPreviewFromOrder trusts the persisted order totals over any temp
       district: 'District',
       city: 'City',
       postalCode: '',
-      addressType: 'HOME',
+      addressType: 'SHIPPING',
       isDefault: false,
       label: '',
       fullAddress: 'Street, Ward, District, City',

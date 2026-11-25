@@ -1,4 +1,4 @@
-import type { PaymentMethod } from '@/shared/types/enums';
+import type { AddressType, PaymentMethod } from '@/shared/types/enums';
 import type { PaymentStatus } from '@/shared/types/payment.types';
 
 export interface InvoiceAddressSnapshot {
@@ -10,7 +10,7 @@ export interface InvoiceAddressSnapshot {
   district: string;
   city: string;
   postalCode: string;
-  addressType?: 'HOME' | 'OFFICE';
+  addressType?: AddressType;
   isDefault?: boolean;
   label?: string;
   fullAddress?: string;

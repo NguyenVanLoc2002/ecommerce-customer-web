@@ -12,4 +12,10 @@ export const profileService = {
     const response = await apiClient.patch<ApiResponse<ApiUserProfileResponse>, ApiUserProfileResponse>('/me', payload);
     return toUserProfile(response);
   },
+  async requestEmailVerification() {
+    await apiClient.post<ApiResponse<null>, null>('/account/email-verification');
+  },
+  async confirmEmailVerification(otp: string) {
+    await apiClient.post<ApiResponse<null>, null>('/account/email-verification/confirm', { otp });
+  },
 };
