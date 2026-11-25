@@ -113,6 +113,7 @@ test('order lifecycle and review screens render at desktop and mobile widths', a
       remainingItemLines: 1,
     }]);
     if (path === '/orders/' + orderId) data = order;
+    if (path === '/orders/' + orderId + '/returns') data = { eligibleItems: [], requests: [] };
     if (path === '/reviews/my') data = paged([review]);
     if (path === '/reviews' && route.request().method() === 'POST') {
       reviewRequests += 1;
@@ -187,6 +188,9 @@ for (const cancellationSucceeds of [true, false]) {
       const path = new URL(route.request().url()).pathname.slice('/api/v1'.length);
       if (path === '/auth/refresh-token' || path === '/me') return route.fallback();
       if (path === '/orders/' + orderId) return route.fulfill({ json: apiEnvelope(currentOrder) });
+      if (path === '/orders/' + orderId + '/returns') {
+        return route.fulfill({ json: apiEnvelope({ eligibleItems: [], requests: [] }) });
+      }
       if (path === '/orders/my/' + orderId + '/cancel' && route.request().method() === 'POST') {
         currentOrder = { ...currentOrder, status: cancellationSucceeds ? 'CANCELLED' : 'CONFIRMED', canCancel: false };
         if (cancellationSucceeds) return route.fulfill({ json: apiEnvelope(currentOrder) });
