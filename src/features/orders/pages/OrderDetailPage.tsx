@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
+import { OrderReturnsPanel } from '@/features/orders/components/OrderReturnsPanel';
 import { useCancelOrder, useOrderDetail } from '@/features/orders/hooks/useOrders';
 import { usePaymentLifecycle } from '@/shared/hooks/usePaymentLifecycle';
 import { useShipmentByOrderId } from '@/shared/hooks/useShipment';
@@ -187,6 +188,7 @@ export const OrderDetailPage = () => {
                     ))}
                   </ul>
                 </section>
+                {orderQuery.isSuccess ? <OrderReturnsPanel key={order.id} order={order} /> : null}
                 <OrderStatusStepper status={order.status} />
                 {order.customerNote.trim() ? (
                   <section className="rounded bg-surface-soft p-5">
