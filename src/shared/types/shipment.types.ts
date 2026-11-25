@@ -1,5 +1,6 @@
 export const SHIPMENT_STATUSES = {
   PENDING: 'PENDING',
+  PICKING: 'PICKING',
   IN_TRANSIT: 'IN_TRANSIT',
   OUT_FOR_DELIVERY: 'OUT_FOR_DELIVERY',
   DELIVERED: 'DELIVERED',
@@ -9,11 +10,13 @@ export const SHIPMENT_STATUSES = {
 
 export type ShipmentStatus = (typeof SHIPMENT_STATUSES)[keyof typeof SHIPMENT_STATUSES];
 
+export type ShipmentAttention = 'DELIVERY_FAILED' | 'CARRIER_CANCELLED' | 'RETURNED_HANDLING';
+
 export type ShipmentEvent = {
   id: string;
   status: ShipmentStatus;
-  location: string;
-  description: string;
+  location: string | null;
+  description: string | null;
   eventTime: string;
 };
 
@@ -23,7 +26,10 @@ export type Shipment = {
   orderCode: string;
   shipmentCode: string;
   carrier: string;
-  trackingNumber: string;
+  trackingNumber: string | null;
+  providerStatus?: string | null;
+  providerTrackingUrl?: string | null;
+  attention?: ShipmentAttention | null;
   status: ShipmentStatus;
   estimatedDeliveryDate: string | null;
   deliveredAt: string | null;

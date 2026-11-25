@@ -1,13 +1,15 @@
 import { MapPin, Truck } from 'lucide-react';
 
-import type { ShipmentEvent } from '@/shared/types/shipment.types';
-import { formatDate } from '@/shared/utils/formatDate';
+import { formatShipmentTimestamp, getShipmentAttention, getShipmentEventsNewestFirst, shipmentAttentionLabels, shipmentStatusLabels } from '@/shared/lib/shipmentTracking';
+import type { Shipment } from '@/shared/types/shipment.types';
 
 type ShipmentTimelineProps = {
-  events: ShipmentEvent[];
+  shipment: Shipment;
 };
 
-export const ShipmentTimeline = ({ events }: ShipmentTimelineProps) => {
+export const ShipmentTimeline = ({ shipment }: ShipmentTimelineProps) => {
+  const events = getShipmentEventsNewestFirst(shipment.events);
+  const attention = getShipmentAttention(shipment);
   if (!events.length) {
     return <p className="px-5 py-6 text-sm text-text-secondary md:px-8">Đơn vị vận chuyển chưa cập nhật sự kiện.</p>;
   }
@@ -24,10 +26,12 @@ export const ShipmentTimeline = ({ events }: ShipmentTimelineProps) => {
           </span>
           <div className="min-w-0 break-words rounded bg-surface-soft p-4">
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-text-secondary">
-              <span className="font-semibold">{event.status.replace(/_/g, ' ')}</span>
-              <time dateTime={event.eventTime}>{formatDate(event.eventTime, { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</time>
+              <span className="font-semibold">{index === 0 && attention && event.status === shipment.status
+                ? shipmentAttentionLabels[attention]
+                : shipmentStatusLabels[event.status] ?? 'Cập nhật vận đơn'}</span>
+              <time dateTime={event.eventTime}>{formatShipmentTimestamp(event.eventTime)}</time>
             </div>
-            <h3 className="mt-2 text-sm font-semibold">{event.description || event.location}</h3>
+            {event.description || event.location ? <p className="mt-2 break-words text-sm font-semibold">{event.description || event.location}</p> : null}
             {event.location && event.description ? (
               <p className="mt-2 flex items-center gap-2 text-xs text-text-secondary"><MapPin aria-hidden="true" className="size-3 shrink-0" />{event.location}</p>
             ) : null}

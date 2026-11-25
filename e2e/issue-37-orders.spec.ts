@@ -1,10 +1,6 @@
-import { mkdirSync } from 'node:fs';
-import { resolve } from 'node:path';
-
 import { expect, test, type Page } from '@playwright/test';
 
 const orderId = 'order-lifecycle-review';
-const evidenceDirectory = resolve(process.cwd(), 'artifacts/issue-37/implementation');
 
 const apiEnvelope = <T,>(data: T) => ({ success: true, code: 'SUCCESS', message: 'ok', data, timestamp: '2026-11-23T00:00:00Z' });
 
@@ -141,7 +137,6 @@ test('order lifecycle and review screens render at desktop and mobile widths', a
     ['/orders/' + orderId + '/review', 'review', 'Mức độ hài lòng'],
     ['/profile/reviews', 'my-reviews', 'Chất liệu nhẹ và phom dáng vừa vặn.'],
   ];
-  mkdirSync(evidenceDirectory, { recursive: true });
   for (const [width, device] of [[1280, 'desktop'], [390, 'mobile']] as const) {
     await page.setViewportSize({ width, height: 900 });
     for (const [path, screen, content] of screens) {
@@ -157,7 +152,7 @@ test('order lifecycle and review screens render at desktop and mobile widths', a
       if (screen === 'detail') await expect(page.getByText('Đang tải giao dịch…')).toHaveCount(0);
       await page.evaluate(() => document.fonts.ready);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
-      await page.screenshot({ path: resolve(evidenceDirectory, screen + '-' + device + '.png'), fullPage: true });
+      await page.screenshot({ path: test.info().outputPath(screen + '-' + device + '.png'), fullPage: true });
     }
   }
 
@@ -175,7 +170,7 @@ test('order lifecycle and review screens render at desktop and mobile widths', a
   await page.route('**/api/v1/shipments/order/*', (route) =>
     route.fulfill({ status: 404, json: { success: false, code: 'SHIPMENT_NOT_FOUND' } }));
   await page.goto('/orders/' + orderId + '/tracking', { waitUntil: 'domcontentloaded' });
-  await expect(page.getByText('Shipment not created yet.')).toBeVisible();
+  await expect(page.getByText('Chưa tạo vận đơn.', { exact: true })).toBeVisible();
 
   await page.route('**/api/v1/invoices/order/*', (route) =>
     route.fulfill({ status: 404, json: { success: false, code: 'INVOICE_NOT_FOUND' } }));
