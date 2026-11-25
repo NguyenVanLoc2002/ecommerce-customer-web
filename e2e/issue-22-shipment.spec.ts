@@ -48,6 +48,7 @@ const installRoutes = async (page: Page, orderStatus = 'PROCESSING') => {
       return route.fulfill({ json: envelope({ id: 'customer-22', customerId: 'customer-22', roles: ['CUSTOMER'], status: 'ACTIVE' }) });
     }
     if (path === orderPath) return route.fulfill({ json: envelope(order(orderStatus)) });
+    if (path === orderPath + '/returns') return route.fulfill({ json: envelope({ eligibleItems: [], requests: [] }) });
     if (path === '/payments/order/' + orderId) {
       return route.fulfill({ status: 404, json: error('PAYMENT_NOT_FOUND') });
     }

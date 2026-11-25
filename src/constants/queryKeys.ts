@@ -31,6 +31,8 @@ export const queryKeys = {
     list: ['orders', 'list'] as const,
     detail: (orderId: string) => ['orders', 'detail', orderId] as const,
     lifecycle: (orderId: string) => ['orders', 'lifecycle', orderId] as const,
+    returns: (orderId: string) => ['orders', 'returns', orderId] as const,
+    returnDetail: (orderId: string, returnId: string) => ['orders', 'returns', orderId, returnId] as const,
   },
   reviews: {
     mine: ['reviews', 'mine'] as const,
