@@ -421,7 +421,15 @@ An authenticated customer can submit a request against an owned order after deli
 
 The submission window is 14 days from delivery. A delivered order without a timestamp enters `PENDING_DELIVERY_VERIFICATION`. The response is `ApiResponse<ReturnResponse>` with `id`, `orderId`, `status`, `reason`, `note`, `createdAt`, and `items`. A matching retry returns the existing request.
 
-Refund preparation is an Admin action. PayPal confirmation, COD maker-checker, and historical reconciliation remain pending. This endpoint does not promise a refund or settlement date.
+Refund preparation and confirmation are Admin actions. Report the status of the linked refund separately from the return status.
+
+#### `GET /orders/{orderId}/returns`
+
+Authenticated owner. Returns `eligibleItems[]` with each item's server-calculated `availableQuantity`, `allowedReasons[]` and `unopenedRequiredForChangedMind`, plus `requests[]` with existing return summaries. The POST endpoint rechecks eligibility and claimable quantities.
+
+#### `GET /orders/{orderId}/returns/{returnId}`
+
+Authenticated owner. Returns the request, its chronological status timeline, reverse tracking and inspection details when recorded, linked refund status and amount, and exchanges with any replacement order ID.
 
 
 Create order request:
