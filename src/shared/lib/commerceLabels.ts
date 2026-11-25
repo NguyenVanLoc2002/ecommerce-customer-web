@@ -2,7 +2,11 @@ import { PAYMENT_METHODS, type PaymentMethod } from '@/shared/types/enums';
 import { PAYMENT_PROVIDERS, PAYMENT_STATUSES } from '@/shared/types/payment.types';
 
 export const getPaymentMethodLabel = (paymentMethod: PaymentMethod) =>
-  paymentMethod === PAYMENT_METHODS.COD ? 'Cash on delivery' : 'Online payment';
+  paymentMethod === PAYMENT_METHODS.EXCHANGE
+    ? 'Exchange replacement'
+    : paymentMethod === PAYMENT_METHODS.COD
+      ? 'Cash on delivery'
+      : 'Online payment';
 
 export const getPaymentMethodNote = (paymentMethod: PaymentMethod) =>
   paymentMethod === PAYMENT_METHODS.ONLINE
@@ -27,6 +31,8 @@ export const getPaymentProviderLabel = (provider?: string | null) => {
 
 export const getPaymentStatusLabel = (status?: string | null) => {
   switch (status) {
+    case 'NOT_REQUIRED':
+      return 'No payment required';
     case PAYMENT_STATUSES.PAID:
       return 'Paid';
     case PAYMENT_STATUSES.FAILED:
