@@ -19,6 +19,7 @@ export type ProductSort = (typeof SORT_OPTIONS)[keyof typeof SORT_OPTIONS];
 export const PAYMENT_METHODS = {
   COD: 'COD',
   ONLINE: 'ONLINE',
+  EXCHANGE: 'EXCHANGE',
 } as const;
 
 export type PaymentMethod = (typeof PAYMENT_METHODS)[keyof typeof PAYMENT_METHODS];

@@ -36,11 +36,11 @@ export const OrderDetailPage = () => {
   const addToast = useUiStore((state) => state.addToast);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const orderQuery = useOrderDetail(orderId);
-  const paymentQuery = usePaymentLifecycle(orderId);
   const cancelOrder = useCancelOrder();
   const order = orderQuery.data;
   const shipmentQuery = useShipmentByOrderId(order?.id ?? '', orderQuery.isSuccess);
   const shipment = shipmentQuery.isSuccess && orderQuery.isSuccess ? shipmentQuery.data : null;
+  const paymentQuery = usePaymentLifecycle(orderId, Boolean(order) && order?.paymentMethod !== PAYMENT_METHODS.EXCHANGE);
   const onlinePaymentPending =
     order?.paymentMethod === PAYMENT_METHODS.ONLINE &&
     order.status === ORDER_STATUSES.AWAITING_PAYMENT &&
