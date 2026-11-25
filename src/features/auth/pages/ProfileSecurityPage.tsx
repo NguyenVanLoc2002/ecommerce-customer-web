@@ -1,6 +1,7 @@
 import { LogOut } from 'lucide-react';
 
 import { routes } from '@/constants/routes';
+import { CustomerSessions } from '@/features/auth/components/CustomerSessions';
 import { ChangePasswordForm } from '@/features/auth/components/ChangePasswordForm';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { AccountWorkspace } from '@/shared/components/layout/AccountWorkspace';
@@ -27,6 +28,7 @@ export const ProfileSecurityPage = () => {
           <h2 className="mb-5 text-lg font-semibold" id="change-password-title">Đổi mật khẩu</h2>
           <ChangePasswordForm />
         </section>
+        <CustomerSessions />
       </AccountWorkspace>
     </>
   );

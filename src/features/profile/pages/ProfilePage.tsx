@@ -3,11 +3,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 
 import { routes } from '@/constants/routes';
+import { EmailVerification } from '@/features/profile/components/EmailVerification';
 import { useProfile, useUpdateProfile } from '@/features/profile/hooks/useProfile';
 import { profileSchema, type ProfileSchemaInput } from '@/features/profile/services/profileSchemas';
 import { ErrorCard } from '@/shared/components/feedback/ErrorCard';
 import { EmptyState } from '@/shared/components/feedback/EmptyState';
 import { LoadingOverlay } from '@/shared/components/feedback/LoadingOverlay';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { AccountWorkspace } from '@/shared/components/layout/AccountWorkspace';
@@ -38,7 +40,7 @@ export const ProfilePage = () => {
   const updateProfile = useUpdateProfile();
   const [formError, setFormError] = useState<string | null>(null);
   const {
-    formState: { errors, isDirty, isSubmitting },
+    formState: { dirtyFields, errors, isDirty, isSubmitting },
     handleSubmit,
     register,
     reset,
@@ -48,7 +50,7 @@ export const ProfilePage = () => {
     defaultValues: profileDefaults,
   });
 
-  useUnsavedChangesPrompt(isDirty);
+  useUnsavedChangesPrompt(isDirty || Object.keys(dirtyFields).length > 0);
 
   useEffect(() => {
     if (!profileQuery.data) {
@@ -61,7 +63,7 @@ export const ProfilePage = () => {
       phoneNumber: profileQuery.data.phoneNumber,
       gender: profileQuery.data.gender ?? '',
       birthDate: profileQuery.data.birthDate ?? '',
-    });
+    }, { keepDirtyValues: true });
   }, [profileQuery.data, reset]);
 
   const onSubmit = handleSubmit(async (values) => {
@@ -126,7 +128,12 @@ export const ProfilePage = () => {
             <fieldset className="grid min-w-0 gap-6 sm:grid-cols-2" disabled={isSubmitting}>
               <Input aria-required="true" autoComplete="family-name" className="bg-surface-muted" error={errors.lastName?.message} label="Họ" {...register('lastName')} />
               <Input aria-required="true" autoComplete="given-name" className="bg-surface-muted" error={errors.firstName?.message} label="Tên" {...register('firstName')} />
-              <Input className="bg-surface-muted" hint="Email của tài khoản chỉ dùng để xem tại đây." label="Địa chỉ email" readOnly type="email" value={profile.email} />
+              <div>
+                <Input className="bg-surface-muted" hint="Email của tài khoản chỉ dùng để xem tại đây." label="Địa chỉ email" readOnly type="email" value={profile.email} />
+                <div aria-live="polite">
+                  {profile.emailVerified ? <Badge className="mt-2">Email đã xác thực</Badge> : null}
+                </div>
+              </div>
               <Input aria-required="true" autoComplete="tel" className="bg-surface-muted" error={errors.phoneNumber?.message} label="Số điện thoại" type="tel" {...register('phoneNumber')} />
               <fieldset className="min-w-0 max-w-md sm:col-span-2">
                 <legend className="mb-2 text-sm font-medium">Giới tính</legend>
@@ -162,6 +169,11 @@ export const ProfilePage = () => {
               </Button>
             </div>
           </form>
+        ) : null}
+        {profile && profile.emailVerified === false && !profileQuery.isError ? (
+          <div className="mt-5">
+            <EmailVerification email={profile.email} key={profile.email} />
+          </div>
         ) : null}
       </AccountWorkspace>
     </>

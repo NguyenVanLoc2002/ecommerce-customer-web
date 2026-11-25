@@ -9,6 +9,7 @@ export const GENDERS = {
 export type Gender = (typeof GENDERS)[keyof typeof GENDERS];
 
 export interface UserProfile extends AuthUser {
+  emailVerified?: boolean;
   gender?: Gender;
   birthDate?: string;
   createdAt?: string;
@@ -23,6 +24,7 @@ export interface ApiUserProfileResponse {
   status: string;
   roles: AuthUser['roles'];
   customerId: string | null;
+  emailVerified?: boolean;
   gender: Gender | null;
   birthDate: string | null;
   avatarUrl: string | null;
@@ -34,6 +36,7 @@ export interface UpdateProfileRequest {
   firstName?: string;
   lastName?: string;
   phoneNumber?: string;
+  emailVerified?: boolean;
   gender?: Gender;
   birthDate?: string;
 }

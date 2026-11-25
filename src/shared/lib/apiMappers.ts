@@ -97,6 +97,7 @@ export const toAuthResponse = (response: ApiAuthResponse, profile?: ApiUserProfi
 
 export const toUserProfile = (profile: ApiUserProfileResponse): UserProfile => ({
   ...toAuthUser(profile),
+  emailVerified: profile.emailVerified,
   gender: profile.gender ?? undefined,
   birthDate: profile.birthDate ?? undefined,
   createdAt: profile.createdAt,

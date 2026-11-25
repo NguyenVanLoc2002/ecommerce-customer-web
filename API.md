@@ -212,6 +212,13 @@ Rules:
   - send Bearer access token
   - on success, clear auth state and redirect the user to sign in again because the backend revokes refresh sessions
 
+### Email verification and device sessions
+
+- `POST /account/email-verification` sends a six-digit OTP to the authenticated customer's current email.
+- `POST /account/email-verification/confirm` takes `{ "otp": "123456" }`. After success, `GET /me` returns `emailVerified: true`. Both requests require CUSTOMER Bearer authentication.
+- `GET /auth/sessions` returns `id`, `userAgent`, `lastRefreshedAt`, `expiresAt` and `current`. Use credentials so the HttpOnly cookie can identify the current device.
+- `DELETE /auth/sessions/{sessionId}` revokes one other device. `DELETE /auth/sessions` revokes all other devices. Both require a matching active cookie and immediately block the revoked access and refresh tokens. Current-device logout uses the existing endpoint.
+- Older Backend versions may omit `emailVerified` and return 404 for the sessions route. Customer Web only shows the new controls when the corresponding contract is available.
 ## 7. Profile Endpoints
 
 ### `GET /me`
@@ -221,6 +228,7 @@ Rules:
   - `id`, `email`, `firstName`, `lastName`, `phoneNumber`
   - `status`, `roles`
   - `customerId`, `gender`, `birthDate`, `avatarUrl`, `loyaltyPoints`
+  - `emailVerified` when supported by the Backend
   - `createdAt`
 
 ### `PATCH /me`
