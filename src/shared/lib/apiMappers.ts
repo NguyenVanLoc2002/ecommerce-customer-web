@@ -293,7 +293,7 @@ const toOrderShippingAddress = (order: OrderResponse) => ({
   district: order.shippingDistrict,
   city: order.shippingCity,
   postalCode: order.shippingPostalCode ?? '',
-  addressType: 'HOME' as const,
+  addressType: 'SHIPPING' as const,
   isDefault: false,
   label: '',
   fullAddress: buildFullAddress({
@@ -360,7 +360,7 @@ export const toCommerceOrderFromListItem = (order: OrderListItemResponse): Comme
     district: '',
     city: '',
     postalCode: '',
-    addressType: 'HOME' as const,
+    addressType: 'SHIPPING' as const,
     isDefault: false,
     label: '',
     fullAddress: '',

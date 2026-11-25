@@ -1,164 +1,133 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+import { CheckCircle2, MapPin, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { MapPin, PencilLine, Phone, Plus, Trash2 } from 'lucide-react';
 
 import { routePaths, routes } from '@/constants/routes';
-import { useAddresses, useDeleteAddress } from '@/shared/hooks/useAddresses';
+import { DeleteAddressDialog } from '@/features/profile/components/DeleteAddressDialog';
+import { addressTypeLabels } from '@/features/profile/services/addressTypeLabels';
 import { EmptyState } from '@/shared/components/feedback/EmptyState';
 import { ErrorCard } from '@/shared/components/feedback/ErrorCard';
-import { ConfirmDialog } from '@/shared/components/overlays/ConfirmDialog';
-import { AccountShell } from '@/shared/components/layout/AccountShell';
-import { Container } from '@/shared/components/layout/Container';
+import { LoadingOverlay } from '@/shared/components/feedback/LoadingOverlay';
+import { AccountWorkspace } from '@/shared/components/layout/AccountWorkspace';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
+import { useAddresses, useUpdateAddress } from '@/shared/hooks/useAddresses';
 import { useUiStore } from '@/shared/stores/uiStore';
 import type { Address } from '@/shared/types/address.types';
-import { formatAddress } from '@/shared/utils/formatAddress';
-
-const cardActionClassName =
-  'inline-flex items-center gap-2 border-b border-transparent pb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-text-secondary transition-colors hover:border-border hover:text-text-primary';
+import { cn } from '@/shared/utils/cn';
 
 export const AddressBookPage = () => {
-  const addToast = useUiStore((state) => state.addToast);
   const addressesQuery = useAddresses();
-  const deleteAddress = useDeleteAddress();
+  const updateAddress = useUpdateAddress();
+  const addToast = useUiStore((state) => state.addToast);
   const [addressToDelete, setAddressToDelete] = useState<Address | null>(null);
+  const closeDelete = useCallback(() => setAddressToDelete(null), []);
   const addresses = addressesQuery.data ?? [];
+  const updatingDefault = updateAddress.isPending || addressesQuery.isFetching;
 
   return (
     <>
-      <PageSEO description="Manage saved delivery destinations for checkout and future orders." noIndex path={routes.profileAddresses} title="Address Book" />
-      <Container className="pb-16 pt-28 md:pb-20 md:pt-32">
-        <AccountShell
-          actions={
-            <Link className={buttonStyles({})} to={routePaths.profileAddressNew()}>
-              <Plus className="h-4 w-4" />
-              Add new address
-            </Link>
-          }
-          description="Quản lý địa chỉ nhận hàng và chọn địa chỉ mặc định cho lần thanh toán tiếp theo."
-          eyebrow="Tài khoản / Địa chỉ"
-          title="Sổ địa chỉ"
-        >
-          {addressesQuery.isLoading ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <div className="border border-border bg-surface px-5 py-6 md:px-6" key={index}>
-                  <div className="shimmer animate-shimmer space-y-4">
-                    <div className="h-5 w-28 bg-surface-soft" />
-                    <div className="h-10 w-40 bg-surface-soft" />
-                    <div className="h-4 w-full bg-surface-soft" />
-                    <div className="h-4 w-4/5 bg-surface-soft" />
-                    <div className="h-4 w-32 bg-surface-soft" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : null}
-          {addressesQuery.isError ? (
-            <ErrorCard
-              action={<Button onClick={() => void addressesQuery.refetch()}>Retry</Button>}
-              className="border-border bg-surface"
-              description="Your saved destinations could not be loaded from the active customer address source."
-              title="Address book unavailable"
-            />
-          ) : null}
-          {!addressesQuery.isLoading && !addressesQuery.isError && addresses.length === 0 ? (
-            <EmptyState
-              action={
-                <Link className={buttonStyles({})} to={routePaths.profileAddressNew()}>
-                  Add first address
-                </Link>
-              }
-              className="border-border bg-surface px-6 py-16"
-              description="Delivery destinations will appear here once you add one from the customer account."
-              title="No saved addresses yet."
-            />
-          ) : null}
-          {!addressesQuery.isLoading && !addressesQuery.isError && addresses.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              {addresses.map((address) => (
-                <article className="border border-border bg-surface p-5 transition-colors hover:border-brand-primary md:p-6" key={address.id}>
-                  <div className="flex items-start justify-between gap-4">
+      <PageSEO description="Quản lý địa chỉ nhận hàng đã lưu tại Fashion Shop." noIndex path={routes.profileAddresses} title="Sổ địa chỉ" />
+      <AccountWorkspace
+        actions={
+          <Link className={buttonStyles({ className: 'account-primary-action' })} to={routePaths.profileAddressNew()}>
+            <Plus aria-hidden="true" className="h-4 w-4" />
+            Thêm địa chỉ mới
+          </Link>
+        }
+        description="Quản lý địa chỉ nhận hàng và chọn địa chỉ mặc định cho lần thanh toán tiếp theo."
+        title="Sổ địa chỉ"
+      >
+        {addressesQuery.isLoading ? <LoadingOverlay className="min-h-[260px] border-border bg-surface" inline label="Đang tải sổ địa chỉ…" /> : null}
+        {addressesQuery.isError ? (
+          <ErrorCard
+            action={<Button onClick={() => void addressesQuery.refetch()}>Thử lại</Button>}
+            description="Vui lòng thử tải lại danh sách địa chỉ đã lưu."
+            title="Không thể tải sổ địa chỉ"
+          />
+        ) : null}
+        {addressesQuery.isSuccess && addresses.length === 0 ? (
+          <EmptyState
+            action={<Link className={buttonStyles({ className: 'account-primary-action' })} to={routePaths.profileAddressNew()}>Tạo địa chỉ đầu tiên</Link>}
+            description="Lưu địa chỉ nhận hàng để chọn nhanh khi thanh toán."
+            title="Bạn chưa lưu địa chỉ nào"
+          />
+        ) : null}
+        {updateAddress.isError ? <p className="mb-4 text-sm text-danger" role="alert">{updateAddress.error.message}</p> : null}
+        {addressesQuery.isSuccess && addresses.length > 0 ? (
+          <ul className="space-y-5">
+            {addresses.map((address) => (
+              <li key={address.id}>
+                <article className={cn(
+                  'overflow-hidden rounded-card border border-border bg-surface',
+                  address.isDefault && 'border-t-4 border-t-brand-primary',
+                )}>
+                  <div className="space-y-3 p-5 [overflow-wrap:anywhere] sm:p-6">
                     <div className="flex flex-wrap gap-2">
-                      {address.isDefault ? <Badge>Default</Badge> : null}
-                      <Badge tone="neutral">{address.addressType}</Badge>
+                      {address.isDefault ? (
+                        <span className="inline-flex min-h-6 items-center gap-1 rounded-chip bg-brand-primary px-2 text-xs font-medium text-white">
+                          <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5" /> Mặc định
+                        </span>
+                      ) : null}
+                      {address.label ? <Badge tone="neutral">{address.label}</Badge> : null}
+                      <Badge tone="neutral">{addressTypeLabels[address.addressType]}</Badge>
                     </div>
-                    <div className="flex flex-wrap items-center gap-4">
-                      <Link className={cardActionClassName} to={routePaths.profileAddressEdit(address.id)}>
-                        <PencilLine className="h-4 w-4" />
-                        Edit
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <h2 className="min-w-0 text-base font-semibold">{address.receiverName}</h2>
+                      <p className="text-sm text-text-secondary">{address.phoneNumber}</p>
+                    </div>
+                    <div className="space-y-1 text-sm leading-6 text-text-secondary">
+                      <p className="font-medium text-text-primary">{address.streetAddress}</p>
+                      <p>{[address.ward, address.district, address.city].filter(Boolean).join(', ')}</p>
+                      {address.postalCode ? <p className="text-xs">Mã bưu chính {address.postalCode}</p> : null}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 border-t border-border bg-surface-muted px-3 py-2 sm:px-5">
+                    {address.isDefault ? (
+                      <p className="flex min-h-11 items-center gap-2 px-2 text-xs text-brand-primary">
+                        <MapPin aria-hidden="true" className="h-4 w-4" /> Địa chỉ nhận hàng mặc định
+                      </p>
+                    ) : (
+                      <Button
+                        className="!text-sm !tracking-normal"
+                        disabled={updatingDefault}
+                        loading={updateAddress.isPending && updateAddress.variables?.addressId === address.id}
+                        onClick={() => updateAddress.mutate({ addressId: address.id, payload: { isDefault: true } }, {
+                          onSuccess: () => addToast({ tone: 'success', title: 'Đã cập nhật địa chỉ mặc định' }),
+                        })}
+                        variant="ghost"
+                      >
+                        Đặt làm mặc định
+                      </Button>
+                    )}
+                    <div className="flex items-center">
+                      <Link
+                        aria-label={`Chỉnh sửa địa chỉ của ${address.receiverName}`}
+                        className="inline-flex min-h-11 items-center rounded-button px-3 text-sm font-medium underline underline-offset-4"
+                        to={routePaths.profileAddressEdit(address.id)}
+                      >
+                        Chỉnh sửa
                       </Link>
-                      <button className={cardActionClassName} onClick={() => setAddressToDelete(address)} type="button">
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                      </button>
+                      <Button
+                        aria-label={`Xóa địa chỉ của ${address.receiverName}`}
+                        className="!text-danger !text-sm !tracking-normal"
+                        disabled={updateAddress.isPending}
+                        onClick={() => setAddressToDelete(address)}
+                        variant="ghost"
+                      >
+                        Xóa
+                      </Button>
                     </div>
-                  </div>
-
-                  <div className="mt-6">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">{address.label || 'Saved location'}</p>
-                    <h2 className="mt-3 text-xl font-semibold leading-snug text-text-primary">{address.receiverName}</h2>
-                    <p className="mt-4 text-sm leading-7 text-text-secondary">{formatAddress(address)}</p>
-                  </div>
-
-                  <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-border pt-4 text-sm text-text-secondary">
-                    <Phone className="h-4 w-4" />
-                    <span>{address.phoneNumber}</span>
                   </div>
                 </article>
-              ))}
-
-              <Link
-                className="flex min-h-[220px] flex-col items-center justify-center gap-4 border border-dashed border-border bg-surface-muted px-6 py-8 text-center transition-colors hover:border-brand-primary hover:bg-surface"
-                to={routePaths.profileAddressNew()}
-              >
-                <span className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-border bg-surface">
-                  <MapPin className="h-5 w-5" />
-                </span>
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Register new</p>
-                  <h2 className="mt-3 text-lg font-semibold leading-snug text-text-primary">Thêm địa chỉ nhận hàng</h2>
-                </div>
-              </Link>
-            </div>
-          ) : null}
-        </AccountShell>
-      </Container>
-
-      <ConfirmDialog
-        cancelLabel="Keep address"
-        confirmLabel={deleteAddress.isPending ? 'Deleting...' : 'Delete address'}
-        description="This removes the saved destination from your customer address book. Checkout selections will need a new address if this one was active."
-        onClose={() => setAddressToDelete(null)}
-        onConfirm={() => {
-          if (!addressToDelete) {
-            return;
-          }
-
-          deleteAddress.mutate(addressToDelete.id, {
-            onSuccess: () => {
-              addToast({
-                tone: 'success',
-                title: 'Address deleted',
-                description: `${addressToDelete.receiverName}'s destination was removed.`,
-              });
-              setAddressToDelete(null);
-            },
-            onError: (error) => {
-              addToast({
-                tone: 'danger',
-                title: 'Address delete failed',
-                description: error instanceof Error ? error.message : 'Try again.',
-              });
-            },
-          });
-        }}
-        open={Boolean(addressToDelete)}
-        title="Delete this address?"
-      />
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </AccountWorkspace>
+      {addressToDelete ? <DeleteAddressDialog address={addressToDelete} onClose={closeDelete} /> : null}
     </>
   );
 };

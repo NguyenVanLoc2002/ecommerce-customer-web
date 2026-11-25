@@ -18,6 +18,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   const transactionVariant = variant === 'transaction';
   const generatedId = useId();
   const fieldId = id ?? generatedId;
+  const labelId = fieldId + '-label';
   const messageId = `${fieldId}-message`;
   const describedBy = [props['aria-describedby'], error || hint ? messageId : undefined].filter(Boolean).join(' ') || undefined;
 
@@ -29,6 +30,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             ? 'text-xs font-medium text-text-secondary'
             : 'text-sm font-medium',
         )}
+        id={labelId}
       >
         {label}
       </span>
@@ -36,6 +38,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         {...props}
         aria-describedby={describedBy}
         aria-invalid={error ? true : props['aria-invalid']}
+        aria-labelledby={props['aria-labelledby'] ?? (props['aria-label'] ? undefined : labelId)}
         className={cn(
           'min-h-11 rounded-input border bg-surface px-3 text-base text-text-primary transition-colors duration-200 placeholder:text-text-secondary/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-text-secondary disabled:opacity-70',
           error ? 'border-danger' : 'border-border hover:border-outline',

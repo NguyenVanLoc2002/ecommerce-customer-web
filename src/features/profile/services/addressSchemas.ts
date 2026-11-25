@@ -10,7 +10,7 @@ export const addressSchema = z.object({
   district: z.string().trim().min(2, 'District must be at least 2 characters.').max(100, 'District must be at most 100 characters.'),
   city: z.string().trim().min(2, 'City must be at least 2 characters.').max(100, 'City must be at most 100 characters.'),
   postalCode: z.string().trim().max(20, 'Postal code must be at most 20 characters.'),
-  addressType: z.enum([ADDRESS_TYPES.HOME, ADDRESS_TYPES.OFFICE]),
+  addressType: z.enum([ADDRESS_TYPES.SHIPPING, ADDRESS_TYPES.BILLING, ADDRESS_TYPES.BOTH]),
   isDefault: z.boolean(),
   label: z.string().trim().max(50, 'Label must be at most 50 characters.'),
 });
