@@ -19,7 +19,7 @@ export const StickyCartBar = ({ compareAtPrice, disabled = false, label = 'Add t
   return (
     <motion.div
       animate={{ y: 0, opacity: 1 }}
-      className="fixed inset-x-0 bottom-16 z-30 border-t border-border bg-canvas/95 px-page py-3 shadow-subtle backdrop-blur-sm lg:hidden"
+      className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t border-border bg-canvas/95 px-page py-3 shadow-subtle backdrop-blur-sm lg:hidden"
       initial={{ y: reducedMotion ? 0 : 48, opacity: reducedMotion ? 1 : 0 }}
       transition={reducedMotion ? { duration: 0 } : { duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
     >

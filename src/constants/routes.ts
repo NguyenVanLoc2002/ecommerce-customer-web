@@ -48,7 +48,10 @@ const withQuery = (path: string, params: Record<string, string | undefined>) => 
   return query ? `${path}?${query}` : path;
 };
 
+export const catalogSearchId = 'catalog-keyword';
+
 export const routePaths = {
+  productSearch: () => `${routes.products}#${catalogSearchId}`,
   productDetail: (slug: string) => `/products/${slug}`,
   checkoutAddress: (selectedAddressId?: string) =>
     withQuery(routes.checkoutAddress, { selectedAddressId }),

@@ -75,7 +75,7 @@
 
   :focus-visible {
     outline: 2px solid rgb(var(--color-brand-primary));
-    outline-offset: 2px;
+    outline-offset: 3px;
   }
 
   ::selection {

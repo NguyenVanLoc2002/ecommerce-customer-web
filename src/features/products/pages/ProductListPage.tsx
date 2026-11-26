@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 
-import { routePaths, routes } from '@/constants/routes';
+import { catalogSearchId, routePaths, routes } from '@/constants/routes';
 import { useBrands, useCategories, useProductList } from '@/features/products/hooks/useProductDiscovery';
 import { ActiveFilterChips } from '@/shared/components/catalog/ActiveFilterChips';
 import { FilterPanel } from '@/shared/components/catalog/FilterPanel';
@@ -32,6 +32,14 @@ const EMPTY_CATEGORIES: Category[] = [];
 const EMPTY_BRANDS: Brand[] = [];
 
 export const ProductListPage = () => {
+  const { hash, key } = useLocation();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (hash !== `#${catalogSearchId}`) return;
+    searchInputRef.current?.focus();
+  }, [hash, key]);
+
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const filters = useMemo(() => getProductListQueryFromSearchParams(searchParams), [searchParams]);
@@ -135,24 +143,24 @@ export const ProductListPage = () => {
           }}
         />
       ) : null}
-      <PageWrapper className="pb-20">
+      <PageWrapper className="pb-20 pt-[68px] lg:pt-24">
         <Container>
-          <nav aria-label="Điều hướng breadcrumb" className="mb-8 flex items-center gap-2 text-sm text-text-secondary">
+          <nav aria-label="Điều hướng breadcrumb" className="mb-5 flex items-center gap-2 text-xs lg:mb-8 lg:text-sm text-text-secondary">
             <Link className="hover:text-text-primary" to={routes.home}>Trang chủ</Link>
             <span aria-hidden="true">/</span>
             <span aria-current="page" className="font-medium text-text-primary">Sản phẩm</span>
           </nav>
 
-          <header className="mb-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.55fr)] lg:items-end">
+          <header className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-end">
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-text-secondary">Bộ sưu tập chọn lọc</p>
-              <h1 className="max-w-[30ch] text-3xl font-semibold leading-tight text-text-primary lg:text-[2.5rem] lg:leading-[1.25]">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wider text-text-secondary">Bộ sưu tập chọn lọc</p>
+              <h1 className="max-w-[30ch] text-2xl font-medium leading-tight tracking-tight text-text-primary lg:text-4xl lg:leading-[1.25]">
                 {selectedCategory?.name ?? 'Những món đồ bạn sẽ mặc mãi.'}
               </h1>
               {selectedCategory?.description ? <p className="mt-3 max-w-2xl text-base leading-7 text-text-secondary">{selectedCategory.description}</p> : null}
             </div>
             <form
-              className="flex min-h-12 items-center gap-3 border border-border bg-surface px-4 focus-within:border-brand-primary focus-within:ring-2 focus-within:ring-brand-primary/20"
+              className="flex min-h-11 items-center gap-3 rounded-card bg-surface px-4 focus-within:border-brand-primary focus-within:ring-2 focus-within:ring-brand-primary/20"
               onSubmit={(event) => {
                 event.preventDefault();
                 updateFilter('keyword', keywordDraft);
@@ -160,11 +168,12 @@ export const ProductListPage = () => {
               role="search"
             >
               <Search aria-hidden="true" className="h-5 w-5 shrink-0 text-text-secondary" />
-              <label className="sr-only" htmlFor="catalog-keyword">Tìm theo tên sản phẩm</label>
+              <label className="sr-only" htmlFor={catalogSearchId}>Tìm theo tên sản phẩm</label>
               <input
                 autoComplete="off"
-                className="min-w-0 flex-1 bg-transparent py-3 text-base text-text-primary outline-none placeholder:text-text-secondary"
-                id="catalog-keyword"
+                className="min-w-0 flex-1 scroll-mt-24 bg-transparent py-3 text-base text-text-primary outline-none placeholder:text-text-secondary"
+                id={catalogSearchId}
+                ref={searchInputRef}
                 onChange={(event) => setKeywordDraft(event.target.value)}
                 placeholder="Tìm theo tên sản phẩm"
                 type="search"
@@ -174,9 +183,14 @@ export const ProductListPage = () => {
             </form>
           </header>
 
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-4 bg-surface-muted px-4 py-4 md:px-6">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-card bg-surface-muted px-4 py-2 lg:mb-16">
             <ActiveFilterChips chips={activeChips} onClear={clearFilters} onRemove={removeChip} />
-            <div className="ml-auto flex items-center gap-4">
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-3">
+              {productsQuery.data ? (
+                <p className="hidden border-r border-border pr-4 text-sm text-text-secondary lg:block">
+                  Hiển thị <strong className="font-semibold text-text-primary">{productsQuery.data.totalItems}</strong> sản phẩm
+                </p>
+              ) : null}
               <Button aria-expanded={drawerOpen} className="lg:hidden" onClick={() => setDrawerOpen(true)} variant="secondary">
                 <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
                 Bộ lọc{activeChips.length ? ` (${activeChips.length})` : ''}
@@ -185,9 +199,9 @@ export const ProductListPage = () => {
             </div>
           </div>
 
-          <div className="grid gap-8 lg:grid-cols-[240px_minmax(0,1fr)] xl:gap-12">
+          <div className="grid gap-8 lg:grid-cols-[224px_minmax(0,1fr)] xl:gap-10">
             <aside className="hidden lg:block">
-              <div className="sticky top-28 border border-border bg-surface p-5">
+              <div className="sticky top-24 rounded-card bg-surface p-5">
                 <FilterPanel
                   brands={brands}
                   categories={categories}
@@ -225,9 +239,9 @@ export const ProductListPage = () => {
               ) : null}
 
               {productsQuery.data && productsQuery.data.items.length > 0 ? (
-                <div className="space-y-8">
-                  <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-text-secondary">
-                    <p>
+                <div className="space-y-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-text-secondary lg:contents">
+                    <p className="lg:sr-only">
                       Hiển thị {(productsQuery.data.page * productsQuery.data.size) + 1}–{Math.min((productsQuery.data.page + 1) * productsQuery.data.size, productsQuery.data.totalItems)} trong {productsQuery.data.totalItems} sản phẩm
                     </p>
                     {productsQuery.isFetching && !productsQuery.isLoading ? <p role="status">Đang cập nhật kết quả…</p> : null}

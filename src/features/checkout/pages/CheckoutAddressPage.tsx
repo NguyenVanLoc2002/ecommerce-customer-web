@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { MapPin, Pencil, Plus } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
@@ -83,9 +84,14 @@ export const CheckoutAddressPage = () => {
         <CheckoutStepper currentStep="address" />
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-8">
           <section className="space-y-6">
-            <div className="space-y-2 border-b border-border pb-4">
-              <h1 className="text-xl font-medium tracking-tight text-text-primary md:text-3xl">Địa chỉ giao hàng</h1>
-              <p className="max-w-2xl text-sm leading-7 text-text-secondary">
+            <div className="flex flex-wrap items-center justify-between gap-2 md:block md:space-y-2 md:border-b md:border-border md:pb-4">
+              <h1 className="flex items-center gap-2 text-base font-semibold uppercase tracking-wide md:text-3xl md:font-medium md:normal-case md:tracking-tight">
+                <MapPin aria-hidden="true" className="size-4 md:hidden" />
+                <span className="md:hidden">Địa chỉ nhận hàng</span>
+                <span className="hidden md:inline">Địa chỉ giao hàng</span>
+              </h1>
+              {addressesQuery.data ? <p className="text-xs text-text-secondary md:hidden">{addressesQuery.data.length} địa chỉ lưu</p> : null}
+              <p className="hidden max-w-2xl text-sm leading-7 text-text-secondary md:block">
                 Chọn địa chỉ nhận hàng và đơn vị vận chuyển.
               </p>
             </div>
@@ -106,31 +112,32 @@ export const CheckoutAddressPage = () => {
 
                 return (
                   <article
-                    className={`border p-5 transition-colors md:p-6 ${
-                      selected ? 'border-text-primary bg-surface' : 'border-border bg-surface hover:border-text-primary'
+                    className={`rounded-feature border p-4 transition-colors md:rounded-none md:p-6 ${
+                      selected ? 'border-brand-primary bg-surface' : 'border-border bg-surface hover:border-text-primary'
                     }`}
                     key={address.id}
                   >
-                    <div className="flex items-start justify-between gap-5">
-                      <button className="flex flex-1 items-start gap-4 text-left" onClick={() => setShippingAddressId(address.id)} type="button">
-                        <span className={`mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full border ${selected ? 'border-text-primary' : 'border-border'}`}>
+                    <div className="flex flex-col items-start justify-between gap-2 md:flex-row md:gap-5">
+                      <button aria-pressed={selected} className="flex min-h-11 flex-1 items-start gap-3 text-left" onClick={() => setShippingAddressId(address.id)} type="button">
+                        <span aria-hidden="true" className={`mt-1 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-text-primary' : 'border-border'}`}>
                           <span className={`h-2 w-2 rounded-full ${selected ? 'bg-text-primary' : 'bg-transparent'}`} />
                         </span>
                         <div>
                           <div className="flex flex-wrap items-center gap-3">
-                            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">{address.label}</p>
-                            {address.isDefault ? <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary">Default</span> : null}
+                            <p className="text-xs font-medium text-text-secondary">{address.label}</p>
+                            {address.isDefault ? <span className="rounded-chip bg-brand-subtle px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-primary">Mặc định</span> : null}
                           </div>
                           <h2 className="mt-2 text-base font-semibold leading-snug text-text-primary">{address.receiverName}</h2>
-                          <p className="mt-3 text-sm uppercase tracking-[0.08em] text-text-secondary">{address.phoneNumber}</p>
-                          <p className="mt-3 max-w-xl text-sm leading-7 text-text-secondary">{formatAddress(address)}</p>
+                          <p className="mt-1 text-sm text-text-secondary">{address.phoneNumber}</p>
+                          <p className="mt-1 max-w-xl text-sm leading-6 text-text-secondary">{formatAddress(address)}</p>
                         </div>
                       </button>
-                      <div className="hidden shrink-0 md:flex">
+                      <div className="ml-7 shrink-0 md:ml-0">
                         <Link
-                          className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline transition-colors hover:text-text-primary"
+                          className="inline-flex min-h-11 items-center gap-1.5 text-xs font-medium text-text-secondary transition-colors hover:text-brand-primary"
                           to={routePaths.profileAddressEdit(address.id, 'checkout')}
                         >
+                          <Pencil aria-hidden="true" className="size-3.5" />
                           Chỉnh sửa
                         </Link>
                       </div>
@@ -139,10 +146,11 @@ export const CheckoutAddressPage = () => {
                 );
               })}
               <Link
-                className="flex min-h-[132px] items-center justify-center border border-dashed border-border px-5 py-8 text-center text-[11px] font-bold uppercase tracking-[0.22em] text-text-primary transition-colors hover:border-text-primary"
+                className="flex min-h-11 items-center justify-center gap-2 rounded-feature bg-surface-muted px-4 text-center text-sm font-medium text-text-primary transition-colors hover:bg-surface-soft md:rounded-none md:border md:border-dashed md:border-border md:bg-transparent md:py-4"
                 to={routePaths.profileAddressNew('checkout')}
               >
-                Thêm địa chỉ mới
+                <Plus aria-hidden="true" className="size-4" />
+                Thêm địa chỉ giao hàng mới
               </Link>
             </div>
             {selectedAddressId ? (
