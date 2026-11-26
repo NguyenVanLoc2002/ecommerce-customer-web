@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useEffect, useId, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Clock3 } from 'lucide-react';
 
+import { AuthError } from './AuthError';
+import { AuthSubmit } from './AuthSubmit';
+import { useAuthAction } from '@/features/auth/hooks/useAuthAction';
 import { useForgotPassword } from '@/features/auth/hooks/useForgotPassword';
 import { useVerifyForgotPasswordOtp } from '@/features/auth/hooks/useVerifyForgotPasswordOtp';
+import { applyAuthFormErrors, authErrorMessage } from '@/features/auth/lib/authFormErrors';
 import { verifyForgotPasswordOtpSchema, type VerifyForgotPasswordOtpSchemaInput } from '@/features/auth/services/authSchemas';
-import { Button } from '@/shared/components/ui/Button';
-import { Input } from '@/shared/components/ui/Input';
+import { cn } from '@/shared/utils/cn';
 import type { ServiceError } from '@/shared/lib/serviceError';
 import { useUiStore } from '@/shared/stores/uiStore';
 import type { VerifyForgotPasswordOtpResponse } from '@/shared/types/auth.types';
@@ -18,123 +22,98 @@ type VerifyOtpFormProps = {
   onSuccess: (response: VerifyForgotPasswordOtpResponse) => void;
 };
 
-const formatCooldown = (seconds: number) => {
-  const minutes = Math.floor(seconds / 60)
-    .toString()
-    .padStart(2, '0');
-  const remainingSeconds = (seconds % 60).toString().padStart(2, '0');
-
-  return `${minutes}:${remainingSeconds}`;
-};
+const formatCooldown = (seconds: number) =>
+  `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 
 export const VerifyOtpForm = ({ email, onSuccess }: VerifyOtpFormProps) => {
   const addToast = useUiStore((state) => state.addToast);
+  const inputId = useId();
+  const runAction = useAuthAction();
   const [formError, setFormError] = useState<string | null>(null);
   const [cooldownSeconds, setCooldownSeconds] = useState(resendCooldownSeconds);
   const resendOtp = useForgotPassword();
   const verifyOtp = useVerifyForgotPasswordOtp();
-  const {
-    formState: { errors },
-    handleSubmit,
-    register,
-    setError,
-  } = useForm<VerifyForgotPasswordOtpSchemaInput>({
+  const { control, formState: { errors }, handleSubmit, register, setError } = useForm<VerifyForgotPasswordOtpSchemaInput>({
     resolver: zodResolver(verifyForgotPasswordOtpSchema),
-    defaultValues: {
-      otp: '',
-    },
+    defaultValues: { otp: '' },
   });
+  const otp = useWatch({ control, name: 'otp' });
+  const busy = resendOtp.isPending || verifyOtp.isPending;
 
   useEffect(() => {
-    if (cooldownSeconds <= 0) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      setCooldownSeconds((current) => current - 1);
-    }, 1000);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
+    if (cooldownSeconds <= 0) return;
+    const timer = window.setTimeout(() => setCooldownSeconds((current) => current - 1), 1000);
+    return () => window.clearTimeout(timer);
   }, [cooldownSeconds]);
 
-  const onSubmit = handleSubmit(async (values) => {
+  const onSubmit = handleSubmit((values) => runAction(async () => {
     setFormError(null);
-
     try {
-      const response = await verifyOtp.mutateAsync({
-        email,
-        otp: values.otp.trim(),
-      });
+      const response = await verifyOtp.mutateAsync({ email, otp: values.otp.trim() });
       onSuccess(response);
     } catch (error) {
-      const serviceError = error as ServiceError;
-      if (serviceError.fieldErrors) {
-        Object.entries(serviceError.fieldErrors).forEach(([field, message]) => {
-          setError(field as keyof VerifyForgotPasswordOtpSchemaInput, { message });
-        });
-      }
-      setFormError(serviceError.message);
+      setFormError(applyAuthFormErrors(error as ServiceError, setError));
     }
-  });
+  }));
 
-  const handleResendOtp = async () => {
+  const handleResendOtp = () => runAction(async () => {
     setFormError(null);
-
     try {
       await resendOtp.mutateAsync({ email });
       setCooldownSeconds(resendCooldownSeconds);
       addToast({
         tone: 'info',
-        title: 'Verification code sent',
-        description: 'If the email exists, a new verification code has been sent.',
+        title: 'Đã yêu cầu mã mới',
+        description: 'Nếu email đã đăng ký, mã xác thực mới sẽ được gửi đến địa chỉ này.',
       });
     } catch (error) {
-      setFormError((error as ServiceError).message);
+      setFormError(authErrorMessage(error as ServiceError));
     }
-  };
-
-  const isSubmitting = verifyOtp.isPending;
-  const isResending = resendOtp.isPending;
+  });
 
   return (
-    <form className="space-y-8" onSubmit={onSubmit}>
-      <div className="border border-border bg-surface px-5 py-5">
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Email</p>
-        <p className="mt-3 text-sm leading-7 text-text-primary">{email}</p>
-        <p className="mt-2 text-sm leading-7 text-text-secondary">
-          Enter the 6-digit verification code sent to this inbox to continue the password reset flow.
-        </p>
+    <form className="space-y-5" noValidate onSubmit={onSubmit}>
+      <AuthError message={formError} />
+      <div>
+        <label className="mb-2 block text-xs font-medium text-text-primary sm:sr-only" htmlFor={inputId}>Mã xác thực 6 chữ số</label>
+        <div className="relative">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 hidden grid-cols-6 gap-2 sm:grid">
+            {Array.from({ length: 6 }, (_, index) => (
+              <span className={cn('grid place-items-center rounded-input border bg-surface-muted text-xl font-semibold', errors.otp && 'border-danger')} key={index}>
+                {otp[index]}
+              </span>
+            ))}
+          </div>
+          <input
+            aria-describedby={errors.otp ? `${inputId}-error` : undefined}
+            aria-invalid={errors.otp ? true : undefined}
+            autoComplete="one-time-code"
+            className={cn(
+              'relative block h-12 w-full rounded-input border bg-surface-muted px-3 text-base placeholder:text-text-secondary/70 sm:h-14 sm:border-transparent sm:bg-transparent sm:text-transparent sm:caret-transparent sm:placeholder:text-transparent',
+              errors.otp && 'border-danger',
+            )}
+            disabled={busy}
+            id={inputId}
+            inputMode="numeric"
+            maxLength={6}
+            pattern="[0-9]*"
+            placeholder="Nhập 6 chữ số"
+            required
+            {...register('otp')}
+          />
+        </div>
+        {errors.otp && <p className="mt-1.5 text-xs text-danger" id={`${inputId}-error`} role="alert">{errors.otp.message}</p>}
       </div>
-
-      <Input
-        autoComplete="one-time-code"
-        disabled={isSubmitting}
-        error={errors.otp?.message}
-        inputMode="numeric"
-        label="Verification code"
-        maxLength={6}
-        pattern="[0-9]*"
-        placeholder="123456"
-        variant="auth"
-        {...register('otp')}
-      />
-
-      <div className="flex flex-col gap-3 border-t border-black/5 pt-6 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-text-secondary">
-          {cooldownSeconds > 0 ? `Resend available in ${formatCooldown(cooldownSeconds)}.` : 'Need another code?'}
-        </p>
-        <Button disabled={cooldownSeconds > 0 || isResending || isSubmitting} type="button" variant="ghost" onClick={() => void handleResendOtp()}>
-          {isResending ? 'Sending...' : 'Resend code'}
-        </Button>
+      <div className="flex flex-wrap items-center justify-between gap-x-2 text-xs text-text-secondary">
+        <span className="inline-flex items-center gap-1.5">
+          <Clock3 aria-hidden="true" className="size-4 text-brand-primary" />
+          {cooldownSeconds > 0 ? `Gửi lại sau ${formatCooldown(cooldownSeconds)}` : 'Bạn chưa nhận được mã?'}
+        </span>
+        <button className="min-h-11 font-medium text-brand-primary underline-offset-4 hover:underline disabled:text-text-secondary disabled:no-underline" disabled={cooldownSeconds > 0 || busy} onClick={() => void handleResendOtp()} type="button">
+          {resendOtp.isPending ? 'Đang gửi mã…' : 'Gửi lại mã OTP'}
+        </button>
       </div>
-
-      {formError ? <p className="text-sm text-danger">{formError}</p> : null}
-
-      <Button disabled={isSubmitting || isResending} fullWidth size="lg" type="submit">
-        {isSubmitting ? 'Verifying...' : 'Verify code'}
-      </Button>
+      <AuthSubmit busy={verifyOtp.isPending} disabled={resendOtp.isPending} label="Xác nhận mã OTP" pending="Đang xác thực…" />
     </form>
   );
 };

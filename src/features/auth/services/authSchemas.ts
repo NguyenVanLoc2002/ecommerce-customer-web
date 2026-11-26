@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const passwordPolicyMessage = 'Use 8-64 characters with at least one lowercase letter, one uppercase letter, and one number.';
+export const passwordPolicyMessage = 'Use 8-64 characters with at least one lowercase letter, one uppercase letter, and one number.';
 const passwordPolicyPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,64}$/;
 
 export const passwordSchema = z
@@ -10,42 +10,42 @@ export const passwordSchema = z
   .regex(passwordPolicyPattern, passwordPolicyMessage);
 
 export const loginSchema = z.object({
-  email: z.string().email('Enter a valid email address.'),
-  password: z.string().min(8, 'Password must be at least 8 characters.'),
+  email: z.string().email('Nhập địa chỉ email hợp lệ.'),
+  password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự.'),
 });
 
 export const registerSchema = loginSchema.extend({
-  firstName: z.string().min(2, 'First name must be at least 2 characters.'),
+  firstName: z.string().min(2, 'Tên phải có ít nhất 2 ký tự.'),
   lastName: z
     .string()
     .trim()
-    .max(100, 'Last name must be at most 100 characters.')
+    .max(100, 'Họ và tên đệm tối đa 100 ký tự.')
     .optional()
     .or(z.literal('')),
   phoneNumber: z
     .string()
     .trim()
-    .max(15, 'Phone number must be at most 15 digits.')
+    .max(15, 'Số điện thoại tối đa 15 chữ số.')
     .optional()
     .or(z.literal('')),
   password: passwordSchema,
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().trim().email('Enter a valid email address.'),
+  email: z.string().trim().email('Nhập địa chỉ email hợp lệ.'),
 });
 
 export const verifyForgotPasswordOtpSchema = z.object({
-  otp: z.string().trim().regex(/^\d{6}$/, 'Enter the 6-digit verification code.'),
+  otp: z.string().trim().regex(/^\d{6}$/, 'Nhập mã xác thực gồm 6 chữ số.'),
 });
 
 export const resetPasswordSchema = z
   .object({
     newPassword: passwordSchema,
-    confirmPassword: z.string().min(1, 'Confirm your new password.'),
+    confirmPassword: z.string().min(1, 'Xác nhận mật khẩu mới của bạn.'),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'The password confirmation does not match.',
+    message: 'Mật khẩu xác nhận không khớp.',
     path: ['confirmPassword'],
   });
 

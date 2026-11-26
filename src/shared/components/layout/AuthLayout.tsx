@@ -1,27 +1,47 @@
-import { Link, Outlet } from 'react-router-dom';
+import { ArrowLeft, UserRound } from 'lucide-react';
+import { Link, NavLink, Outlet, useSearchParams } from 'react-router-dom';
 
-import { routes } from '@/constants/routes';
-import { Container } from '@/shared/components/layout/Container';
+import { routePaths, routes } from '@/constants/routes';
 
-export const AuthLayout = () => (
-  <div className="auth-shell-bg flex min-h-screen flex-col">
-    <header className="border-b border-border">
-      <Container className="flex min-h-16 items-center justify-between py-3">
-        <Link className="text-sm font-semibold tracking-[0.12em] text-text-primary" to={routes.home}>
-          FASHION SHOP
-        </Link>
-        <Link className="text-sm text-text-secondary underline-offset-4 hover:text-text-primary hover:underline" to={routes.home}>
-          Quay lại cửa hàng
-        </Link>
-      </Container>
-    </header>
-    <main className="flex flex-1 items-center justify-center px-page py-10 md:py-16">
-      <section className="w-full max-w-md border border-border bg-surface px-6 py-8 sm:px-8 md:px-10 md:py-10">
+const navClass = ({ isActive }: { isActive: boolean }) =>
+  `inline-flex min-h-11 items-center px-2 text-sm underline-offset-8 hover:underline ${isActive ? 'font-semibold underline' : 'text-text-secondary'}`;
+
+export const AuthLayout = () => {
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect') ?? undefined;
+
+  return (
+    <div className="auth-shell-bg flex min-h-screen flex-col">
+      <header className="bg-canvas shadow-subtle">
+        <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-x-3 px-4 sm:min-h-20 sm:px-6 lg:px-12">
+          <Link className="inline-flex min-h-11 items-center text-sm font-semibold tracking-[0.24em] sm:text-lg" to={routes.home}>
+            FASHION SHOP
+          </Link>
+          <div className="flex items-center gap-2 sm:gap-6">
+            <nav aria-label="Tài khoản" className="hidden items-center sm:flex">
+              <NavLink className={navClass} to={routePaths.loginRedirect(redirect)}>Đăng nhập</NavLink>
+              <span aria-hidden="true" className="text-xs text-outline">/</span>
+              <NavLink className={navClass} to={routePaths.registerRedirect(redirect)}>Đăng ký</NavLink>
+            </nav>
+            <Link className="inline-flex min-h-11 items-center gap-2 text-xs font-medium text-brand-primary underline-offset-4 hover:underline sm:uppercase sm:tracking-wider" to={routes.home}>
+              <ArrowLeft aria-hidden="true" className="size-4" />
+              <span className="sm:hidden">Cửa hàng</span>
+              <span className="hidden sm:inline">Quay lại cửa hàng</span>
+            </Link>
+            <span aria-hidden="true" className="hidden size-8 place-items-center rounded-full bg-text-primary text-surface sm:grid">
+              <UserRound className="size-4" />
+            </span>
+          </div>
+        </div>
+      </header>
+      <main className="flex flex-1 flex-col items-center px-5 py-8 md:px-8 md:py-16">
         <Outlet />
-      </section>
-    </main>
-    <footer className="border-t border-border py-5 text-center text-xs text-text-secondary">
-      <Container>© {new Date().getFullYear()} Fashion Shop</Container>
-    </footer>
-  </div>
-);
+      </main>
+      <footer className="bg-surface-muted py-6 text-center text-xs text-text-secondary sm:py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 sm:text-left lg:px-12">
+          © {new Date().getFullYear()} Fashion Shop. Bảo lưu mọi quyền.
+        </div>
+      </footer>
+    </div>
+  );
+};
