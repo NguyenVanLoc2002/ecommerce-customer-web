@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/constants/queryKeys';
 import { notificationService } from '@/shared/services/notificationService';
 import { useAuthStore } from '@/shared/stores/authStore';
-import type { Notification } from '@/shared/types/notification.types';
+import type { Notification, UnreadCountResponse } from '@/shared/types/notification.types';
 
 type NotificationListCache = {
   items: Notification[];
@@ -46,7 +46,7 @@ export const useMarkNotificationRead = () => {
       await queryClient.cancelQueries({ queryKey: queryKeys.notifications.unreadCount });
 
       const previousNotifications = queryClient.getQueryData<NotificationListCache>(queryKeys.notifications.list);
-      const previousUnreadCount = queryClient.getQueryData<number>(queryKeys.notifications.unreadCount);
+      const previousUnreadCount = queryClient.getQueryData<UnreadCountResponse>(queryKeys.notifications.unreadCount);
       const target = previousNotifications?.items.find((notification) => notification.id === notificationId);
 
       if (previousNotifications && target && !target.read) {
@@ -60,10 +60,11 @@ export const useMarkNotificationRead = () => {
           ...previousNotifications,
           items: nextNotifications,
         });
-        queryClient.setQueryData(
-          queryKeys.notifications.unreadCount,
-          Math.max((previousUnreadCount ?? previousNotifications.items.filter((notification) => !notification.read).length) - 1, 0),
-        );
+        if (previousUnreadCount) {
+          queryClient.setQueryData<UnreadCountResponse>(queryKeys.notifications.unreadCount, {
+            count: Math.max(previousUnreadCount.count - 1, 0),
+          });
+        }
       }
 
       return {
@@ -76,14 +77,15 @@ export const useMarkNotificationRead = () => {
         queryClient.setQueryData(queryKeys.notifications.list, context.previousNotifications);
       }
 
-      if (typeof context?.previousUnreadCount === 'number') {
+      if (context?.previousUnreadCount) {
         queryClient.setQueryData(queryKeys.notifications.unreadCount, context.previousUnreadCount);
       }
     },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount });
-    },
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount }),
+      ]),
   });
 };
 
@@ -97,7 +99,7 @@ export const useMarkAllNotificationsRead = () => {
       await queryClient.cancelQueries({ queryKey: queryKeys.notifications.unreadCount });
 
       const previousNotifications = queryClient.getQueryData<NotificationListCache>(queryKeys.notifications.list);
-      const previousUnreadCount = queryClient.getQueryData<number>(queryKeys.notifications.unreadCount);
+      const previousUnreadCount = queryClient.getQueryData<UnreadCountResponse>(queryKeys.notifications.unreadCount);
 
       if (previousNotifications) {
         const readAt = new Date().toISOString();
@@ -115,7 +117,9 @@ export const useMarkAllNotificationsRead = () => {
         );
       }
 
-      queryClient.setQueryData(queryKeys.notifications.unreadCount, 0);
+      if (previousUnreadCount) {
+        queryClient.setQueryData<UnreadCountResponse>(queryKeys.notifications.unreadCount, { count: 0 });
+      }
 
       return {
         previousNotifications,
@@ -127,13 +131,14 @@ export const useMarkAllNotificationsRead = () => {
         queryClient.setQueryData(queryKeys.notifications.list, context.previousNotifications);
       }
 
-      if (typeof context?.previousUnreadCount === 'number') {
+      if (context?.previousUnreadCount) {
         queryClient.setQueryData(queryKeys.notifications.unreadCount, context.previousUnreadCount);
       }
     },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount });
-    },
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount }),
+      ]),
   });
 };

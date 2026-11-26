@@ -15,11 +15,9 @@ export const NOTIFICATION_TYPES = {
   SECURITY: 'SECURITY',
 } as const;
 
-export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];
-
 export interface Notification {
   id: string;
-  type: NotificationType;
+  type: string;
   title: string;
   body: string;
   referenceId: string | null;
@@ -34,7 +32,7 @@ export interface Notification {
 
 export interface NotificationResponse {
   id: string;
-  type: NotificationType;
+  type: string;
   title: string;
   body: string;
   referenceId: string | null;
