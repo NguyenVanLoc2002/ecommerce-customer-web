@@ -115,9 +115,9 @@ test.describe('Mock payment purchase journey', () => {
       expect(productList.items.some((product) => product.slug === process.env.E2E_PRODUCT_SLUG)).toBeTruthy();
 
       await page.goto('/login');
-      await page.getByLabel('Email address').fill(process.env.E2E_CUSTOMER_EMAIL ?? '');
-      await page.getByLabel('Password').fill(process.env.E2E_CUSTOMER_PASSWORD ?? '');
-      await page.getByRole('button', { name: 'Sign in' }).click();
+      await page.getByLabel('Địa chỉ email').fill(process.env.E2E_CUSTOMER_EMAIL ?? '');
+      await page.getByLabel('Mật khẩu', { exact: true }).fill(process.env.E2E_CUSTOMER_PASSWORD ?? '');
+      await page.getByRole('button', { name: 'Đăng nhập' }).click();
       await expect(page).toHaveURL(/\/(?:profile)?$/);
 
       await page.goto(`/products/${process.env.E2E_PRODUCT_SLUG}`);

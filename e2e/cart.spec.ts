@@ -166,8 +166,9 @@ const installCartApi = async (
 
 const signInAndOpenCart = async (page: Page) => {
   await page.goto('/cart');
-  await page.getByLabel('Email address').waitFor();
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByLabel('Địa chỉ email').fill('customer@example.test');
+  await page.getByLabel('Mật khẩu', { exact: true }).fill('FixturePassword123');
+  await page.getByRole('button', { name: 'Đăng nhập' }).click();
   await expect(page.getByRole('heading', { name: 'Túi đồ của bạn' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Áo blazer dáng suông' })).toBeVisible();
 };

@@ -1,6 +1,8 @@
+import { ArrowLeft, LockKeyhole } from 'lucide-react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 import { routes } from '@/constants/routes';
+import { AuthHeading } from '@/features/auth/components/AuthHeading';
 import { ForgotPasswordForm } from '@/features/auth/components/ForgotPasswordForm';
 import { resolveAuthRedirect } from '@/features/auth/lib/resolveAuthRedirect';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
@@ -19,40 +21,33 @@ export const ForgotPasswordPage = () => {
   }
 
   return (
-    <>
-      <PageSEO description="Request a password reset verification code for your customer account." noIndex path={routes.forgotPassword} title="Forgot Password" />
-      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">Password Recovery</p>
-      <h1 className="mt-4 font-display text-[2.5rem] leading-[1.05] text-text-primary md:text-[3rem]">Forgot Password</h1>
-      <p className="mt-4 max-w-md text-base leading-7 text-text-secondary">
-        Restore account access with a one-time verification code delivered to your email address.
-      </p>
-      <div className="mt-10">
+    <div className="w-full max-w-[480px]">
+      <PageSEO description="Yêu cầu mã xác thực để đặt lại mật khẩu Fashion Shop." noIndex path={routes.forgotPassword} title="Quên mật khẩu" />
+      <p className="mb-6 text-xs font-medium uppercase tracking-[0.2em] text-brand-primary sm:mb-8">Bảo mật tài khoản</p>
+      <section className="rounded-card bg-surface p-6 shadow-card sm:p-12 [&_h1]:sm:text-[26px]">
+        <div aria-hidden="true" className="mb-6 grid size-10 place-items-center rounded-card bg-surface-muted text-brand-primary">
+          <LockKeyhole className="size-5" />
+        </div>
+        <AuthHeading description="Nhập email bạn dùng để đăng ký Fashion Shop. Nếu email đã đăng ký, chúng tôi sẽ gửi mã xác thực gồm 6 chữ số." title="Quên mật khẩu?" />
         <ForgotPasswordForm
           defaultEmail={typeof location.state === 'object' && location.state && 'email' in location.state ? String(location.state.email ?? '') : ''}
           onSuccess={(email) => {
             addToast({
               tone: 'info',
-              title: 'Verification code sent',
-              description: 'If the email exists, a verification code has been sent.',
+              title: 'Đã tiếp nhận yêu cầu',
+              description: 'Nếu email đã đăng ký, mã xác thực sẽ được gửi đến địa chỉ này.',
             });
-            navigate(routes.verifyOtp, {
-              replace: true,
-              state: {
-                email,
-              },
-            });
+            navigate(routes.verifyOtp, { replace: true, state: { email } });
           }}
         />
-      </div>
-      <div className="mt-10 border-t border-black/5 pt-8">
-        <Link
-          className="inline-block border-b border-text-primary pb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary transition-opacity hover:opacity-70"
-          to={routes.login}
-        >
-          Back to Login
-        </Link>
-      </div>
-    </>
+        <div className="mt-6 text-center">
+          <Link className="inline-flex min-h-11 items-center gap-2 text-xs font-medium text-brand-primary underline-offset-4 hover:underline" to={routes.login}>
+            <ArrowLeft aria-hidden="true" className="size-4" />
+            Quay lại trang đăng nhập
+          </Link>
+        </div>
+      </section>
+    </div>
   );
 };
 
