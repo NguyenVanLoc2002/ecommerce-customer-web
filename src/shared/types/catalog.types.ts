@@ -12,7 +12,6 @@ export interface Category {
   status?: string;
   sortOrder?: number;
   createdAt?: string;
-  itemCount: number;
 }
 
 export interface Brand {

@@ -1,43 +1,39 @@
-import { motion, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
 import { routePaths } from '@/constants/routes';
-import { PriceDisplay } from '@/shared/components/catalog/PriceDisplay';
 import type { ProductSummary } from '@/shared/types/catalog.types';
+import { formatVnd } from '@/shared/utils/formatVnd';
 
 type ProductCardProps = {
   product: ProductSummary;
+  appearance: 'home' | 'list';
 };
 
-export const ProductCard = ({ product }: ProductCardProps) => {
-  const reducedMotion = useReducedMotion();
+export const ProductCard = ({ product, appearance }: ProductCardProps) => {
+  const Heading = appearance === 'home' ? 'h3' : 'h2';
 
   return (
-    <motion.article
-      className="group"
-      transition={reducedMotion ? { duration: 0 } : { duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-    >
-      <Link className="block" to={routePaths.productDetail(product.slug)}>
-        <div className="relative overflow-hidden bg-surface-muted">
+    <article className="min-w-0">
+      <Link className="group block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4" to={routePaths.productDetail(product.slug)}>
+        <div className={`aspect-[3/4] overflow-hidden rounded-sm bg-surface-soft ${appearance === 'home' ? 'lg:rounded-none lg:border lg:border-border' : 'lg:rounded'}`}>
           <img
             alt={product.primaryImage.alt}
-            className="aspect-[3/4] h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+            className="h-full w-full object-cover object-top motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-[1.02] lg:object-center"
             height={product.primaryImage.height}
             loading="lazy"
+            onError={(event) => { event.currentTarget.hidden = true; }}
             src={product.primaryImage.src}
             width={product.primaryImage.width}
           />
         </div>
-        <div className="flex min-w-0 flex-col items-start gap-3 px-1 pt-4">
-          <div className="min-w-0 w-full">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-text-secondary">{product.brandName}</p>
-            <h3 className="text-sm font-medium leading-snug text-text-primary sm:text-base">
-              {product.name}
-            </h3>
-          </div>
-          <PriceDisplay align="left" price={product.price} />
+        <div className={`space-y-1 pt-2.5 ${appearance === 'home' ? 'lg:pt-4' : 'lg:pt-3.5'}`}>
+          {product.brandName ? <p className="break-words text-[11px] uppercase tracking-wider text-text-secondary lg:text-[13px]">{product.brandName}</p> : null}
+          <Heading className={`break-words text-sm leading-snug text-text-primary transition-colors group-hover:text-brand-primary lg:text-base lg:font-normal ${appearance === 'list' ? 'font-medium' : 'font-normal'}`}>
+            {product.name}
+          </Heading>
+          <p className="break-words text-[15px] font-medium text-text-primary">{formatVnd(product.price)}</p>
         </div>
       </Link>
-    </motion.article>
+    </article>
   );
 };

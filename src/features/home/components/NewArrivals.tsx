@@ -1,8 +1,7 @@
-import { ProductGrid } from '@/shared/components/catalog/ProductGrid';
-import { Container } from '@/shared/components/layout/Container';
-import { SectionHeader } from '@/shared/components/layout/SectionHeader';
 import { Link } from 'react-router-dom';
+
 import { routes } from '@/constants/routes';
+import { ProductGrid } from '@/shared/components/catalog/ProductGrid';
 import type { ProductSummary } from '@/shared/types/catalog.types';
 
 type NewArrivalsProps = {
@@ -10,14 +9,13 @@ type NewArrivalsProps = {
 };
 
 export const NewArrivals = ({ products }: NewArrivalsProps) => (
-  <section className="py-8 md:py-12">
-    <Container className="space-y-8">
-      <SectionHeader
-        action={<Link className="border-b border-text-primary pb-1 text-sm font-medium text-text-primary" to={routes.products}>Xem tất cả</Link>}
-        eyebrow="Vừa cập nhật"
-        title="Sản phẩm mới"
-      />
-      <ProductGrid desktopColumns={4} products={products} />
-    </Container>
+  <section className="mx-auto max-w-[1440px] px-5 py-8 lg:px-8 lg:py-12">
+    <div className="mb-6 flex items-baseline justify-between gap-3 lg:mb-10">
+      <h2 className="text-xl font-semibold tracking-tight text-text-primary lg:text-2xl lg:font-light">Sản phẩm mới</h2>
+      <Link className="inline-flex min-h-11 shrink-0 items-center text-sm text-text-secondary underline underline-offset-4 hover:text-text-primary" to={routes.products}>
+        Xem tất cả
+      </Link>
+    </div>
+    <ProductGrid appearance="home" products={products} />
   </section>
 );

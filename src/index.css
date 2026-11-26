@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -11,6 +11,8 @@
   --color-brand-active: 49 58 40;
   --color-brand-subtle: 238 239 232;
   --color-canvas: 250 249 246;
+  --discovery-panel: 244 243 241;
+  --discovery-control: 60 59 56;
   --color-surface: 255 255 255;
   --color-surface-muted: 246 245 241;
   --color-surface-soft: 238 237 231;

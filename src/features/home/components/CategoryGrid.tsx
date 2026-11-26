@@ -1,71 +1,59 @@
-import { motion, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
 import { routes } from '@/constants/routes';
-import { Container } from '@/shared/components/layout/Container';
 import { EmptyState } from '@/shared/components/feedback/EmptyState';
-import { motionPresets } from '@/shared/lib/motionPresets';
 import type { Category } from '@/shared/types/catalog.types';
 
 type CategoryGridProps = {
   categories: Category[];
 };
 
-export const CategoryGrid = ({ categories }: CategoryGridProps) => {
-  const reducedMotion = useReducedMotion();
-  const categoryItems = categories
-    .map((category) => ({
-      slug: category.slug,
-      name: category.name,
-      itemCount: category.itemCount,
-      imageUrl: category.imageUrl,
-      imageAlt: category.imageAlt,
-    }))
-    .slice(0, 3);
-
-  if (categoryItems.length === 0) {
-    return (
-      <section className="mx-auto max-w-[1440px] border-b border-border px-5 py-8 md:px-8 md:py-12">
-        <Container>
-          <EmptyState
-            action={<Link className="underline underline-offset-4" to={routes.products}>Xem sản phẩm</Link>}
-            description="Danh mục sẽ xuất hiện tại đây khi cửa hàng có dữ liệu."
-            title="Chưa có danh mục"
-          />
-        </Container>
-      </section>
-    );
-  }
-
-  return (
-    <section className="mx-auto max-w-[1440px] border-b border-border px-5 py-8 md:px-8 md:py-12">
-      <div className="mb-8">
-        <h2 className="text-2xl font-light tracking-tight text-text-primary">Tìm theo phong cách của bạn</h2>
-      </div>
-      <motion.div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-6" {...motionPresets.staggerContainer(Boolean(reducedMotion), 0.06)}>
-          {categoryItems.map((category, index) => (
-            <motion.article className={`group flex flex-col ${index === 2 ? 'col-span-2 md:col-span-1' : ''}`} key={category.slug} {...motionPresets.staggerItem(Boolean(reducedMotion))}>
-              <Link aria-label={`Khám phá danh mục ${category.name}`} className="block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-primary" to={`${routes.products}?category=${encodeURIComponent(category.slug)}`}>
-                <div className={`overflow-hidden border border-border bg-surface-muted ${index === 2 ? 'aspect-[2/1] md:aspect-[3/4]' : 'aspect-[3/4]'}`}>
+export const CategoryGrid = ({ categories }: CategoryGridProps) => (
+  <section className="bg-[rgb(var(--discovery-panel))] lg:bg-canvas">
+    <div className="mx-auto max-w-[1440px] px-5 py-8 lg:border-b lg:border-border lg:px-8 lg:py-12">
+      <h2 className="mb-5 text-xl font-semibold tracking-tight text-text-primary lg:mb-10 lg:text-2xl lg:font-light">
+        Tìm theo phong cách của bạn
+      </h2>
+      {categories.length === 0 ? (
+        <EmptyState
+          action={<Link className="underline underline-offset-4" to={routes.products}>Xem sản phẩm</Link>}
+          description="Danh mục sẽ xuất hiện tại đây khi cửa hàng có dữ liệu."
+          title="Chưa có danh mục"
+        />
+      ) : (
+        <div className="grid gap-5 md:grid-cols-3 lg:gap-6">
+          {categories.slice(0, 3).map((category) => (
+            <article className="min-w-0" key={category.id}>
+              <Link
+                aria-label={`Khám phá danh mục ${category.name}`}
+                className="group block overflow-hidden rounded bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 lg:rounded-none"
+                to={`${routes.products}?category=${encodeURIComponent(category.slug)}`}
+              >
+                <div className="aspect-[4/3] overflow-hidden bg-surface-soft lg:aspect-[3/4] lg:border lg:border-border">
                   <img
-                    alt={category.imageAlt}
-                    className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+                    alt=""
+                    className="h-full w-full object-cover object-top motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-[1.02] lg:object-center"
                     height={1125}
                     loading="lazy"
+                    onError={(event) => { event.currentTarget.hidden = true; }}
                     src={category.imageUrl}
                     width={900}
                   />
                 </div>
+                <div className="flex items-center justify-between gap-3 p-4 lg:px-0 lg:pb-0">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-widest text-text-secondary lg:hidden">Bộ sưu tập</p>
+                    <h3 className="break-words text-base font-semibold text-text-primary lg:text-lg lg:font-normal">{category.name}</h3>
+                  </div>
+                  <span className="shrink-0 text-sm font-medium text-text-primary group-hover:underline lg:font-normal lg:text-text-secondary">
+                    Khám phá <span aria-hidden="true">→</span>
+                  </span>
+                </div>
               </Link>
-              <div className="flex items-center justify-between gap-3 pt-4">
-                <h3 className="text-lg font-normal text-text-primary">{category.name}</h3>
-                <Link className="inline-flex min-h-11 items-center gap-1 text-sm text-text-secondary transition-colors hover:text-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary" to={`${routes.products}?category=${encodeURIComponent(category.slug)}`}>
-                  <span className="hidden md:inline">Khám phá</span><span aria-hidden="true">→</span>
-                </Link>
-              </div>
-            </motion.article>
+            </article>
           ))}
-      </motion.div>
-    </section>
-  );
-};
+        </div>
+      )}
+    </div>
+  </section>
+);

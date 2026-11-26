@@ -39,6 +39,7 @@ export const Header = () => {
   const unreadNotificationCount = unreadNotificationCountQuery.data ?? 0;
   const cartItemCount = cartItemCountQuery.data ?? 0;
   const isHome = pathname === routes.home;
+  const isProductList = pathname === routes.products;
   const isCatalog = pathname === routes.products || pathname.startsWith(`${routes.products}/`);
   const category = isCatalog ? searchParams.get('category') : null;
   const cartTarget = user ? routes.cart : routePaths.loginRedirect(routes.cart);
@@ -108,7 +109,7 @@ export const Header = () => {
   };
 
   const accountIcon = (
-    <span className={cn('grid size-8 shrink-0 place-items-center rounded-full bg-brand-primary text-surface', isHome && 'lg:hidden')}>
+    <span className={cn('grid size-8 shrink-0 place-items-center rounded-full text-surface', isHome || isProductList ? 'bg-[rgb(var(--discovery-control))]' : 'bg-brand-primary', isHome && 'lg:hidden')}>
       <User2 aria-hidden="true" className="size-[18px]" strokeWidth={1.7} />
     </span>
   );
@@ -117,9 +118,9 @@ export const Header = () => {
     <header className={cn('fixed inset-x-0 top-0 z-50 print:hidden', isHome ? 'bg-canvas lg:border-b lg:border-border' : 'bg-canvas/90 shadow-subtle backdrop-blur-md')}>
       <div className={cn(
         'mx-auto flex items-center justify-between gap-0.5 px-4 lg:gap-4 lg:px-12',
-        isHome ? 'h-16 max-w-[1440px] px-5 lg:h-20 lg:px-8' : isCatalog ? 'h-14 max-w-layout lg:h-16' : 'h-[72px] max-w-layout lg:h-20',
+        isHome ? 'h-16 max-w-[1440px] px-4 lg:h-20 lg:px-8' : isCatalog ? 'h-14 max-w-layout lg:h-16' : 'h-[72px] max-w-layout lg:h-20',
       )}>
-        <div className={cn('flex min-w-0 items-center gap-1 sm:gap-3 lg:gap-10', isHome && 'lg:gap-12')}>
+        <div className={cn('flex min-w-0 items-center gap-1 sm:gap-3 lg:gap-10', (isHome || isProductList) && 'min-[360px]:gap-3', isHome && 'lg:gap-12')}>
           <button
             aria-expanded={isMobileNavOpen}
             aria-label="Mở danh mục"

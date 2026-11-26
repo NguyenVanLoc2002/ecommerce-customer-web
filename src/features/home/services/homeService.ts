@@ -13,19 +13,7 @@ export const homeService = {
 
     const categories = await catalogLookupService.getCategories();
 
-    const items = await Promise.all(
-      categories.slice(0, 4).map(async (category) => {
-        const response = await catalogLookupService.listProducts({
-          categoryId: category.id,
-          size: 1,
-          sort: 'createdAt,desc',
-        });
-
-        return toCategory(category, response.totalItems);
-      }),
-    );
-
-    return items;
+    return categories.filter((category) => !category.parentId).map(toCategory);
   },
   async getFeaturedProducts() {
     if (config.useMockData) {

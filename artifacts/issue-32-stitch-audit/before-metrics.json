@@ -1,0 +1,478 @@
+[
+  {
+    "device": "desktop",
+    "name": "home",
+    "overflow": 0,
+    "headings": [
+      [
+        "Ít hơn, nhưng đúng hơn.",
+        "64px",
+        "300"
+      ],
+      [
+        "Tìm theo phong cách của bạn",
+        "24px",
+        "300"
+      ],
+      [
+        "Những lựa chọn nổi bật",
+        "24px",
+        "300"
+      ],
+      [
+        "Những lớp mặc nhẹ nhàng.",
+        "36px",
+        "300"
+      ],
+      [
+        "Sản phẩm mới",
+        "48px",
+        "400"
+      ]
+    ],
+    "sections": [
+      [
+        0,
+        80,
+        1280,
+        661
+      ],
+      [
+        0,
+        741,
+        1280,
+        740
+      ],
+      [
+        0,
+        1481,
+        1280,
+        656
+      ],
+      [
+        0,
+        2137,
+        1280,
+        472
+      ],
+      [
+        0,
+        2609,
+        1280,
+        672
+      ]
+    ],
+    "cards": [
+      [
+        32,
+        1615,
+        283,
+        377
+      ],
+      [
+        343,
+        1615,
+        283,
+        377
+      ],
+      [
+        654,
+        1615,
+        283,
+        377
+      ],
+      [
+        965,
+        1615,
+        283,
+        377
+      ],
+      [
+        48,
+        2770,
+        275,
+        367
+      ],
+      [
+        351,
+        2770,
+        275,
+        367
+      ],
+      [
+        654,
+        2770,
+        275,
+        367
+      ],
+      [
+        957,
+        2770,
+        275,
+        367
+      ]
+    ],
+    "brokenImages": 0,
+    "elapsedMs": 5092,
+    "api": [
+      [
+        "/api/v1/auth/refresh-token",
+        401
+      ],
+      [
+        "/api/v1/categories",
+        200
+      ],
+      [
+        "/api/v1/products?size=4&sort=createdAt%2Cdesc&featured=true",
+        200
+      ],
+      [
+        "/api/v1/products?size=4&sort=createdAt%2Cdesc",
+        200
+      ],
+      [
+        "/api/v1/products?size=1&sort=createdAt%2Cdesc&categoryId=womenswear",
+        200
+      ],
+      [
+        "/api/v1/products?size=1&sort=createdAt%2Cdesc&categoryId=menswear",
+        200
+      ],
+      [
+        "/api/v1/products?size=1&sort=createdAt%2Cdesc&categoryId=accessories",
+        200
+      ]
+    ],
+    "errors": []
+  },
+  {
+    "device": "desktop",
+    "name": "products",
+    "overflow": 0,
+    "headings": [
+      [
+        "Nữ",
+        "36px",
+        "500"
+      ]
+    ],
+    "sections": [
+      [
+        312,
+        365,
+        920,
+        1133
+      ]
+    ],
+    "cards": [
+      [
+        312,
+        389,
+        288,
+        384
+      ],
+      [
+        628,
+        389,
+        288,
+        384
+      ],
+      [
+        944,
+        389,
+        288,
+        384
+      ],
+      [
+        312,
+        925,
+        288,
+        384
+      ],
+      [
+        628,
+        925,
+        288,
+        384
+      ],
+      [
+        944,
+        925,
+        288,
+        384
+      ]
+    ],
+    "brokenImages": 0,
+    "elapsedMs": 745,
+    "api": [
+      [
+        "/api/v1/auth/refresh-token",
+        401
+      ],
+      [
+        "/api/v1/categories",
+        200
+      ],
+      [
+        "/api/v1/brands",
+        200
+      ],
+      [
+        "/api/v1/products?size=1&sort=createdAt%2Cdesc&categoryId=womenswear",
+        200
+      ],
+      [
+        "/api/v1/products?size=1&sort=createdAt%2Cdesc&categoryId=menswear",
+        200
+      ],
+      [
+        "/api/v1/products?size=1&sort=createdAt%2Cdesc&categoryId=accessories",
+        200
+      ],
+      [
+        "/api/v1/products?page=0&size=20&sort=featured%2Cdesc&categoryId=womenswear",
+        200
+      ]
+    ],
+    "errors": []
+  },
+  {
+    "device": "mobile",
+    "name": "home",
+    "overflow": 0,
+    "headings": [
+      [
+        "Ít hơn, nhưng đúng hơn.",
+        "32px",
+        "600"
+      ],
+      [
+        "Tìm theo phong cách của bạn",
+        "24px",
+        "300"
+      ],
+      [
+        "Những lựa chọn nổi bật",
+        "24px",
+        "300"
+      ],
+      [
+        "Những lớp mặc nhẹ nhàng.",
+        "30px",
+        "300"
+      ],
+      [
+        "Sản phẩm mới",
+        "32px",
+        "400"
+      ]
+    ],
+    "sections": [
+      [
+        0,
+        64,
+        390,
+        736
+      ],
+      [
+        0,
+        800,
+        390,
+        661
+      ],
+      [
+        0,
+        1462,
+        390,
+        845
+      ],
+      [
+        0,
+        2307,
+        390,
+        578
+      ],
+      [
+        0,
+        2885,
+        390,
+        889
+      ]
+    ],
+    "cards": [
+      [
+        20,
+        1590,
+        169,
+        225
+      ],
+      [
+        201,
+        1590,
+        169,
+        225
+      ],
+      [
+        20,
+        1957,
+        169,
+        225
+      ],
+      [
+        201,
+        1957,
+        169,
+        225
+      ],
+      [
+        20,
+        3057,
+        170,
+        226
+      ],
+      [
+        201,
+        3057,
+        170,
+        226
+      ],
+      [
+        20,
+        3425,
+        170,
+        226
+      ],
+      [
+        201,
+        3425,
+        170,
+        226
+      ]
+    ],
+    "brokenImages": 0,
+    "elapsedMs": 1045,
+    "api": [
+      [
+        "/api/v1/auth/refresh-token",
+        401
+      ],
+      [
+        "/api/v1/categories",
+        200
+      ],
+      [
+        "/api/v1/products?size=4&sort=createdAt%2Cdesc&featured=true",
+        200
+      ],
+      [
+        "/api/v1/products?size=4&sort=createdAt%2Cdesc",
+        200
+      ],
+      [
+        "/api/v1/products?size=1&sort=createdAt%2Cdesc&categoryId=womenswear",
+        200
+      ],
+      [
+        "/api/v1/products?size=1&sort=createdAt%2Cdesc&categoryId=menswear",
+        200
+      ],
+      [
+        "/api/v1/products?size=1&sort=createdAt%2Cdesc&categoryId=accessories",
+        200
+      ]
+    ],
+    "errors": []
+  },
+  {
+    "device": "mobile",
+    "name": "products",
+    "overflow": 0,
+    "headings": [
+      [
+        "Nữ",
+        "24px",
+        "500"
+      ]
+    ],
+    "sections": [
+      [
+        20,
+        450,
+        351,
+        1283
+      ]
+    ],
+    "cards": [
+      [
+        20,
+        494,
+        170,
+        226
+      ],
+      [
+        201,
+        494,
+        170,
+        226
+      ],
+      [
+        20,
+        863,
+        170,
+        226
+      ],
+      [
+        201,
+        863,
+        170,
+        226
+      ],
+      [
+        20,
+        1212,
+        170,
+        226
+      ],
+      [
+        201,
+        1212,
+        170,
+        226
+      ]
+    ],
+    "brokenImages": 0,
+    "elapsedMs": 502,
+    "api": [
+      [
+        "/api/v1/auth/refresh-token",
+        401
+      ],
+      [
+        "/api/v1/categories",
+        200
+      ],
+      [
+        "/api/v1/brands",
+        200
+      ],
+      [
+        "/api/v1/products?size=1&sort=createdAt%2Cdesc&categoryId=womenswear",
+        200
+      ],
+      [
+        "/api/v1/products?size=1&sort=createdAt%2Cdesc&categoryId=menswear",
+        200
+      ],
+      [
+        "/api/v1/products?size=1&sort=createdAt%2Cdesc&categoryId=accessories",
+        200
+      ],
+      [
+        "/api/v1/products?page=0&size=20&sort=featured%2Cdesc&categoryId=womenswear",
+        200
+      ]
+    ],
+    "errors": []
+  }
+]

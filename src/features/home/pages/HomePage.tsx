@@ -18,6 +18,7 @@ export const HomePage = () => {
   const categoriesQuery = useHomeCategories();
   const featuredQuery = useFeaturedProducts();
   const arrivalsQuery = useNewArrivals();
+  const womenswear = categoriesQuery.data?.find(({ slug }) => slug === 'womenswear' || slug === 'women');
 
   return (
     <>
@@ -42,7 +43,7 @@ export const HomePage = () => {
           },
         ]}
       />
-      <PageWrapper className="space-y-0 pb-0 !pt-0">
+      <PageWrapper className="space-y-0 !pb-0 !pt-0">
         <HeroSection />
         {categoriesQuery.isLoading ? (
           <Container className="grid grid-cols-1 gap-5 py-8 sm:grid-cols-3 md:py-12">
@@ -80,7 +81,7 @@ export const HomePage = () => {
           </Container>
         )}
 
-        <CreativePerspectiveSection />
+        <CreativePerspectiveSection categorySlug={womenswear?.slug} />
 
         {arrivalsQuery.isLoading ? (
           <Container className="grid grid-cols-2 gap-4 py-8 md:grid-cols-4 md:py-12">

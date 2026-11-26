@@ -23,11 +23,17 @@ const fetchBrands = async () =>
 
 export const catalogLookupService = {
   async getCategories() {
-    categoriesPromise ??= fetchCategories();
+    categoriesPromise ??= fetchCategories().catch((error: unknown) => {
+      categoriesPromise = null;
+      throw error;
+    });
     return categoriesPromise;
   },
   async getBrands() {
-    brandsPromise ??= fetchBrands();
+    brandsPromise ??= fetchBrands().catch((error: unknown) => {
+      brandsPromise = null;
+      throw error;
+    });
     return brandsPromise;
   },
   async getCategoryBySlug(slug: string) {

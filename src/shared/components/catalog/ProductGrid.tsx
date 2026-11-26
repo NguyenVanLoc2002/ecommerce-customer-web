@@ -5,19 +5,21 @@ import { motionPresets } from '@/shared/lib/motionPresets';
 import type { ProductSummary } from '@/shared/types/catalog.types';
 
 type ProductGridProps = {
-  desktopColumns?: 3 | 4;
+  appearance?: 'home' | 'list';
   products: ProductSummary[];
 };
 
-export const ProductGrid = ({ desktopColumns = 3, products }: ProductGridProps) => {
+export const ProductGrid = ({ appearance = 'list', products }: ProductGridProps) => {
   const reducedMotion = useReducedMotion();
-  const desktopColumnsClass = desktopColumns === 4 ? 'lg:grid-cols-3 xl:grid-cols-4' : 'lg:grid-cols-3';
+  const isHomeGrid = appearance === 'home';
+  const desktopColumnsClass = isHomeGrid ? 'lg:grid-cols-4' : 'lg:grid-cols-3';
+  const motionReduced = Boolean(reducedMotion);
 
   return (
-    <motion.div className={`grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-5 sm:gap-y-10 ${desktopColumnsClass} xl:gap-x-7 xl:gap-y-14`} {...motionPresets.staggerContainer(Boolean(reducedMotion), 0.05)}>
+    <motion.div className={`grid grid-cols-2 gap-x-3.5 gap-y-7 lg:gap-x-6 lg:gap-y-10 ${desktopColumnsClass}`} {...(isHomeGrid ? motionPresets.staggerContainer(motionReduced, 0.05) : {})}>
       {products.map((product) => (
-        <motion.div key={product.id} {...motionPresets.staggerItem(Boolean(reducedMotion))}>
-          <ProductCard product={product} />
+        <motion.div key={product.id} {...(isHomeGrid ? motionPresets.staggerItem(motionReduced) : {})}>
+          <ProductCard appearance={appearance} product={product} />
         </motion.div>
       ))}
     </motion.div>

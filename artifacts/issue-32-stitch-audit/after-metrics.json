@@ -1,0 +1,490 @@
+[
+  {
+    "device": "desktop",
+    "name": "home",
+    "overflow": 0,
+    "headings": [
+      [
+        "Ít hơn, nhưng đúng hơn.",
+        "64px",
+        "300"
+      ],
+      [
+        "Tìm theo phong cách của bạn",
+        "24px",
+        "300"
+      ],
+      [
+        "Những lựa chọn nổi bật",
+        "24px",
+        "300"
+      ],
+      [
+        "Những lớp mặc nhẹ nhàng.",
+        "36px",
+        "300"
+      ],
+      [
+        "Sản phẩm mới",
+        "24px",
+        "300"
+      ]
+    ],
+    "sections": [
+      [
+        0,
+        80,
+        1280,
+        661
+      ],
+      [
+        0,
+        741,
+        1280,
+        732
+      ],
+      [
+        0,
+        1473,
+        1280,
+        652
+      ],
+      [
+        0,
+        2125,
+        1280,
+        482
+      ],
+      [
+        0,
+        2607,
+        1280,
+        651
+      ]
+    ],
+    "cards": [
+      [
+        33,
+        1606,
+        284,
+        379
+      ],
+      [
+        343,
+        1606,
+        284,
+        379
+      ],
+      [
+        653,
+        1606,
+        284,
+        379
+      ],
+      [
+        963,
+        1606,
+        284,
+        379
+      ],
+      [
+        33,
+        2740,
+        284,
+        379
+      ],
+      [
+        343,
+        2740,
+        284,
+        379
+      ],
+      [
+        653,
+        2740,
+        284,
+        379
+      ],
+      [
+        963,
+        2740,
+        284,
+        379
+      ]
+    ],
+    "brokenImages": 0,
+    "elapsedMs": 9659,
+    "api": [
+      [
+        "/api/v1/auth/refresh-token",
+        401
+      ],
+      [
+        "/api/v1/categories",
+        200
+      ],
+      [
+        "/api/v1/products?size=4&sort=createdAt%2Cdesc&featured=true",
+        200
+      ],
+      [
+        "/api/v1/products?size=4&sort=createdAt%2Cdesc",
+        200
+      ]
+    ],
+    "errors": []
+  },
+  {
+    "device": "desktop",
+    "name": "products",
+    "overflow": 0,
+    "headings": [
+      [
+        "Sản phẩmNhững món đồ bạn sẽ mặc mãi.",
+        "36px",
+        "400"
+      ],
+      [
+        "Áo blazer dáng suông",
+        "16px",
+        "400"
+      ],
+      [
+        "Áo khoác trench dáng dài",
+        "16px",
+        "400"
+      ],
+      [
+        "Áo len cổ tròn",
+        "16px",
+        "400"
+      ],
+      [
+        "Quần dài xếp ly",
+        "16px",
+        "400"
+      ],
+      [
+        "Bộ âu phục vải đũi tối giản",
+        "16px",
+        "400"
+      ],
+      [
+        "Túi da đeo chéo cổ điển",
+        "16px",
+        "400"
+      ]
+    ],
+    "sections": [
+      [
+        312,
+        386,
+        920,
+        1123
+      ]
+    ],
+    "cards": [
+      [
+        312,
+        386,
+        291,
+        388
+      ],
+      [
+        627,
+        386,
+        291,
+        388
+      ],
+      [
+        941,
+        386,
+        291,
+        388
+      ],
+      [
+        312,
+        901,
+        291,
+        388
+      ],
+      [
+        627,
+        901,
+        291,
+        388
+      ],
+      [
+        941,
+        901,
+        291,
+        388
+      ]
+    ],
+    "brokenImages": 0,
+    "elapsedMs": 1158,
+    "api": [
+      [
+        "/api/v1/auth/refresh-token",
+        401
+      ],
+      [
+        "/api/v1/categories",
+        200
+      ],
+      [
+        "/api/v1/brands",
+        200
+      ],
+      [
+        "/api/v1/products?page=0&size=20&sort=featured%2Cdesc&categoryId=womenswear",
+        200
+      ]
+    ],
+    "errors": []
+  },
+  {
+    "device": "mobile",
+    "name": "home",
+    "overflow": 0,
+    "headings": [
+      [
+        "Ít hơn, nhưng đúng hơn.",
+        "32px",
+        "600"
+      ],
+      [
+        "Tìm theo phong cách của bạn",
+        "20px",
+        "600"
+      ],
+      [
+        "Những lựa chọn nổi bật",
+        "20px",
+        "600"
+      ],
+      [
+        "Những lớp mặc nhẹ nhàng.",
+        "26px",
+        "600"
+      ],
+      [
+        "Sản phẩm mới",
+        "20px",
+        "600"
+      ]
+    ],
+    "sections": [
+      [
+        0,
+        64,
+        390,
+        747
+      ],
+      [
+        0,
+        811,
+        390,
+        1156
+      ],
+      [
+        0,
+        1966,
+        390,
+        811
+      ],
+      [
+        0,
+        2777,
+        390,
+        520
+      ],
+      [
+        0,
+        3298,
+        390,
+        780
+      ]
+    ],
+    "cards": [
+      [
+        20,
+        2090,
+        168,
+        224
+      ],
+      [
+        202,
+        2090,
+        168,
+        224
+      ],
+      [
+        20,
+        2437,
+        168,
+        224
+      ],
+      [
+        202,
+        2437,
+        168,
+        224
+      ],
+      [
+        20,
+        3398,
+        168,
+        224
+      ],
+      [
+        202,
+        3398,
+        168,
+        224
+      ],
+      [
+        20,
+        3745,
+        168,
+        224
+      ],
+      [
+        202,
+        3745,
+        168,
+        224
+      ]
+    ],
+    "brokenImages": 0,
+    "elapsedMs": 1514,
+    "api": [
+      [
+        "/api/v1/auth/refresh-token",
+        401
+      ],
+      [
+        "/api/v1/categories",
+        200
+      ],
+      [
+        "/api/v1/products?size=4&sort=createdAt%2Cdesc&featured=true",
+        200
+      ],
+      [
+        "/api/v1/products?size=4&sort=createdAt%2Cdesc",
+        200
+      ]
+    ],
+    "errors": []
+  },
+  {
+    "device": "mobile",
+    "name": "products",
+    "overflow": 0,
+    "headings": [
+      [
+        "Sản phẩmNhững món đồ bạn sẽ mặc mãi.",
+        "24px",
+        "600"
+      ],
+      [
+        "Áo blazer dáng suông",
+        "14px",
+        "500"
+      ],
+      [
+        "Áo khoác trench dáng dài",
+        "14px",
+        "500"
+      ],
+      [
+        "Áo len cổ tròn",
+        "14px",
+        "500"
+      ],
+      [
+        "Quần dài xếp ly",
+        "14px",
+        "500"
+      ],
+      [
+        "Bộ âu phục vải đũi tối giản",
+        "14px",
+        "500"
+      ],
+      [
+        "Túi da đeo chéo cổ điển",
+        "14px",
+        "500"
+      ]
+    ],
+    "sections": [
+      [
+        20,
+        322,
+        350,
+        1095
+      ]
+    ],
+    "cards": [
+      [
+        20,
+        322,
+        168,
+        224
+      ],
+      [
+        202,
+        322,
+        168,
+        224
+      ],
+      [
+        20,
+        670,
+        168,
+        224
+      ],
+      [
+        202,
+        670,
+        168,
+        224
+      ],
+      [
+        20,
+        998,
+        168,
+        224
+      ],
+      [
+        202,
+        998,
+        168,
+        224
+      ]
+    ],
+    "brokenImages": 0,
+    "elapsedMs": 1085,
+    "api": [
+      [
+        "/api/v1/auth/refresh-token",
+        401
+      ],
+      [
+        "/api/v1/categories",
+        200
+      ],
+      [
+        "/api/v1/brands",
+        200
+      ],
+      [
+        "/api/v1/products?page=0&size=20&sort=featured%2Cdesc&categoryId=womenswear",
+        200
+      ]
+    ],
+    "errors": []
+  }
+]
