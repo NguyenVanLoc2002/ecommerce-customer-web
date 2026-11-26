@@ -70,6 +70,10 @@ export const router = createBrowserRouter([
         element: renderLazyPage(ProductDetailPage),
       },
       {
+        path: routes.notFound,
+        element: renderLazyPage(NotFoundPage),
+      },
+      {
         element: <ProtectedOutlet />,
         children: [
           {
@@ -198,10 +202,6 @@ export const router = createBrowserRouter([
         element: renderLazyPage(ResetPasswordPage),
       },
     ],
-  },
-  {
-    path: routes.notFound,
-    element: renderLazyPage(NotFoundPage),
   },
   {
     path: '*',
