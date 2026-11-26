@@ -1,3 +1,5 @@
+import { Truck } from 'lucide-react';
+
 import type { CheckoutCarrierOption } from '@/shared/types/commerce.types';
 import { Button } from '@/shared/components/ui/Button';
 
@@ -43,8 +45,8 @@ export const CheckoutCarrierSelector = ({
       <section aria-live="assertive" className="border border-danger/30 bg-surface px-5 py-5 md:px-6">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-danger">Shipping carrier</p>
         <h2 className="mt-2 text-sm font-semibold uppercase tracking-wider text-text-primary">Carrier loading failed</h2>
-        <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">{errorMessage}</p>
-        <div className="mt-6">
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">{errorMessage}</p>
+        <div className="mt-3 md:mt-5">
           <Button onClick={onRetry} variant="secondary">
             Retry carriers
           </Button>
@@ -58,7 +60,7 @@ export const CheckoutCarrierSelector = ({
       <section aria-live="polite" className="border border-border bg-surface px-5 py-5 md:px-6">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Shipping carrier</p>
         <h2 className="mt-2 text-sm font-semibold uppercase tracking-wider text-text-primary">No carrier available</h2>
-        <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">
           The backend returned no active checkout carrier, so this order can still continue with a zero-fee shipping fallback.
         </p>
       </section>
@@ -66,30 +68,30 @@ export const CheckoutCarrierSelector = ({
   }
 
   return (
-    <section className="border border-border bg-surface px-5 py-5 md:px-6">
+    <section className="md:border md:border-border md:bg-surface md:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-outline">Shipping carrier</p>
-          <h2 className="mt-2 text-sm font-semibold uppercase tracking-wider text-text-primary">Đơn vị vận chuyển</h2>
-        </div>
+        <h2 className="flex items-center gap-2 text-base font-semibold uppercase tracking-wide md:text-sm">
+          <Truck aria-hidden="true" className="size-4" />
+          Phương thức vận chuyển
+        </h2>
         {previewLoading ? <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary">Refreshing total...</p> : null}
       </div>
-      <p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">
         Phí giao hàng được tính theo địa chỉ và đơn vị vận chuyển đã chọn.
       </p>
-      <fieldset aria-describedby="shipping-carrier-hint" className="mt-6">
+      <fieldset aria-describedby="shipping-carrier-hint" className="mt-3 md:mt-5">
         <legend className="sr-only">Shipping carrier</legend>
         <p className="sr-only" id="shipping-carrier-hint">
           Choose one carrier to refresh the checkout shipping quote.
         </p>
-        <div className="grid gap-4" role="radiogroup">
+        <div className="grid gap-3 md:gap-4" role="radiogroup">
           {options.map((option) => {
             const checked = option.id === selectedCarrierId;
 
             return (
               <label
-                className={`block cursor-pointer border p-5 transition-colors md:p-6 ${
-                  checked ? 'border-text-primary bg-surface' : 'border-border bg-surface hover:border-text-primary'
+                className={`block cursor-pointer rounded-feature border p-4 transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-primary md:rounded-card md:p-5 ${
+                  checked ? 'border-brand-primary bg-surface' : 'border-border bg-surface hover:border-text-primary'
                 }`}
                 key={option.id}
               >
@@ -117,7 +119,7 @@ export const CheckoutCarrierSelector = ({
                         <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-text-primary">{shippingServiceName}</span>
                       ) : null}
                     </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-4">
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
                       {option.logoUrl ? (
                         <img
                           alt={`${option.name} logo`}
@@ -129,7 +131,7 @@ export const CheckoutCarrierSelector = ({
                       ) : null}
                       <h3 className="text-sm font-semibold leading-snug text-text-primary">{option.name}</h3>
                     </div>
-                    <p className="mt-3 text-sm leading-7 text-text-secondary">
+                    <p className="mt-1 text-sm leading-6 text-text-secondary">
                       {option.description?.trim() ? option.description : 'Live shipping quote available during checkout preview.'}
                     </p>
                   </div>

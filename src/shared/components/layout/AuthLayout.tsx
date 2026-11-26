@@ -12,9 +12,9 @@ export const AuthLayout = () => {
 
   return (
     <div className="auth-shell-bg flex min-h-screen flex-col">
-      <header className="bg-canvas shadow-subtle">
+      <header className="bg-canvas/90 shadow-subtle backdrop-blur-md">
         <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-x-3 px-4 sm:min-h-20 sm:px-6 lg:px-12">
-          <Link className="inline-flex min-h-11 items-center text-sm font-semibold tracking-[0.24em] sm:text-lg" to={routes.home}>
+          <Link className="inline-flex min-h-11 items-center text-sm font-semibold tracking-[0.28em] hover:text-brand-primary sm:text-lg" to={routes.home}>
             FASHION SHOP
           </Link>
           <div className="flex items-center gap-2 sm:gap-6">
@@ -23,12 +23,12 @@ export const AuthLayout = () => {
               <span aria-hidden="true" className="text-xs text-outline">/</span>
               <NavLink className={navClass} to={routePaths.registerRedirect(redirect)}>Đăng ký</NavLink>
             </nav>
-            <Link className="inline-flex min-h-11 items-center gap-2 text-xs font-medium text-brand-primary underline-offset-4 hover:underline sm:uppercase sm:tracking-wider" to={routes.home}>
+            <Link className="inline-flex min-h-11 items-center gap-2 rounded-button px-3 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-muted hover:text-text-primary sm:uppercase sm:tracking-[0.15em]" to={routes.home}>
               <ArrowLeft aria-hidden="true" className="size-4" />
               <span className="sm:hidden">Cửa hàng</span>
               <span className="hidden sm:inline">Quay lại cửa hàng</span>
             </Link>
-            <span aria-hidden="true" className="hidden size-8 place-items-center rounded-full bg-text-primary text-surface sm:grid">
+            <span aria-hidden="true" className="hidden size-8 place-items-center rounded-full bg-brand-primary text-surface sm:grid">
               <UserRound className="size-4" />
             </span>
           </div>

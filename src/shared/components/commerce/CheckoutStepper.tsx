@@ -18,7 +18,7 @@ export const CheckoutStepper = ({ currentStep }: CheckoutStepperProps) => {
   const currentIndex = Math.max(0, steps.findIndex((step) => step.key === currentStep));
 
   return (
-    <nav aria-label="Các bước thanh toán" className="border-b border-border pb-5">
+    <nav aria-label="Các bước thanh toán" className="md:border-b md:border-border md:pb-5">
       <ol className="mx-auto grid max-w-3xl grid-cols-4 gap-2 md:gap-6">
         {steps.map((step, index) => {
           const active = index === currentIndex;
@@ -26,10 +26,10 @@ export const CheckoutStepper = ({ currentStep }: CheckoutStepperProps) => {
 
           return (
             <li aria-current={active ? 'step' : undefined} className="min-w-0 space-y-1.5" key={step.key}>
-              <div className="flex min-h-14 flex-col items-center justify-start gap-1 md:min-h-10 md:flex-row md:justify-center md:gap-2">
+              <div className="flex min-h-7 items-center gap-1 md:min-h-10 md:justify-center md:gap-2">
                 <span
                   className={cn(
-                    'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-colors',
+                    'hidden size-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-colors md:inline-flex',
                     active
                       ? 'border-text-primary bg-text-primary text-surface'
                       : complete
@@ -39,7 +39,8 @@ export const CheckoutStepper = ({ currentStep }: CheckoutStepperProps) => {
                 >
                   {complete ? '✓' : index + 1}
                 </span>
-                <span className={cn('text-center text-[10px] leading-3 md:text-xs md:leading-5', active || complete ? 'font-semibold text-text-primary' : 'text-text-secondary')}>
+                <span className={cn('flex min-w-0 items-baseline gap-1 text-[11px] leading-tight md:text-center md:text-xs md:leading-5', active || complete ? 'font-semibold text-text-primary' : 'text-text-secondary')}>
+                  <span aria-hidden="true" className="shrink-0 md:hidden">{index + 1}.</span>
                   {step.label}
                 </span>
               </div>

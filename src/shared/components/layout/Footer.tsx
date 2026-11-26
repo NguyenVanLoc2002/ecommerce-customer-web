@@ -1,65 +1,52 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 import { routes } from '@/constants/routes';
-import { Container } from '@/shared/components/layout/Container';
-import { SORT_OPTIONS } from '@/shared/types/enums';
+import { catalogNavigation } from '@/shared/components/layout/catalogNavigation';
+import { cn } from '@/shared/utils/cn';
 
-const shopLinks = [
-  { label: 'Sản phẩm mới', href: `${routes.products}?sort=${SORT_OPTIONS.NEWEST}` },
-  { label: 'Tất cả sản phẩm', href: routes.products },
-  { label: 'Nổi bật', href: `${routes.products}?sort=${SORT_OPTIONS.FEATURED}` },
+const serviceLinks = [
+  { label: 'Đơn hàng', to: routes.orders },
+  { label: 'Sổ địa chỉ', to: routes.profileAddresses },
+  { label: 'Thông báo', to: routes.notifications },
 ];
 
-const accountLinks = [
-  { label: 'Đơn hàng', href: routes.orders },
-  { label: 'Sổ địa chỉ', href: routes.profileAddresses },
-  { label: 'Thông báo', href: routes.notifications },
-];
+export const Footer = ({ desktopOnly = false }: { desktopOnly?: boolean }) => {
+  const { pathname } = useLocation();
+  const home = pathname === routes.home;
+  const productDetail = pathname.startsWith(`${routes.products}/`);
 
-const accessLinks = [
-  { label: 'Đăng nhập', href: routes.login },
-  { label: 'Tạo tài khoản', href: routes.register },
-  { label: 'Hồ sơ', href: routes.profile },
-];
-
-const renderLinkGroup = (title: string, links: Array<{ label: string; href: string }>) => (
-  <div className="space-y-5">
-    <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-outline">{title}</h4>
-    <div className="space-y-4">
-      {links.map((link) => (
-        <Link className="block text-sm text-text-secondary transition-colors hover:text-text-primary" key={link.label} to={link.href}>
-          {link.label}
-        </Link>
-      ))}
-    </div>
-  </div>
-);
-
-export const Footer = () => (
-  <footer className="border-t border-border bg-canvas pt-12 print:hidden md:pt-16">
-    <Container className="grid gap-10 pb-12 sm:grid-cols-2 md:grid-cols-12 md:gap-x-12 md:pb-16">
-      <div className="md:col-span-4">
-        <span className="block font-display text-2xl font-semibold tracking-[0.12em] text-text-primary">FASHION SHOP</span>
-        <p className="mt-5 max-w-xs text-sm leading-7 text-text-secondary">
-          Khám phá những thiết kế được tuyển chọn, cùng trải nghiệm mua sắm rõ ràng và thuận tiện.
-        </p>
-      </div>
-      <div className="md:col-span-2">{renderLinkGroup('Mua sắm', shopLinks)}</div>
-      <div className="md:col-span-3">{renderLinkGroup('Tài khoản', accountLinks)}</div>
-      <div className="md:col-span-3">
-        <h4 className="text-sm font-medium text-text-primary">Truy cập</h4>
-        <div className="mt-5 space-y-4">
-          {accessLinks.map((link) => (
-            <Link className="block text-sm text-text-secondary transition-colors hover:text-text-primary" key={link.label} to={link.href}>
-              {link.label}
-            </Link>
-          ))}
+  return (
+    <footer className={cn('border-t border-border bg-surface-muted text-sm text-text-secondary print:hidden', home && 'bg-canvas', desktopOnly && 'hidden md:block')}>
+      <div className={cn('mx-auto max-w-layout px-5 pt-10 md:px-12 md:pb-12 md:pt-14', home && 'max-w-[1440px] lg:px-8 lg:pt-16')}>
+        <div className={cn('grid grid-cols-2 gap-6 pb-8 md:grid-cols-12 md:gap-10 md:pb-12', home && 'lg:pb-16')}>
+          <div className={cn('col-span-2 space-y-3 md:col-span-5', home && 'max-md:hidden')}>
+            <p className={cn('text-sm font-semibold tracking-wider text-text-primary', home && 'text-base font-bold tracking-widest')}>FASHION SHOP</p>
+            <p className={cn('max-w-sm leading-relaxed', productDetail && 'max-md:hidden')}>
+              Bộ sưu tập trang phục và phụ kiện tinh giản với hình thái tối giản, chất liệu chọn lọc và phom dáng chuẩn mực.
+            </p>
+          </div>
+          <div className={cn('space-y-3 md:col-span-3', productDetail && 'max-md:col-span-2')}>
+            <p className={cn('text-xs font-semibold uppercase tracking-widest text-text-primary', home && 'md:text-base md:font-medium md:normal-case md:tracking-tight', productDetail && 'max-md:sr-only')}>Danh mục</p>
+            <ul className={cn('space-y-2.5', productDetail && 'max-md:flex max-md:flex-wrap max-md:gap-x-5 max-md:gap-y-2 max-md:space-y-0 max-md:text-xs')}>
+              {catalogNavigation.map(({ slug, label, to }) => (
+                <li key={slug}><Link className="inline-flex py-0.5 transition-colors hover:text-brand-primary" to={to}>{label}</Link></li>
+              ))}
+            </ul>
+          </div>
+          <div className={cn('space-y-3 md:col-span-4', productDetail && 'max-md:hidden')}>
+            <p className={cn('text-xs font-semibold uppercase tracking-widest text-text-primary', home && 'md:text-base md:font-medium md:normal-case md:tracking-tight')}>Dịch vụ khách hàng</p>
+            <ul className="space-y-2.5">
+              {serviceLinks.map(({ label, to }) => (
+                <li key={to}><Link className="inline-flex py-0.5 transition-colors hover:text-brand-primary" to={to}>{label}</Link></li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 pb-8 text-xs text-outline md:flex-row md:items-center md:justify-between md:border-t md:border-border md:pb-0 md:pt-8">
+          <p>© {new Date().getFullYear()} Fashion Shop. Bảo lưu mọi quyền.</p>
+          <p className="hidden md:block">Sản phẩm hiển thị theo đơn vị tiền tệ VND.</p>
         </div>
       </div>
-    </Container>
-    <Container className="flex flex-col gap-5 border-t border-border py-8 text-xs uppercase tracking-[0.18em] text-outline md:flex-row md:items-center md:justify-between">
-      <p>© {new Date().getFullYear()} Fashion Shop</p>
-      <p>Thời trang dành cho mỗi ngày</p>
-    </Container>
-  </footer>
-);
+    </footer>
+  );
+};
