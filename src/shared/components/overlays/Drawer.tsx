@@ -8,11 +8,12 @@ type DrawerProps = {
   open: boolean;
   title: string;
   side?: 'left' | 'right';
+  appearance?: 'filters';
   children: React.ReactNode;
   onClose: () => void;
 };
 
-export const Drawer = ({ children, onClose, open, side = 'right', title }: DrawerProps) => {
+export const Drawer = ({ appearance, children, onClose, open, side = 'right', title }: DrawerProps) => {
   const panelRef = useRef<HTMLDivElement | null>(null);
   const titleId = useId();
   const reducedMotion = useReducedMotion();
@@ -51,7 +52,7 @@ export const Drawer = ({ children, onClose, open, side = 'right', title }: Drawe
       const lastElement = focusableElements[focusableElements.length - 1];
       const activeElement = document.activeElement;
 
-      if (event.shiftKey && activeElement === firstElement) {
+      if (event.shiftKey && (activeElement === firstElement || activeElement === panelRef.current)) {
         event.preventDefault();
         lastElement.focus();
       } else if (!event.shiftKey && activeElement === lastElement) {
@@ -74,13 +75,14 @@ export const Drawer = ({ children, onClose, open, side = 'right', title }: Drawe
   }
 
   const startX = side === 'right' ? '100%' : '-100%';
+  const isFilterDrawer = appearance === 'filters';
 
   return createPortal(
     <AnimatePresence>
       {open ? (
         <motion.div
           animate={{ opacity: 1 }}
-          className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm"
+          className={`fixed inset-0 bg-black/20 ${isFilterDrawer ? 'z-[60]' : 'z-50 backdrop-blur-sm'}`}
           exit={reducedMotion ? { opacity: 1 } : { opacity: 0 }}
           initial={reducedMotion ? { opacity: 1 } : { opacity: 0 }}
           onClick={onClose}
@@ -88,7 +90,7 @@ export const Drawer = ({ children, onClose, open, side = 'right', title }: Drawe
         >
           <motion.div
             animate={{ x: 0 }}
-            className={`absolute ${side === 'right' ? 'right-0' : 'left-0'} top-0 h-full w-full max-w-md overflow-y-auto bg-canvas px-6 py-8 shadow-modal`}
+            className={`absolute ${side === 'right' ? 'right-0' : 'left-0'} top-0 h-full w-full max-w-md overflow-y-auto shadow-modal ${isFilterDrawer ? 'bg-surface p-5' : 'bg-canvas px-6 py-8'}`}
             exit={reducedMotion ? { x: 0 } : { x: startX }}
             initial={reducedMotion ? { x: 0 } : { x: startX }}
             onClick={(event) => event.stopPropagation()}
@@ -99,10 +101,10 @@ export const Drawer = ({ children, onClose, open, side = 'right', title }: Drawe
             tabIndex={-1}
             transition={reducedMotion ? { duration: 0 } : { duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="flex items-center justify-between border-b border-border pb-5">
-              <h2 className="text-xl font-semibold leading-tight" id={titleId}>{title}</h2>
+            <div className={`flex items-center justify-between ${isFilterDrawer ? 'rounded bg-[rgb(var(--discovery-panel))] pl-3' : 'border-b border-border pb-5'}`}>
+              <h2 className={`font-semibold leading-tight ${isFilterDrawer ? 'text-sm' : 'text-xl'}`} id={titleId}>{title}</h2>
               <button
-                aria-label="Close drawer"
+                aria-label={isFilterDrawer ? 'Đóng bộ lọc' : 'Close drawer'}
                 className="inline-flex h-11 w-11 items-center justify-center rounded-button transition-colors hover:bg-surface-soft hover:text-brand-primary"
                 onClick={onClose}
                 type="button"
@@ -110,7 +112,7 @@ export const Drawer = ({ children, onClose, open, side = 'right', title }: Drawe
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="mt-8">{children}</div>
+            <div className={isFilterDrawer ? 'mt-5' : 'mt-8'}>{children}</div>
           </motion.div>
         </motion.div>
       ) : null}

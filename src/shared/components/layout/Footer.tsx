@@ -13,38 +13,46 @@ const serviceLinks = [
 export const Footer = ({ desktopOnly = false }: { desktopOnly?: boolean }) => {
   const { pathname } = useLocation();
   const home = pathname === routes.home;
+  const productList = pathname === routes.products;
+  const compactLinks = 'max-md:flex max-md:flex-wrap max-md:gap-x-5 max-md:gap-y-2 max-md:space-y-0 max-md:text-xs';
   const productDetail = pathname.startsWith(`${routes.products}/`);
 
   return (
-    <footer className={cn('border-t border-border bg-surface-muted text-sm text-text-secondary print:hidden', home && 'bg-canvas', desktopOnly && 'hidden md:block')}>
+    <footer className={cn('border-t border-border text-sm text-text-secondary print:hidden', home ? 'bg-canvas' : productList ? 'bg-[rgb(var(--discovery-panel))]' : 'bg-surface-muted', desktopOnly && 'hidden md:block')}>
       <div className={cn('mx-auto max-w-layout px-5 pt-10 md:px-12 md:pb-12 md:pt-14', home && 'max-w-[1440px] lg:px-8 lg:pt-16')}>
-        <div className={cn('grid grid-cols-2 gap-6 pb-8 md:grid-cols-12 md:gap-10 md:pb-12', home && 'lg:pb-16')}>
-          <div className={cn('col-span-2 space-y-3 md:col-span-5', home && 'max-md:hidden')}>
+        <div className={cn('grid pb-8 md:gap-10 md:pb-12', productList ? 'grid-cols-1 gap-4 md:grid-cols-4' : 'grid-cols-2 gap-6 md:grid-cols-12', home && 'lg:pb-16')}>
+          <div className={cn('space-y-3', productList ? 'col-span-1' : 'col-span-2 md:col-span-5', home && 'max-md:hidden')}>
             <p className={cn('text-sm font-semibold tracking-wider text-text-primary', home && 'text-base font-bold tracking-widest')}>FASHION SHOP</p>
-            <p className={cn('max-w-sm leading-relaxed', productDetail && 'max-md:hidden')}>
+            <p className={cn('max-w-sm leading-relaxed', productDetail && 'max-md:hidden', productList && 'text-xs')}>
               Bộ sưu tập trang phục và phụ kiện tinh giản với hình thái tối giản, chất liệu chọn lọc và phom dáng chuẩn mực.
             </p>
           </div>
-          <div className={cn('space-y-3 md:col-span-3', productDetail && 'max-md:col-span-2')}>
-            <p className={cn('text-xs font-semibold uppercase tracking-widest text-text-primary', home && 'md:text-base md:font-medium md:normal-case md:tracking-tight', productDetail && 'max-md:sr-only')}>Danh mục</p>
-            <ul className={cn('space-y-2.5', productDetail && 'max-md:flex max-md:flex-wrap max-md:gap-x-5 max-md:gap-y-2 max-md:space-y-0 max-md:text-xs')}>
+          <div className={cn('space-y-3', productList ? 'col-span-1' : 'md:col-span-3', productDetail && 'max-md:col-span-2')}>
+            <p className={cn('text-xs font-semibold uppercase tracking-widest text-text-primary', home && 'md:text-base md:font-medium md:normal-case md:tracking-tight', (productDetail || productList) && 'max-md:sr-only')}>Danh mục</p>
+            <ul className={cn('space-y-2.5', (productDetail || productList) && compactLinks)}>
               {catalogNavigation.map(({ slug, label, to }) => (
                 <li key={slug}><Link className="inline-flex py-0.5 transition-colors hover:text-brand-primary" to={to}>{label}</Link></li>
               ))}
             </ul>
           </div>
-          <div className={cn('space-y-3 md:col-span-4', productDetail && 'max-md:hidden')}>
-            <p className={cn('text-xs font-semibold uppercase tracking-widest text-text-primary', home && 'md:text-base md:font-medium md:normal-case md:tracking-tight')}>Dịch vụ khách hàng</p>
-            <ul className="space-y-2.5">
+          <div className={cn('space-y-3', productList ? 'col-span-1' : 'md:col-span-4', productDetail && 'max-md:hidden', productList && 'text-xs')}>
+            <p className={cn('text-xs font-semibold uppercase tracking-widest text-text-primary', home && 'md:text-base md:font-medium md:normal-case md:tracking-tight', productList && 'max-md:sr-only')}>Dịch vụ khách hàng</p>
+            <ul className={cn('space-y-2.5', productList && compactLinks)}>
               {serviceLinks.map(({ label, to }) => (
                 <li key={to}><Link className="inline-flex py-0.5 transition-colors hover:text-brand-primary" to={to}>{label}</Link></li>
               ))}
             </ul>
           </div>
+          {productList ? (
+            <div className="hidden space-y-3 md:block">
+              <p className="text-xs font-semibold uppercase tracking-widest text-text-primary">Ghi chú cửa hàng</p>
+              <p className="text-xs leading-relaxed">Sản phẩm hiển thị theo đơn vị tiền tệ VND.</p>
+            </div>
+          ) : null}
         </div>
         <div className="flex flex-col gap-2 pb-8 text-xs text-outline md:flex-row md:items-center md:justify-between md:border-t md:border-border md:pb-0 md:pt-8">
           <p>© {new Date().getFullYear()} Fashion Shop. Bảo lưu mọi quyền.</p>
-          <p className="hidden md:block">Sản phẩm hiển thị theo đơn vị tiền tệ VND.</p>
+          {!productList ? <p className="hidden md:block">Sản phẩm hiển thị theo đơn vị tiền tệ VND.</p> : null}
         </div>
       </div>
     </footer>

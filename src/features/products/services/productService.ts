@@ -6,36 +6,14 @@ import { buildProductListRequest } from '@/shared/lib/productSearch';
 import { mockCatalog } from '@/shared/lib/mockCatalog';
 import type { ProductListQuery, ProductListResponse } from '@/shared/types/catalog.types';
 
-const buildCategoryCounts = async () => {
-  const categories = await catalogLookupService.getCategories();
-
-  const counts = await Promise.all(
-    categories.map(async (category) => {
-      const response = await catalogLookupService.listProducts({
-        categoryId: category.id,
-        size: 1,
-        sort: 'createdAt,desc',
-      });
-
-      return [category.id, response.totalItems] as const;
-    }),
-  );
-
-  return new Map<string, number>(counts);
-};
-
 export const productService = {
   async getCategories() {
     if (config.useMockData) {
       return mockCatalog.getCategories();
     }
 
-    const [categories, categoryCounts] = await Promise.all([
-      catalogLookupService.getCategories(),
-      buildCategoryCounts(),
-    ]);
-
-    return categories.map((category) => toCategory(category, categoryCounts.get(category.id) ?? 0));
+    const categories = await catalogLookupService.getCategories();
+    return categories.map(toCategory);
   },
   async getBrands() {
     if (config.useMockData) {

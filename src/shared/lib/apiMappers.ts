@@ -119,7 +119,7 @@ export const toAddress = (address: AddressResponse) => ({
   createdAt: address.createdAt,
 });
 
-export const toCategory = (category: CategoryResponse, itemCount = 0): Category => ({
+export const toCategory = (category: CategoryResponse): Category => ({
   id: category.id,
   parentId: category.parentId,
   slug: category.slug,
@@ -130,7 +130,6 @@ export const toCategory = (category: CategoryResponse, itemCount = 0): Category 
   status: category.status,
   sortOrder: category.sortOrder,
   createdAt: category.createdAt,
-  itemCount,
 });
 
 export const toBrand = (brand: BrandResponse): Brand => ({

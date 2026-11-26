@@ -27,7 +27,6 @@ export const categories: Category[] = [
     description: 'Structured tailoring, fluid layers, and evening textures.',
     imageUrl: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=900&q=80',
     imageAlt: 'Editorial womenswear rack with structured tailoring',
-    itemCount: 18,
   },
   {
     id: 'cat-menswear',
@@ -36,7 +35,6 @@ export const categories: Category[] = [
     description: 'Soft tailoring and sharp essentials for daily uniform dressing.',
     imageUrl: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80',
     imageAlt: 'Menswear rail with neutral tailoring',
-    itemCount: 14,
   },
   {
     id: 'cat-accessories',
@@ -45,7 +43,6 @@ export const categories: Category[] = [
     description: 'Leather goods, sculptural hardware, and polished finishing pieces.',
     imageUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80',
     imageAlt: 'Luxury accessories styled on a soft neutral background',
-    itemCount: 9,
   },
 ];
 
