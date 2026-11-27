@@ -893,3 +893,5 @@ Customer cancellation is limited to `PENDING`/`AWAITING_PAYMENT` by the current 
 ## Shipping policy (#88)
 
 `GET /api/v1/policies/shipping` returns the currently effective published version with `version`, `title`, `content`, `effectiveFrom` and `publishedAt`. Content is plain text. A 404 means no public version is currently available. The PDP checks only when opening the shipping accordion. The public page is `/policies/shipping`. Fees remain sourced from Checkout.
+
+Updating or deleting an address resets cached Checkout previews even when the same address ID was used for a prior quote. Deleting the selected address clears checkout selection. The Backend continues to calculate prices and fees.

@@ -1,6 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 
 import { queryKeys } from '@/constants/queryKeys';
+import { useCheckoutStore } from '@/features/checkout/stores/checkoutStore';
 import { addressService } from '@/shared/services/addressService';
 import type { CreateAddressRequest, UpdateAddressRequest } from '@/shared/types/address.types';
 
@@ -29,6 +30,17 @@ export const useCreateAddress = () => {
   });
 };
 
+const resetAddressQuotes = (queryClient: QueryClient, addressId: string, deleted = false) => {
+  if (useCheckoutStore.getState().shippingAddressId === addressId) {
+    useCheckoutStore.setState({
+      ...(deleted ? { shippingAddressId: '' } : {}),
+      orderPreview: null,
+      previewError: null,
+    });
+  }
+  void queryClient.resetQueries({ queryKey: queryKeys.checkout.previews });
+};
+
 export const useUpdateAddress = () => {
   const queryClient = useQueryClient();
 
@@ -36,6 +48,7 @@ export const useUpdateAddress = () => {
     mutationFn: ({ addressId, payload }: { addressId: string; payload: UpdateAddressRequest }) =>
       addressService.updateAddress(addressId, payload),
     onSuccess: (address) => {
+      resetAddressQuotes(queryClient, address.id);
       void queryClient.invalidateQueries({ queryKey: queryKeys.addresses.list });
       void queryClient.invalidateQueries({ queryKey: queryKeys.addresses.detail(address.id) });
     },
@@ -47,7 +60,8 @@ export const useDeleteAddress = () => {
 
   return useMutation({
     mutationFn: (addressId: string) => addressService.deleteAddress(addressId),
-    onSuccess: () => {
+    onSuccess: (_, addressId) => {
+      resetAddressQuotes(queryClient, addressId, true);
       void queryClient.invalidateQueries({ queryKey: queryKeys.addresses.list });
     },
   });
