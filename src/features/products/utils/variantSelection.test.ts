@@ -30,6 +30,21 @@ const variants: ProductVariant[] = [
   },
 ];
 
+describe('getVariantAttributeGroups', () => {
+  it('keeps color before size and orders letter sizes even when the catalog returns them out of order', () => {
+    const unorderedVariants = [...variants].reverse().map((variant) => ({
+      ...variant,
+      attributes: [...variant.attributes].reverse(),
+    }));
+    const groups = getVariantAttributeGroups(unorderedVariants);
+
+    expect(groups.map((group) => group.attributeCode)).toEqual(['COLOR', 'SIZE']);
+    expect(groups[1].values.map((value) => value.valueId)).toEqual(['s', 'm', 'l']);
+    expect(resolveVariantSelection(unorderedVariants, groups, { color: 'gray', size: 'm' }))
+      .toMatchObject({ status: 'active', variant: { id: 'variant-gray-m' } });
+  });
+});
+
 describe('resolveVariantSelection', () => {
   const groups = getVariantAttributeGroups(variants);
 

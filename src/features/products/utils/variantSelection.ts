@@ -13,6 +13,14 @@ export type VariantSelectionResult =
 
 export type VariantValueStatus = 'available' | 'inactive' | 'unavailable';
 
+const ATTRIBUTE_ORDER = ['COLOR', 'SIZE'];
+const LETTER_SIZE_ORDER = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+
+const displayOrder = (order: string[], value?: string) => {
+  const index = value ? order.indexOf(value.trim().toUpperCase()) : -1;
+  return index === -1 ? order.length : index;
+};
+
 export const getVariantAttributeGroups = (variants: ProductVariant[]): VariantAttributeGroup[] => {
   const groups = new Map<string, VariantAttributeGroup>();
 
@@ -37,7 +45,17 @@ export const getVariantAttributeGroups = (variants: ProductVariant[]): VariantAt
     }
   }
 
-  return [...groups.values()];
+  const orderedGroups = [...groups.values()].sort((first, second) =>
+    displayOrder(ATTRIBUTE_ORDER, first.attributeCode) - displayOrder(ATTRIBUTE_ORDER, second.attributeCode),
+  );
+  for (const group of orderedGroups) {
+    if (group.attributeCode === 'SIZE') {
+      group.values.sort((first, second) =>
+        displayOrder(LETTER_SIZE_ORDER, first.label) - displayOrder(LETTER_SIZE_ORDER, second.label),
+      );
+    }
+  }
+  return orderedGroups;
 };
 
 export const resolveVariantSelection = (
