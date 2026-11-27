@@ -888,3 +888,8 @@ Customer cancellation is limited to `PENDING`/`AWAITING_PAYMENT` by the current 
 - The server resolves active guides in order Product → Category + Brand → Brand → Category → Shop default. Within a category scope the lower configured assignment priority wins, followed by category sort order and slug.
 - Product detail may contain `badges` with up to two `{ code, label }` entries. Product list items may contain a single `badge` of the same shape. These are explicitly assigned and active. Price and inventory states come from their own contract. `featured` continues to control product discovery.
 - The product detail shipping note describes when the existing quote is calculated. `CheckoutCarrierQuoteResponse` exposes `shippingFee` and no ETA field. `estimatedDeliveryDate` belongs to shipment tracking. VAT applicability is not available in the catalog, order or invoice contract, so PDP omits an inclusive-VAT label.
+
+
+## Shipping policy (#88)
+
+`GET /api/v1/policies/shipping` returns the currently effective published version with `version`, `title`, `content`, `effectiveFrom` and `publishedAt`. Content is plain text. A 404 means no public version is currently available. The PDP checks only when opening the shipping accordion. The public page is `/policies/shipping`. Fees remain sourced from Checkout.

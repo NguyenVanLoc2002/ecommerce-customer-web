@@ -2,6 +2,7 @@ export const routes = {
   home: '/',
   products: '/products',
   productDetail: '/products/:slug',
+  shippingPolicy: '/policies/shipping',
   cart: '/cart',
   checkoutAddress: '/checkout/address',
   checkoutPayment: '/checkout/payment',
