@@ -1,3 +1,4 @@
+import { cn } from '@/shared/utils/cn';
 import type { ProductVariant } from '@/shared/types/catalog.types';
 import { getVariantValueStatus, type VariantAttributeGroup, type VariantSelectionResult } from '@/features/products/utils/variantSelection';
 
@@ -6,16 +7,17 @@ type VariantSelectorProps = {
   groups: VariantAttributeGroup[];
   selectedValues: Record<string, string>;
   selection: VariantSelectionResult;
+  sizeGuideAction?: React.ReactNode;
   onSelectValue: (attributeId: string, valueId: string) => void;
 };
 
-export const VariantSelector = ({ groups, onSelectValue, selectedValues, selection, variants }: VariantSelectorProps) => {
+export const VariantSelector = ({ groups, onSelectValue, selectedValues, selection, sizeGuideAction, variants }: VariantSelectorProps) => {
   if (variants.length === 0) {
-    return <p className="text-sm text-text-secondary" role="status">Sản phẩm hiện chưa có phiên bản để đặt mua.</p>;
+    return <><p className="text-sm text-text-secondary" role="status">Sản phẩm hiện chưa có phiên bản để đặt mua.</p>{sizeGuideAction}</>;
   }
 
   if (groups.length === 0) {
-    return <p className="text-sm text-text-secondary" role="status">Chưa có thông tin phân loại sản phẩm để chọn.</p>;
+    return <><p className="text-sm text-text-secondary" role="status">Chưa có thông tin phân loại sản phẩm để chọn.</p>{sizeGuideAction}</>;
   }
 
   const selectionMessage = {
@@ -27,16 +29,22 @@ export const VariantSelector = ({ groups, onSelectValue, selectedValues, selecti
   }[selection.status];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 lg:space-y-6">
       {groups.map((group) => {
         const selectedValue = group.values.find((value) => value.valueId === selectedValues[group.attributeId]);
 
+        const isSize = group.attributeCode === 'SIZE';
+
         return (
-          <fieldset className="space-y-3 border-b border-border pb-5 last:border-0 last:pb-0" key={group.attributeId}>
-            <legend className="mb-1 text-sm font-medium text-text-primary">
-              {group.attributeName}: <span className="font-normal text-text-secondary">{selectedValue?.label ?? 'Chưa chọn'}</span>
+          <fieldset className="min-w-0 space-y-2.5 lg:space-y-3" key={group.attributeId}>
+            <legend className="w-full text-sm font-medium text-text-primary">
+              <span className="flex flex-wrap items-center justify-between gap-x-3">
+                <span>
+               {isSize ? 'Kích cỡ' : group.attributeCode === 'COLOR' ? 'Màu sắc' : group.attributeName}: <span className="font-normal text-text-secondary">{selectedValue?.label ?? 'Chưa chọn'}</span></span>
+                {isSize ? sizeGuideAction : null}
+              </span>
             </legend>
-            <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap">
+            <div className={cn('gap-2.5', isSize ? 'grid grid-cols-2 lg:grid-cols-4' : 'flex flex-wrap')}>
               {group.values.map((value) => {
                 const selected = selectedValues[group.attributeId] === value.valueId;
                 const valueStatus = getVariantValueStatus(variants, groups, selectedValues, group.attributeId, value.valueId);
@@ -45,7 +53,13 @@ export const VariantSelector = ({ groups, onSelectValue, selectedValues, selecti
                 return (
                   <button
                     aria-pressed={selected}
-                    className={`flex min-h-11 min-w-0 flex-col items-center justify-center rounded border px-4 py-2 text-sm transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary motion-reduce:transition-none md:min-w-[92px] ${selected ? 'border-text-primary bg-text-primary text-surface' : 'border-border bg-surface hover:border-text-primary'} ${disabled ? 'cursor-not-allowed bg-surface-muted text-text-secondary opacity-70' : ''}`}
+                    className={cn(
+                      'flex min-h-11 min-w-0 flex-col items-center justify-center break-words rounded px-4 py-1.5 text-center text-sm font-medium transition-colors motion-reduce:transition-none lg:rounded-sm lg:ring-1',
+                      isSize ? 'lg:px-1' : 'lg:px-5',
+                      selected && 'bg-brand-primary text-surface lg:bg-canvas lg:text-text-primary lg:ring-text-primary',
+                      !selected && !disabled && 'bg-surface-muted text-text-primary hover:bg-surface-soft lg:ring-border lg:hover:ring-text-primary',
+                      disabled && 'cursor-not-allowed bg-surface-muted text-text-secondary opacity-65 lg:ring-border',
+                    )}
                     disabled={disabled}
                     key={value.valueId}
                     onClick={() => onSelectValue(group.attributeId, value.valueId)}
@@ -53,7 +67,7 @@ export const VariantSelector = ({ groups, onSelectValue, selectedValues, selecti
                     title={valueStatus === 'inactive' ? 'Tạm ngừng bán' : valueStatus === 'unavailable' ? 'Không có tổ hợp này' : undefined}
                   >
                     <span className={valueStatus === 'inactive' ? 'line-through' : undefined}>{value.label}</span>
-                    {disabled ? <span className="mt-1 text-[11px] leading-tight">{valueStatus === 'inactive' ? 'Tạm ngừng bán' : 'Không có lựa chọn này'}</span> : null}
+                    {disabled ? <span className="text-xs leading-tight lg:text-[10px]">{valueStatus === 'inactive' ? 'Tạm ngừng bán' : 'Không có lựa chọn này'}</span> : null}
                   </button>
                 );
               })}
@@ -61,6 +75,7 @@ export const VariantSelector = ({ groups, onSelectValue, selectedValues, selecti
           </fieldset>
         );
       })}
+      {!groups.some((group) => group.attributeCode === 'SIZE') ? sizeGuideAction : null}
       <p aria-live="polite" className={selection.status === 'active' ? 'sr-only' : 'text-sm text-text-secondary'} role="status">{selectionMessage}</p>
     </div>
   );

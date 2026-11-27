@@ -6,10 +6,12 @@ type QuantitySelectorProps = {
   disabled?: boolean;
   label?: string;
   compact?: boolean;
+  appearance?: 'cart' | 'product';
   labelledBy?: string;
 };
 
 export const QuantitySelector = ({
+  appearance = 'cart',
   compact = false,
   disabled = false,
   label = 'quantity',
@@ -19,10 +21,11 @@ export const QuantitySelector = ({
 }: QuantitySelectorProps) => {
   const decrementLabel = label.startsWith('quantity') ? `Decrease ${label}` : `Giảm ${label}`;
   const incrementLabel = label.startsWith('quantity') ? `Increase ${label}` : `Tăng ${label}`;
+  const product = appearance === 'product';
   const controlWidthClassName = compact ? 'w-10' : 'w-11';
 
   return (
-    <div aria-labelledby={labelledBy} className="inline-flex items-center border border-border bg-surface" role="group">
+    <div aria-labelledby={labelledBy} className={product ? 'inline-flex items-center rounded bg-surface-muted lg:h-[52px] lg:w-36 lg:justify-between lg:rounded-sm lg:ring-1 lg:ring-border' : 'inline-flex items-center border border-border bg-surface'} role="group">
       <button
         aria-label={decrementLabel}
         className={`inline-flex h-11 ${controlWidthClassName} items-center justify-center text-text-primary transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50`}
@@ -32,7 +35,7 @@ export const QuantitySelector = ({
       >
         <Minus aria-hidden="true" className="h-4 w-4" />
       </button>
-      <output aria-label="Số lượng hiện tại" aria-live="polite" className={`${compact ? 'min-w-8' : 'min-w-12'} text-center text-sm`}>
+      <output aria-label="Số lượng hiện tại" aria-live="polite" className={`${product ? 'min-w-10 font-medium max-lg:text-base' : compact ? 'min-w-8' : 'min-w-12'} text-center text-sm`}>
         {value}
       </output>
       <button

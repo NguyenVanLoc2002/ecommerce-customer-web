@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 
 import { routePaths } from '@/constants/routes';
+import { ProductBadges } from '@/shared/components/catalog/ProductBadges';
 import type { ProductSummary } from '@/shared/types/catalog.types';
 import { formatVnd } from '@/shared/utils/formatVnd';
 
@@ -15,7 +16,7 @@ export const ProductCard = ({ product, appearance }: ProductCardProps) => {
   return (
     <article className="min-w-0">
       <Link className="group block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4" to={routePaths.productDetail(product.slug)}>
-        <div className={`aspect-[3/4] overflow-hidden rounded-sm bg-surface-soft ${appearance === 'home' ? 'lg:rounded-none lg:border lg:border-border' : 'lg:rounded'}`}>
+        <div className={`relative aspect-[3/4] overflow-hidden rounded-sm bg-surface-soft ${appearance === 'home' ? 'lg:rounded-none lg:border lg:border-border' : 'lg:rounded'}`}>
           <img
             alt={product.primaryImage.alt}
             className="h-full w-full object-cover object-top motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-[1.02] lg:object-center"
@@ -25,6 +26,7 @@ export const ProductCard = ({ product, appearance }: ProductCardProps) => {
             src={product.primaryImage.src}
             width={product.primaryImage.width}
           />
+          {appearance === 'list' ? <ProductBadges labels={product.badges} /> : null}
         </div>
         <div className={`space-y-1 pt-2.5 ${appearance === 'home' ? 'lg:pt-4' : 'lg:pt-3.5'}`}>
           {product.brandName ? <p className="break-words text-[11px] uppercase tracking-wider text-text-secondary lg:text-[13px]">{product.brandName}</p> : null}

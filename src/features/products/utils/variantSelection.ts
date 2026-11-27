@@ -3,6 +3,7 @@ import type { ProductVariant } from '@/shared/types/catalog.types';
 export type VariantAttributeGroup = {
   attributeId: string;
   attributeName: string;
+  attributeCode?: string;
   values: Array<{ valueId: string; label: string }>;
 };
 
@@ -23,6 +24,7 @@ export const getVariantAttributeGroups = (variants: ProductVariant[]): VariantAt
 
       const group = groups.get(attribute.attributeId) ?? {
         attributeId: attribute.attributeId,
+        attributeCode: attribute.attributeCode.toUpperCase(),
         attributeName: attribute.attributeName || attribute.attributeCode || 'Phân loại',
         values: [],
       };

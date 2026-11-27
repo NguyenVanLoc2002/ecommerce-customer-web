@@ -1,0 +1,13 @@
+{
+  "port": 8082,
+  "passed": true,
+  "marks": [
+    "OpenAPI includes public detail and new Admin resources",
+    "Live guide replacement/removal, inactive/copy and two badges with idempotent assignment and priority",
+    "Live Admin and Customer screens: desktop",
+    "Live Admin and Customer screens: mobile",
+    "Live stock rejection, Add to Cart and server-priced COD preview verified",
+    "Live checkout address screen shows the synthetic customer address",
+    "Assignments removed through the real API"
+  ]
+}

@@ -158,7 +158,7 @@ export const toProductSummary = (product: ProductListItemResponse): ProductSumma
     categorySlugs: [],
     price: product.minPrice,
     compareAtPrice: product.maxPrice > product.minPrice ? product.maxPrice : undefined,
-    badges: [product.featured ? 'Featured' : '', product.createdAt ? 'New' : ''].filter(Boolean),
+    badges: product.badge?.label ? [product.badge.label] : [],
     rating: 0,
     reviewCount: 0,
     primaryImage,

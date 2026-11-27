@@ -2,15 +2,17 @@ import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
 import type { ProductImage } from '@/shared/types/catalog.types';
+import { ProductBadges } from '@/shared/components/catalog/ProductBadges';
 import { cn } from '@/shared/utils/cn';
 
 type ProductMediaGalleryProps = {
   media: ProductImage[];
   productName: string;
   selectedVariantId?: string;
+  badgeLabels?: string[];
 };
 
-export const ProductMediaGallery = ({ media, productName, selectedVariantId }: ProductMediaGalleryProps) => {
+export const ProductMediaGallery = ({ badgeLabels = [], media, productName, selectedVariantId }: ProductMediaGalleryProps) => {
   const reducedMotion = useReducedMotion();
   const imageMedia = media.filter((image) => !image.mediaType || image.mediaType.toUpperCase() === 'IMAGE');
   const variantMedia = selectedVariantId ? imageMedia.filter((image) => image.variantId === selectedVariantId) : [];
@@ -28,15 +30,15 @@ export const ProductMediaGallery = ({ media, productName, selectedVariantId }: P
   }
 
   return (
-    <div className="flex flex-col gap-3 md:flex-row md:gap-5">
-      <div aria-label={`Hình ảnh ${productName}`} className="order-2 grid grid-cols-4 gap-2.5 px-page md:order-1 md:flex md:w-20 md:flex-col md:overflow-visible md:px-0" role="group">
+    <div className="flex flex-col gap-3 lg:flex-row lg:gap-5">
+      <div aria-label={`Hình ảnh ${productName}`} className="order-2 grid grid-cols-4 gap-2.5 px-page lg:order-1 lg:flex lg:w-20 lg:flex-col lg:gap-3 lg:px-0" role="group">
         {visibleMedia.map((image, index) => (
           <button
             aria-label={`Hiển thị ảnh ${index + 1} của ${productName}`}
             aria-pressed={selectedImage?.id === image.id}
             className={cn(
-              'group/thumb aspect-[3/4] min-w-0 overflow-hidden rounded border bg-surface transition-[border-color,opacity] duration-300 motion-reduce:transition-none md:h-auto md:w-full',
-              selectedImage.id === image.id ? 'border-text-primary opacity-100' : 'border-transparent opacity-70 hover:opacity-100',
+              'aspect-[3/4] min-w-0 overflow-hidden rounded bg-surface-muted transition-opacity duration-300 motion-reduce:transition-none lg:h-28 lg:w-full lg:p-0.5 lg:ring-1',
+              selectedImage.id === image.id ? 'shadow-subtle lg:ring-text-primary' : 'opacity-60 hover:opacity-100 lg:opacity-100 lg:ring-border lg:hover:ring-text-secondary',
             )}
             key={image.id}
             onClick={() => setSelectedId(image.id)}
@@ -44,7 +46,7 @@ export const ProductMediaGallery = ({ media, productName, selectedVariantId }: P
           >
             <img
               alt={image.alt}
-              className="aspect-[3/4] h-full w-full object-cover transition-opacity duration-300 group-hover/thumb:opacity-90 motion-reduce:transition-none"
+              className="h-full w-full object-cover lg:rounded-sm"
               height={image.height}
               loading="lazy"
               src={image.src}
@@ -53,20 +55,22 @@ export const ProductMediaGallery = ({ media, productName, selectedVariantId }: P
           </button>
         ))}
       </div>
-      <div className="order-1 flex-1 md:order-2">
-        <div className="group relative aspect-[3/4] overflow-hidden bg-surface-soft">
+      <div className="order-1 min-w-0 flex-1 lg:order-2">
+        <div className="group relative aspect-[3/4] overflow-hidden bg-surface-soft lg:rounded-sm">
           <motion.img
             alt={selectedImage.alt}
             animate={{ opacity: 1 }}
-            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.015] motion-reduce:transition-none"
+            className="h-full w-full object-cover transition-transform duration-500 ease-out motion-reduce:transition-none lg:object-top lg:motion-safe:group-hover:scale-105"
             height={selectedImage.height}
-            initial={reducedMotion ? false : { opacity: 0.65 }}
+            fetchPriority="high"
+            initial={false}
             key={selectedImage.id}
             loading="eager"
             src={selectedImage.src}
             transition={reducedMotion ? { duration: 0 } : { duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             width={selectedImage.width}
           />
+          <ProductBadges labels={badgeLabels} limit={2} />
         </div>
       </div>
     </div>
