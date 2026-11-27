@@ -13,6 +13,7 @@ import { ShopLayout } from '@/shared/components/layout/ShopLayout';
 const HomePage = lazy(() => import('@/features/home/pages/HomePage'));
 const ProductListPage = lazy(() => import('@/features/products/pages/ProductListPage'));
 const ProductDetailPage = lazy(() => import('@/features/products/pages/ProductDetailPage'));
+const ShippingPolicyPage = lazy(() => import('@/features/policies/ShippingPolicyPage'));
 const CartPage = lazy(() => import('@/features/cart/pages/CartPage'));
 const CheckoutAddressPage = lazy(() => import('@/features/checkout/pages/CheckoutAddressPage'));
 const CheckoutPaymentPage = lazy(() => import('@/features/checkout/pages/CheckoutPaymentPage'));
@@ -68,6 +69,10 @@ export const router = createBrowserRouter([
       {
         path: routes.productDetail,
         element: renderLazyPage(ProductDetailPage),
+      },
+      {
+        path: routes.shippingPolicy,
+        element: renderLazyPage(ShippingPolicyPage),
       },
       {
         path: routes.notFound,

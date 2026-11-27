@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { CheckCircle2, ChevronDown, CircleAlert, ShoppingBag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { routes } from '@/constants/routes';
+import { useShippingPolicy } from '@/features/policies/useShippingPolicy';
 
 import { PriceDisplay } from '@/shared/components/catalog/PriceDisplay';
 import { SizeGuide } from '@/shared/components/catalog/SizeGuide';
@@ -58,6 +60,8 @@ export const PurchaseBlock = ({
 }: PurchaseBlockProps) => {
   const hasDescription = Boolean(product.description && product.description !== product.subtitle);
   const hasDetails = hasDescription || product.materials.length > 0 || product.care.length > 0;
+  const [showShippingPolicy, setShowShippingPolicy] = useState(false);
+  const shippingPolicy = useShippingPolicy(showShippingPolicy);
   const returnPolicyDescription = product.returnPolicy ? returnPolicyDescriptions[product.returnPolicy] : undefined;
 
   return (
@@ -120,13 +124,19 @@ export const PurchaseBlock = ({
             </div>
           </details>
         ) : null}
-        <details className="group rounded bg-surface-muted lg:rounded-none lg:bg-transparent lg:py-1.5">
+        <details className="group rounded bg-surface-muted lg:rounded-none lg:bg-transparent lg:py-1.5"
+          onToggle={(event) => setShowShippingPolicy(event.currentTarget.open)}>
           <summary className={detailSummaryClass}>
             <span>{returnPolicyDescription ? 'Chính sách đổi trả & Giao nhận' : 'Thông tin giao nhận'}</span>
             <ChevronDown aria-hidden="true" className={detailIconClass} strokeWidth={1.5} />
           </summary>
           <div className="space-y-2 px-4 pb-4 text-sm leading-relaxed text-text-secondary lg:px-0 lg:pb-2 lg:text-xs">
             <p>Phí giao hàng được tính tại bước thanh toán sau khi bạn chọn địa chỉ nhận hàng và phương thức vận chuyển.</p>
+            {shippingPolicy.isSuccess && shippingPolicy.data ? (
+              <Link className="font-medium underline underline-offset-4" to={routes.shippingPolicy}>
+                {shippingPolicy.data.title}
+              </Link>
+            ) : null}
             {returnPolicyDescription ? <p>{returnPolicyDescription} Bạn vẫn có thể gửi yêu cầu hỗ trợ nếu sản phẩm bị lỗi, thiếu hàng hoặc giao sai.</p> : null}
           </div>
         </details>

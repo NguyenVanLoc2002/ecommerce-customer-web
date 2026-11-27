@@ -1,3 +1,5 @@
+const checkoutPreviews = ['checkout', 'preview'] as const;
+
 export const queryKeys = {
   auth: {
     me: ['auth', 'me'] as const,
@@ -24,7 +26,8 @@ export const queryKeys = {
   },
   checkout: {
     carriers: ['checkout', 'carriers'] as const,
-    preview: (payloadSignature: string) => ['checkout', 'preview', payloadSignature] as const,
+    previews: checkoutPreviews,
+    preview: (payloadSignature: string) => [...checkoutPreviews, payloadSignature] as const,
     voucher: (code: string, amount: number) => ['checkout', 'voucher', code, amount] as const,
     confirmation: ['checkout', 'confirmation'] as const,
   },
