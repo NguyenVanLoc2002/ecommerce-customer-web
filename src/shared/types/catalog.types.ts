@@ -81,7 +81,24 @@ export interface ProductReview {
   verifiedPurchase: boolean;
 }
 
+export type ProductReturnPolicy = 'STANDARD' | 'SEALED_ONLY' | 'REVIEW_REQUIRED' | 'CUSTOMIZED_FINAL_SALE';
+
+export interface ProductSizeGuide {
+  id: string;
+  name: string;
+  content: {
+    measurement: 'BODY' | 'GARMENT';
+    columns: Array<{ key: string; label: string; unit: 'CM' | 'IN' | 'KG' }>;
+    rows: Array<{ size: string; values: Record<string, { min: number; max?: number | null }> }>;
+    measurementImageUrl?: string | null;
+    notes?: string | null;
+  };
+}
+
 export interface ProductDetail extends ProductSummary {
+  sizeGuide?: ProductSizeGuide;
+  categoryName?: string;
+  returnPolicy?: ProductReturnPolicy;
   description: string;
   story: string;
   materials: string[];
@@ -114,7 +131,10 @@ export interface BrandResponse {
   createdAt: string;
 }
 
+export type ProductBadgeSummary = { code: string; label: string };
+
 export interface ProductListItemResponse {
+  badge?: ProductBadgeSummary | null;
   id: string;
   name: string;
   slug: string;
@@ -168,6 +188,9 @@ export interface ProductReferenceResponse {
 }
 
 export interface ProductDetailResponse {
+  badges?: ProductBadgeSummary[] | null;
+  sizeGuide?: ProductSizeGuide | null;
+  returnPolicy?: ProductReturnPolicy | null;
   id: string;
   name: string;
   slug: string;

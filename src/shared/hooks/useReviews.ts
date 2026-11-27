@@ -5,11 +5,11 @@ import { reviewService } from '@/shared/services/reviewService';
 import { useAuthStore } from '@/shared/stores/authStore';
 import type { ReviewCreateRequest } from '@/shared/types/review.types';
 
-export const useProductReviews = (productId: string) =>
+export const useProductReviews = (productId: string, enabled = true) =>
   useQuery({
     queryKey: queryKeys.reviews.product(productId),
     queryFn: () => reviewService.getProductReviews(productId),
-    enabled: Boolean(productId),
+    enabled: Boolean(productId) && enabled,
   });
 
 export const useMyReviews = () => {

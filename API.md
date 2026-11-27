@@ -351,6 +351,7 @@ List item fields used by frontend:
   - `status`, `featured`
   - `minPrice`, `maxPrice` (nullable/omitted when no eligible variants)
   - `brand`, `categories`, `variants`, `media`
+  - `returnPolicy` (may be omitted by older Backend versions)
   - `createdAt`, `updatedAt`
 
 ### `GET /products/slug/{slug}`
@@ -419,7 +420,7 @@ Cart item shape:
 
 Backend contract confirmed against [backend PR #80](https://github.com/NguyenVanLoc2002/ecommerce-backend/pull/80).
 
-- Product detail exposes `returnPolicy`. Checkout preview exposes `returnPolicies[]` as `{ variantId, policy }` so restrictions can be shown before checkout. The values are `STANDARD`, `SEALED_ONLY`, `REVIEW_REQUIRED`, and `CUSTOMIZED_FINAL_SALE`.
+- Product detail exposes `returnPolicy`. Checkout preview exposes `returnPolicies[]` as `{ variantId, policy }` so restrictions can be shown before checkout. The values are `STANDARD`, `SEALED_ONLY`, `REVIEW_REQUIRED`, and `CUSTOMIZED_FINAL_SALE`. Product detail previews the strictest configured policy across the product and its non-deleted categories, with `REVIEW_REQUIRED` when none is configured. Omit the PDP preview when the field is absent. Return eligibility uses the policy snapshot captured when the order is placed.
 - Admin-created replacements may appear in order history. They use `paymentMethod: EXCHANGE` and `paymentStatus: NOT_REQUIRED`, with `replacementForOrderId` on order detail. Keep these values out of payment selection. The replacement has no Payment record, voucher redemption, or sales invoice.
 - Return notifications use `RETURN_UPDATED`. A return request leaves the original order and its delivery history intact.
 
@@ -879,3 +880,11 @@ Customer cancellation is limited to `PENDING`/`AWAITING_PAYMENT` by the current 
 - Storefront product slugs resolve through `GET /products/slug/{slug}`.
 - Voucher validation alone is preview-only. Order preview calculates the cart-aware discount; order creation atomically redeems the voucher and persists discount and shipping totals.
 - Review creation requires the parent order to be `COMPLETED`, not merely delivered.
+
+### Size guide and assigned catalog badges
+
+- Both product-detail lookups may return `sizeGuide`. It contains `id`, `name` and `content` with `measurement` (`BODY` or `GARMENT`), ordered `columns`, ordered `rows`, and optional HTTPS `measurementImageUrl` and `notes`.
+- Each column uses `{ key, label, unit }` with unit `CM`, `IN` or `KG`. Each row uses `{ size, values }`, keyed by column key. A cell `{ min, max? }` is either a fixed value or an inclusive range. Absence of `sizeGuide` hides the action. This information is advisory. Cart and inventory continue using catalog variant IDs.
+- The server resolves active guides in order Product → Category + Brand → Brand → Category → Shop default. Within a category scope the lower configured assignment priority wins, followed by category sort order and slug.
+- Product detail may contain `badges` with up to two `{ code, label }` entries. Product list items may contain a single `badge` of the same shape. These are explicitly assigned and active. Price and inventory states come from their own contract. `featured` continues to control product discovery.
+- The product detail shipping note describes when the existing quote is calculated. `CheckoutCarrierQuoteResponse` exposes `shippingFee` and no ETA field. `estimatedDeliveryDate` belongs to shipment tracking. VAT applicability is not available in the catalog, order or invoice contract, so PDP omits an inclusive-VAT label.

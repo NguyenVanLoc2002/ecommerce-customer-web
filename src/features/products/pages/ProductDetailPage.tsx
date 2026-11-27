@@ -50,13 +50,13 @@ export const ProductDetailPage = () => {
   const user = useAuthStore((state) => state.user);
   const addCartItem = useAddCartItem();
   const isSubmittingRef = useRef(false);
-  const purchaseActionRef = useRef<HTMLDivElement>(null);
   const productQuery = useProductDetail(slug);
   const relatedQuery = useRelatedProducts(slug);
   const product = productQuery.data;
   const [selectedValues, setSelectedValues] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
   const [addError, setAddError] = useState('');
+  const [addSucceeded, setAddSucceeded] = useState(false);
   const variantGroups = useMemo(() => getVariantAttributeGroups(product?.variants ?? []), [product?.variants]);
   const selection = resolveVariantSelection(product?.variants ?? [], variantGroups, selectedValues);
   const selectedVariant = selection.variant;
@@ -85,13 +85,15 @@ export const ProductDetailPage = () => {
   useEffect(() => {
     setSelectedValues({});
     setAddError('');
+    setAddSucceeded(false);
+    setQuantity(1);
   }, [product?.id]);
 
   if (productQuery.isLoading) {
     return (
       <>
         <PageSEO description="Chi tiết sản phẩm, hình ảnh và các phân loại hiện có." path={routePaths.productDetail(slug || 'product')} title="Đang tải sản phẩm" />
-        <PageWrapper>
+        <PageWrapper className="!pt-8">
           <Container>
             <h1 className="sr-only">Đang tải sản phẩm</h1>
             <SkeletonDetail />
@@ -105,7 +107,7 @@ export const ProductDetailPage = () => {
     return (
       <>
         <PageSEO description="Chi tiết sản phẩm hiện chưa thể tải." noIndex path={routePaths.productDetail(slug || 'product')} title="Sản phẩm tạm thời không khả dụng" />
-        <PageWrapper>
+        <PageWrapper className="!pt-8">
           <Container className="space-y-6">
             <h1 className="sr-only">Sản phẩm tạm thời không khả dụng</h1>
             <BreadcrumbNav items={[{ label: 'Trang chủ', href: routes.home }, { label: 'Sản phẩm', href: routes.products }]} />
@@ -124,7 +126,7 @@ export const ProductDetailPage = () => {
     return (
       <>
         <PageSEO description="Sản phẩm không có trong danh mục hiện tại." noIndex path={routePaths.productDetail(slug || 'product')} title="Không tìm thấy sản phẩm" />
-        <PageWrapper>
+        <PageWrapper className="!pt-8">
           <Container className="space-y-6">
             <BreadcrumbNav items={[{ label: 'Trang chủ', href: routes.home }, { label: 'Sản phẩm', href: routes.products }]} />
             <h1 className="text-2xl font-semibold">Không tìm thấy sản phẩm</h1>
@@ -139,7 +141,7 @@ export const ProductDetailPage = () => {
     );
   }
 
-  const addToCart = () => {
+  const addToCart = (fromStickyBar = false) => {
     if (isSubmittingRef.current || selection.status !== 'active') {
       return;
     }
@@ -151,16 +153,21 @@ export const ProductDetailPage = () => {
 
     isSubmittingRef.current = true;
     setAddError('');
+    setAddSucceeded(false);
     addCartItem.mutate(
       { variantId: selection.variant.id, quantity },
       {
         onSuccess: () => {
           isSubmittingRef.current = false;
-          addToast({
-            tone: 'success',
-            title: 'Đã thêm vào giỏ hàng',
-            description: `${product.name} · ${selection.variant.sku || 'Phiên bản đã chọn'} · SL ${quantity}`,
-          });
+          if (fromStickyBar) {
+            addToast({
+              tone: 'success',
+              title: 'Đã thêm vào giỏ hàng',
+              description: `${product.name} · ${selection.variant.sku || 'Phiên bản đã chọn'} · SL ${quantity}`,
+            });
+          } else {
+            setAddSucceeded(true);
+          }
         },
         onError: (error) => {
           isSubmittingRef.current = false;
@@ -174,14 +181,24 @@ export const ProductDetailPage = () => {
             ? 'Tồn kho vừa thay đổi. Hãy giảm số lượng hoặc thử lại.'
             : error instanceof Error ? error.message : 'Không thể thêm sản phẩm lúc này. Vui lòng thử lại.';
           setAddError(message);
-          addToast({ tone: 'danger', title: 'Không thể thêm vào giỏ', description: message });
+          if (fromStickyBar) {
+            addToast({ tone: 'danger', title: 'Không thể thêm vào giỏ', description: message });
+          }
         },
       },
     );
   };
 
   const handleSelectValue = (attributeId: string, valueId: string) => {
-    setSelectedValues((current) => ({ ...current, [attributeId]: valueId }));
+    setSelectedValues((current) => {
+      if (current[attributeId] !== valueId) {
+        return { ...current, [attributeId]: valueId };
+      }
+
+      const next = { ...current };
+      delete next[attributeId];
+      return next;
+    });
     setAddError('');
   };
 
@@ -224,25 +241,37 @@ export const ProductDetailPage = () => {
           },
         ]}
       />
-      <PageWrapper className="pt-24 pb-40 md:pt-20 md:pb-24 lg:pb-0">
-        <Container className="space-y-5 md:space-y-6">
-          <BreadcrumbNav items={[{ label: 'Trang chủ', href: routes.home }, { label: getProductCategoryLabel(product.categorySlugs[0]), href: routes.products }, { label: product.name }]} />
+      <div className="pb-[68px] lg:pb-0">
+        <Container className="lg:pb-16 lg:pt-8">
+          <div className="py-3 lg:mb-8 lg:py-0">
+            <BreadcrumbNav
+              appearance="product"
+              items={[
+                { label: 'Trang chủ', href: routes.home },
+                {
+                  label: product.categoryName ?? getProductCategoryLabel(product.categorySlugs[0]),
+                  href: product.categorySlugs[0] ? `${routes.products}?category=${encodeURIComponent(product.categorySlugs[0])}` : routes.products,
+                },
+                { label: product.name },
+              ]}
+            />
+          </div>
 
-          <div className="grid gap-8 lg:grid-cols-12 lg:gap-12">
-            <div className="max-lg:-mx-page max-lg:w-[calc(100%+2*var(--space-page))] lg:col-span-7">
-              <ProductMediaGallery media={product.media} productName={product.name} selectedVariantId={selectedVariant?.id} />
+          <div className="grid items-start max-lg:gap-6 lg:grid-cols-12 lg:gap-14">
+            <div className="min-w-0 max-lg:-mx-page lg:col-span-7">
+              <ProductMediaGallery badgeLabels={product.badges} media={product.media} productName={product.name} selectedVariantId={selectedVariant?.id} />
             </div>
             <div className="lg:col-span-5">
               <PurchaseBlock
                 addError={addError}
+                addSucceeded={addSucceeded}
                 addToCartDisabled={addToCartDisabled}
                 addToCartLabel={addToCartLabel}
                 addToCartLoading={addCartItem.isPending}
-                purchaseActionRef={purchaseActionRef}
                 compareAtPrice={currentCompareAtPrice}
                 currentPrice={currentPrice}
                 groups={variantGroups}
-                onAddToCart={addToCart}
+                onAddToCart={() => addToCart()}
                 onQuantityChange={handleQuantityChange}
                 onSelectValue={handleSelectValue}
                 product={product}
@@ -252,23 +281,21 @@ export const ProductDetailPage = () => {
               />
             </div>
           </div>
-
         </Container>
-        {product.story && product.story !== product.description ? <ProductStorySection description={product.description} images={product.media} story={product.story} /> : null}
-        <Container className="space-y-14 md:space-y-20 pt-14 md:pt-20">
+        {product.story ? <ProductStorySection images={product.media} story={product.story} /> : null}
+        <Container className="pb-8 lg:pb-16">
           {relatedQuery.data && relatedQuery.data.length > 0 ? <RelatedProducts categorySlug={product.categorySlugs[0]} products={relatedQuery.data} /> : null}
           <ReviewSection productId={product.id} />
         </Container>
         <StickyCartBar
-          compareAtPrice={currentCompareAtPrice}
           disabled={addToCartDisabled}
           label={requiresLogin && canAddToCart ? 'Đăng nhập để mua' : addToCartLabel}
           loading={addCartItem.isPending}
-          onAddToCart={addToCart}
+          onAddToCart={() => addToCart(true)}
           price={currentPrice}
           variantSummary={variantSummary}
         />
-      </PageWrapper>
+      </div>
     </>
   );
 };

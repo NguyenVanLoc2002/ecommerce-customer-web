@@ -1,11 +1,15 @@
+import { CheckCircle2, ChevronDown, CircleAlert, ShoppingBag } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+import { routes } from '@/constants/routes';
+
 import { PriceDisplay } from '@/shared/components/catalog/PriceDisplay';
+import { SizeGuide } from '@/shared/components/catalog/SizeGuide';
 import { QuantitySelector } from '@/shared/components/catalog/QuantitySelector';
 import { VariantSelector } from '@/shared/components/catalog/VariantSelector';
 import { Button } from '@/shared/components/ui/Button';
-import { ChevronDown } from 'lucide-react';
 import type { VariantAttributeGroup, VariantSelectionResult } from '@/features/products/utils/variantSelection';
-import type { ProductDetail } from '@/shared/types/catalog.types';
-import type { RefObject } from 'react';
+import type { ProductDetail, ProductReturnPolicy } from '@/shared/types/catalog.types';
 
 type PurchaseBlockProps = {
   addToCartDisabled: boolean;
@@ -19,14 +23,25 @@ type PurchaseBlockProps = {
   product: ProductDetail;
   quantity: number;
   addError?: string;
-  purchaseActionRef: RefObject<HTMLDivElement>;
+  addSucceeded: boolean;
   onSelectValue: (attributeId: string, valueId: string) => void;
   onAddToCart: () => void;
   onQuantityChange: (value: number) => void;
 };
 
+const returnPolicyDescriptions: Record<ProductReturnPolicy, string> = {
+  STANDARD: 'Có thể gửi yêu cầu đổi trả theo điều kiện áp dụng cho đơn hàng.',
+  SEALED_ONLY: 'Yêu cầu đổi trả theo nhu cầu chỉ áp dụng khi sản phẩm còn nguyên niêm phong.',
+  REVIEW_REQUIRED: 'Yêu cầu đổi trả theo nhu cầu cần được xem xét.',
+  CUSTOMIZED_FINAL_SALE: 'Sản phẩm được cá nhân hóa không áp dụng đổi trả theo nhu cầu.',
+};
+
+const detailSummaryClass = 'flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 px-4 text-sm font-medium text-text-primary lg:min-h-11 lg:px-0 [&::-webkit-details-marker]:hidden';
+const detailIconClass = 'size-5 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none';
+
 export const PurchaseBlock = ({
   addError,
+  addSucceeded,
   addToCartDisabled,
   addToCartLabel,
   addToCartLoading,
@@ -37,67 +52,85 @@ export const PurchaseBlock = ({
   onQuantityChange,
   onSelectValue,
   product,
-  purchaseActionRef,
   quantity,
   selectedValues,
   selection,
-}: PurchaseBlockProps) => (
-  <aside className="lg:sticky lg:top-20">
-    <div className="space-y-6 border-t border-border pt-6 lg:border-0 lg:pt-0">
-      <header className="space-y-3">
-        <p className="text-xs font-medium uppercase tracking-[0.12em] text-text-secondary">{product.brandName}</p>
-        <h1 className="break-words text-[28px] font-semibold leading-[1.2] tracking-tight text-text-primary md:text-[30px]">{product.name}</h1>
+}: PurchaseBlockProps) => {
+  const hasDescription = Boolean(product.description && product.description !== product.subtitle);
+  const hasDetails = hasDescription || product.materials.length > 0 || product.care.length > 0;
+  const returnPolicyDescription = product.returnPolicy ? returnPolicyDescriptions[product.returnPolicy] : undefined;
+
+  return (
+    <aside className="min-w-0">
+      <header className="space-y-2 lg:space-y-1.5">
+        <p className="text-xs font-medium uppercase tracking-widest text-text-secondary">{product.brandName}</p>
+        <h1 className="break-words text-2xl font-semibold leading-tight text-text-primary lg:text-3xl lg:font-medium lg:leading-snug lg:tracking-tight">{product.name}</h1>
         {currentPrice !== undefined ? (
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            {selection.status !== 'active' && selection.status !== 'inactive' ? <span className="text-sm text-text-secondary">Giá từ</span> : null}
-            <PriceDisplay align="left" appearance="catalog" compareAtPrice={compareAtPrice} price={currentPrice} size="lg" />
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 pt-1 lg:gap-x-3">
+            {selection.status !== 'active' && selection.status !== 'inactive' ? <span className="text-xs text-text-secondary">Giá từ</span> : null}
+            <PriceDisplay align="left" className="text-lg font-semibold text-text-primary lg:text-2xl" compareAtPrice={compareAtPrice} price={currentPrice} />
           </div>
         ) : <p className="text-sm text-text-secondary">Chọn phân loại để xem giá.</p>}
-        {product.subtitle ? <p className="max-w-prose pt-1 text-base leading-7 text-text-secondary">{product.subtitle}</p> : null}
+        {product.subtitle ? <p className="pt-2 text-base leading-relaxed text-text-secondary lg:pt-2.5 lg:text-sm">{product.subtitle}</p> : null}
       </header>
 
-      <VariantSelector
-        groups={groups}
-        onSelectValue={onSelectValue}
-        selectedValues={selectedValues}
-        selection={selection}
-        variants={product.variants}
-      />
+      <div className="mt-5 lg:mt-6 lg:border-t lg:border-border/60 lg:pt-6">
+        <VariantSelector groups={groups} onSelectValue={onSelectValue} selectedValues={selectedValues} selection={selection} sizeGuideAction={product.sizeGuide ? <SizeGuide guide={product.sizeGuide} key={product.sizeGuide.id} /> : undefined} variants={product.variants} />
 
-      {addError ? <p aria-live="assertive" className="border border-danger/30 bg-danger/5 p-3 text-sm leading-6 text-danger" role="alert">{addError}</p> : null}
-
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(128px,auto)_1fr] md:items-end">
-        <div className="flex items-center justify-between md:block">
-          <p className="mb-0 text-sm font-medium text-text-primary md:mb-3" id="product-quantity-label">Số lượng</p>
-          <QuantitySelector label="số lượng" labelledBy="product-quantity-label" onChange={onQuantityChange} value={quantity} />
+        <div className="mt-5 flex flex-col gap-3 pt-1 lg:mt-8 lg:flex-row lg:pt-0">
+          <div className="flex shrink-0 items-center justify-between">
+            <p className="text-sm font-medium text-text-primary lg:sr-only" id="product-quantity-label">Số lượng</p>
+            <QuantitySelector appearance="product" label="số lượng" labelledBy="product-quantity-label" onChange={onQuantityChange} value={quantity} />
+          </div>
+          <Button
+            className="!h-auto !min-h-12 min-w-0 flex-1 !whitespace-normal !rounded !px-3 !py-2 !text-base !leading-snug !tracking-normal lg:!min-h-[52px] lg:!rounded-sm lg:!text-sm lg:!tracking-wide"
+            disabled={addToCartDisabled}
+            fullWidth
+            loading={addToCartLoading}
+            onClick={onAddToCart}
+          >
+            {!addToCartLoading ? <ShoppingBag aria-hidden="true" className="hidden size-[19px] shrink-0 lg:block" /> : null}
+            {addToCartLabel}
+          </Button>
         </div>
-        <div ref={purchaseActionRef}>
-        <Button
-          className="!min-h-12 !rounded !border-text-primary !bg-text-primary text-sm !font-medium !tracking-normal !text-surface transition-colors duration-200 hover:!border-text-secondary hover:!bg-text-secondary motion-reduce:transition-none"
-          disabled={addToCartDisabled}
-          fullWidth
-          loading={addToCartLoading}
-          onClick={onAddToCart}
-          size="lg"
-        >
-          {addToCartLabel}
-        </Button>
-        </div>
+        {addSucceeded ? (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 rounded bg-brand-subtle px-3.5 py-1 text-sm text-text-primary">
+            <p className="flex items-center gap-2" role="status"><CheckCircle2 aria-hidden="true" className="size-5 shrink-0" /> Đã thêm vào giỏ</p>
+            <Link className="inline-flex min-h-11 items-center font-semibold underline underline-offset-4" to={routes.cart}>Xem giỏ hàng</Link>
+          </div>
+        ) : null}
+        {addError ? (
+          <p className="mt-3 flex items-start gap-2.5 rounded bg-danger/10 p-3.5 text-sm leading-snug text-danger" role="alert">
+            <CircleAlert aria-hidden="true" className="size-5 shrink-0" /> {addError}
+          </p>
+        ) : null}
       </div>
 
-      {product.description ? (
-        <details className="group rounded bg-surface-muted p-4 md:rounded-none md:border-t md:bg-transparent md:p-0 md:pt-5" open>
-          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 py-1 text-sm font-semibold text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary [&::-webkit-details-marker]:hidden">
-            <span>Chi tiết sản phẩm &amp; Chất liệu</span>
-            <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" strokeWidth={1.5} />
+      <div className="mt-6 space-y-2 lg:mt-10 lg:space-y-0 lg:divide-y lg:divide-border/60">
+        {hasDetails ? (
+          <details className="group rounded bg-surface-muted lg:rounded-none lg:bg-transparent lg:py-1.5" open>
+            <summary className={detailSummaryClass}>
+              <span>Chi tiết sản phẩm &amp; Chất liệu</span>
+              <ChevronDown aria-hidden="true" className={detailIconClass} strokeWidth={1.5} />
+            </summary>
+            <div className="space-y-1.5 whitespace-pre-line px-4 pb-4 text-sm leading-relaxed text-text-secondary lg:px-0 lg:pb-2 lg:text-xs">
+              {hasDescription ? <p>{product.description}</p> : null}
+              {product.materials.length > 0 ? <ul className="list-disc space-y-1.5 pl-4">{product.materials.map((material) => <li key={material}>{material}</li>)}</ul> : null}
+              {product.care.length > 0 ? <ul className="list-disc space-y-1.5 pl-4">{product.care.map((instruction) => <li key={instruction}>{instruction}</li>)}</ul> : null}
+            </div>
+          </details>
+        ) : null}
+        <details className="group rounded bg-surface-muted lg:rounded-none lg:bg-transparent lg:py-1.5">
+          <summary className={detailSummaryClass}>
+            <span>{returnPolicyDescription ? 'Chính sách đổi trả & Giao nhận' : 'Thông tin giao nhận'}</span>
+            <ChevronDown aria-hidden="true" className={detailIconClass} strokeWidth={1.5} />
           </summary>
-          <div className="space-y-3 pb-1 pt-3 text-sm leading-6 text-text-secondary md:pb-5">
-            <p>{product.description}</p>
-            {product.materials.length > 0 ? <ul className="list-disc space-y-2 pl-5">{product.materials.map((material) => <li key={material}>{material}</li>)}</ul> : null}
-            {product.care.length > 0 ? <ul className="list-disc space-y-2 pl-5">{product.care.map((careInstruction) => <li key={careInstruction}>{careInstruction}</li>)}</ul> : null}
+          <div className="space-y-2 px-4 pb-4 text-sm leading-relaxed text-text-secondary lg:px-0 lg:pb-2 lg:text-xs">
+            <p>Phí giao hàng được tính tại bước thanh toán sau khi bạn chọn địa chỉ nhận hàng và phương thức vận chuyển.</p>
+            {returnPolicyDescription ? <p>{returnPolicyDescription} Bạn vẫn có thể gửi yêu cầu hỗ trợ nếu sản phẩm bị lỗi, thiếu hàng hoặc giao sai.</p> : null}
           </div>
         </details>
-      ) : null}
-    </div>
-  </aside>
-);
+      </div>
+    </aside>
+  );
+};

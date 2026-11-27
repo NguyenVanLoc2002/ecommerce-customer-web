@@ -1,3 +1,5 @@
+import { Link, useLocation } from 'react-router-dom';
+import { routePaths } from '@/constants/routes';
 import { useEffect, useMemo, useState } from 'react';
 
 import { useProductReviews } from '@/shared/hooks/useReviews';
@@ -6,6 +8,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Divider } from '@/shared/components/ui/Divider';
 import { EmptyState } from '@/shared/components/feedback/EmptyState';
 import { ErrorCard } from '@/shared/components/feedback/ErrorCard';
+import { useAuthStore } from '@/shared/stores/authStore';
 import { formatDate } from '@/shared/utils/formatDate';
 
 type ReviewSectionProps = {
@@ -29,7 +32,10 @@ const RatingBar = ({ count, rating, totalReviews }: { count: number; rating: num
 };
 
 export const ReviewSection = ({ productId }: ReviewSectionProps) => {
-  const reviewQuery = useProductReviews(productId);
+  const { pathname, search } = useLocation();
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const bootstrapStatus = useAuthStore((state) => state.bootstrapStatus);
+  const reviewQuery = useProductReviews(productId, Boolean(accessToken));
   const [visibleCount, setVisibleCount] = useState(REVIEW_PAGE_SIZE);
   const reviews = useMemo(() => reviewQuery.data?.items ?? [], [reviewQuery.data]);
 
@@ -59,11 +65,16 @@ export const ReviewSection = ({ productId }: ReviewSectionProps) => {
   const visibleReviews = reviews.slice(0, visibleCount);
 
   return (
-    <section className="border-t border-border pt-10">
-      <p className="text-sm font-semibold uppercase tracking-[0.12em] text-text-secondary">Đánh giá từ khách hàng</p>
-      <h2 className="mt-3 text-2xl font-semibold leading-tight text-text-primary">Đánh giá sản phẩm</h2>
+    <section className="mt-10 border-t border-border pt-6 lg:mt-0 lg:pt-8">
+      <h2 className="text-lg font-semibold text-text-primary lg:text-xl">Đánh giá sản phẩm</h2>
 
-      {reviewQuery.isLoading ? (
+      {!accessToken && bootstrapStatus === 'ready' ? (
+        <Link className="mt-2 inline-flex min-h-11 items-center text-sm text-text-secondary underline underline-offset-4" to={routePaths.loginRedirect(pathname + search)}>
+          Đăng nhập để xem đánh giá
+        </Link>
+      ) : null}
+
+      {accessToken && reviewQuery.isLoading ? (
         <div className="mt-8 grid gap-10 lg:grid-cols-[280px_minmax(0,1fr)]">
           <div className="border border-border bg-surface px-5 py-6 md:px-6">
             <div className="shimmer animate-shimmer space-y-4">
@@ -88,10 +99,10 @@ export const ReviewSection = ({ productId }: ReviewSectionProps) => {
         </div>
       ) : null}
 
-      {reviewQuery.isError ? (
+      {accessToken && reviewQuery.isError ? (
         <div className="mt-8">
           <ErrorCard
-            action={<Button onClick={() => void reviewQuery.refetch()}>Retry</Button>}
+            action={<Button onClick={() => void reviewQuery.refetch()}>Thử lại</Button>}
             className="border-border bg-surface"
             description="Không thể tải đánh giá sản phẩm lúc này. Vui lòng thử lại."
             title="Đánh giá tạm thời chưa khả dụng"
@@ -99,7 +110,7 @@ export const ReviewSection = ({ productId }: ReviewSectionProps) => {
         </div>
       ) : null}
 
-      {!reviewQuery.isLoading && !reviewQuery.isError ? (
+      {accessToken && reviewQuery.isSuccess ? (
         <div className="mt-8 grid gap-10 lg:grid-cols-[280px_minmax(0,1fr)]">
           <aside className="space-y-6 border border-border bg-surface px-5 py-6 md:px-6">
             {reviewSummary.totalReviews > 0 ? (

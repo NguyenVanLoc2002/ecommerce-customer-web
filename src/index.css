@@ -96,6 +96,26 @@
     backdrop-filter: blur(12px);
   }
 
+  .product-detail {
+    --color-text-primary: 26 28 26;
+    --color-text-secondary: 69 72 64;
+    --color-surface-muted: 244 243 241;
+    --color-surface-soft: 233 232 229;
+    --color-border: 198 199 189;
+    --color-brand-primary: 60 59 56;
+    --color-brand-hover: 79 78 75;
+    --color-brand-active: 26 28 26;
+    --color-brand-subtle: 224 228 212;
+    --color-danger: 147 0 10;
+    --space-page: 20px;
+  }
+
+  @media (min-width: 1024px) {
+    .product-detail {
+      --space-page: 48px;
+    }
+  }
+
   .auth-shell-bg {
     background-color: rgb(var(--color-canvas));
   }
