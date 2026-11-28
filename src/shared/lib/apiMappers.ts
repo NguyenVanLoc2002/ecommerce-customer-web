@@ -207,6 +207,7 @@ export const toOrderPreview = (preview: OrderPreviewResponse): OrderPreview => (
   totalAmount: preview.totalAmount,
   voucherCode: preview.voucherCode,
   customerNote: preview.customerNote,
+  confirmationToken: preview.confirmationToken,
 });
 
 const toCartItem = (item: CartResponse['items'][number]): CartItem => {

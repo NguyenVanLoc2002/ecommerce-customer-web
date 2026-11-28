@@ -1,6 +1,7 @@
 import type { ServiceError } from '@/shared/lib/serviceError';
 
 const REUSE_BLOCKED_ERROR_CODES = new Set([
+  'CHECKOUT_PRICE_CHANGED',
   'IDEMPOTENCY_KEY_REQUIRED',
   'IDEMPOTENCY_KEY_TOO_LONG',
   'IDEMPOTENCY_KEY_CONFLICT',

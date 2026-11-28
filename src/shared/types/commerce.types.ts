@@ -182,6 +182,7 @@ export interface OrderPreviewResponse {
   totalAmount: number;
   voucherCode: string | null;
   customerNote: string | null;
+  confirmationToken?: string;
 }
 
 export interface OrderPreview {
@@ -197,6 +198,7 @@ export interface OrderPreview {
   totalAmount: number;
   voucherCode?: string | null;
   customerNote?: string | null;
+  confirmationToken?: string;
 }
 
 export interface OrderResponse {
@@ -239,6 +241,7 @@ export interface CheckoutDraft {
 }
 
 export interface CheckoutOrderInput {
+  confirmationToken?: string;
   shippingAddressId: string;
   carrierId?: string;
   paymentMethod: PaymentMethod;
