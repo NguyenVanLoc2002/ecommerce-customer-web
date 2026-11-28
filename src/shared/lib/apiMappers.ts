@@ -195,7 +195,6 @@ export const toCheckoutCarrierOption = (carrier: CheckoutCarrierOptionResponse):
 });
 
 export const toOrderPreview = (preview: OrderPreviewResponse): OrderPreview => ({
-  confirmationToken: preview.confirmationToken,
   carrierId: preview.carrierId,
   carrierCode: preview.carrierCode,
   carrierName: preview.carrierName,
@@ -208,6 +207,7 @@ export const toOrderPreview = (preview: OrderPreviewResponse): OrderPreview => (
   totalAmount: preview.totalAmount,
   voucherCode: preview.voucherCode,
   customerNote: preview.customerNote,
+  confirmationToken: preview.confirmationToken,
 });
 
 const toCartItem = (item: CartResponse['items'][number]): CartItem => {
