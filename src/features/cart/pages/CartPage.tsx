@@ -1,15 +1,17 @@
 import { useState } from 'react';
+import { ArrowLeft, ShoppingBag, Truck } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
 import { isCartStockConflict } from '@/features/cart/lib/cartErrors';
+import { CartVoucher } from '@/features/cart/components/CartVoucher';
+import { useCartVoucher } from '@/features/cart/hooks/useCartVoucher';
 import { StaleCartBanner } from '@/features/cart/components/StaleCartBanner';
 import { useCart, useClearCart, useRemoveCartItem, useUpdateCartItemQuantity } from '@/features/cart/hooks/useCart';
 import { CartItemCard } from '@/shared/components/commerce/CartItemCard';
-import { CartSummary } from '@/shared/components/commerce/CartSummary';
-import { EmptyState } from '@/shared/components/feedback/EmptyState';
+import { ShoppingBagSummary } from '@/features/cart/components/ShoppingBagSummary';
 import { ErrorCard } from '@/shared/components/feedback/ErrorCard';
-import { LoadingOverlay } from '@/shared/components/feedback/LoadingOverlay';
+import { CartSkeleton } from '@/features/cart/components/CartSkeleton';
 import { Container } from '@/shared/components/layout/Container';
 import { ConfirmDialog } from '@/shared/components/overlays/ConfirmDialog';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
@@ -29,7 +31,10 @@ export const CartPage = () => {
   const clearCart = useClearCart();
 
   const cart = cartQuery.data;
-  const mutationPending = updateQuantity.isPending || removeItem.isPending || clearCart.isPending;
+  const mutationPending = updateQuantity.isPending || removeItem.isPending || clearCart.isPending || cartQuery.isFetching;
+
+  const voucher = useCartVoucher(cart, mutationPending);
+  const freeShipping = voucher.checking ? undefined : voucher.preview?.freeShipping ?? cart?.freeShipping;
 
   const handleMutationError = (error: unknown, title: string) => {
     if (isAuthenticationError(error)) {
@@ -52,18 +57,24 @@ export const CartPage = () => {
   return (
     <>
       <PageSEO description="Xem lại sản phẩm và biến thể trong giỏ hàng trước khi tiếp tục thanh toán." noIndex path={routes.cart} title="Giỏ hàng" />
-      <Container className="space-y-3 pb-16 pt-24 md:space-y-10 md:pb-20 md:pt-32">
-        <header className="border-b-0 pb-0 md:border-b md:border-border md:pb-8">
+      <Container className="space-y-4 pb-14 pt-[72px] lg:space-y-12 lg:pb-20 lg:pt-32">
+        <header className="lg:border-b lg:border-border lg:pb-6">
           <div>
-            <nav aria-label="Breadcrumb" className="mb-2 text-sm text-text-secondary">
-              <Link className="underline decoration-border underline-offset-4 hover:text-text-primary" to={routes.home}>Trang chủ</Link>
-              <span aria-hidden="true" className="mx-2">/</span>
-              <span aria-current="page" className="text-text-primary">Giỏ hàng</span>
+            <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[13px] text-text-secondary">
+              <Link className="hover:text-text-primary hover:underline" to={routes.home}>Trang chủ</Link>
+              <span aria-hidden="true" className="text-outline">/</span>
+              <span aria-current="page" className="font-semibold text-text-primary">Giỏ hàng</span>
+              {cart ? <span aria-hidden="true" className="ml-1 lg:hidden">({cart.totalItems} sản phẩm)</span> : null}
             </nav>
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-              <h1 className="text-xl font-normal leading-tight text-text-primary md:text-3xl">Túi đồ của bạn</h1>
+              <h1 className="text-xl font-bold leading-tight text-text-primary lg:text-[30px] lg:font-normal">Túi đồ của bạn</h1>
+              {freeShipping?.enabled && freeShipping.qualified ? (
+                <span className="ml-auto inline-flex items-center gap-1 rounded bg-brand-subtle px-2 py-1 text-xs font-medium text-text-secondary lg:hidden">
+                  <Truck aria-hidden="true" className="size-3.5" /> Miễn phí vận chuyển
+                </span>
+              ) : null}
               {cart || cartQuery.isLoading ? (
-                <p aria-live="polite" className="text-base text-text-secondary md:text-lg">
+                <p aria-live="polite" className="sr-only text-text-secondary lg:not-sr-only lg:text-base">
                   ({cart ? `${cart.totalItems} sản phẩm` : 'Đang tải…'})
                 </p>
               ) : null}
@@ -71,7 +82,7 @@ export const CartPage = () => {
           </div>
         </header>
 
-        {cartQuery.isLoading ? <LoadingOverlay className="min-h-[240px] border-border bg-surface" inline label="Đang tải giỏ hàng…" /> : null}
+        {cartQuery.isLoading ? <CartSkeleton /> : null}
         {cartQuery.isError ? (
           <ErrorCard
             action={<Button onClick={() => void cartQuery.refetch()}>Thử tải lại</Button>}
@@ -81,23 +92,25 @@ export const CartPage = () => {
           />
         ) : null}
         {cart && cart.items.length === 0 ? (
-          <EmptyState
-            action={
-              <Link className={buttonStyles({})} to={routes.products}>
-                Tiếp tục mua sắm
-              </Link>
-            }
-            className="border-border bg-surface px-6 py-16"
-            description="Sản phẩm bạn thêm vào sẽ xuất hiện tại đây."
-            title="Giỏ hàng đang trống"
-          />
+          <section className="rounded-feature bg-surface px-6 py-14 text-center shadow-subtle lg:rounded-chip lg:py-16">
+            <span className="mx-auto grid size-12 place-items-center rounded-full bg-[rgb(var(--discovery-panel))] text-text-secondary">
+              <ShoppingBag aria-hidden="true" className="size-6" />
+            </span>
+            <h2 className="mt-4 text-base font-semibold">Túi đồ của bạn đang trống</h2>
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-text-secondary">
+              Hãy khám phá bộ sưu tập mới nhất để tìm trang phục phù hợp.
+            </p>
+            <Link className={buttonStyles({ variant: 'ghost', className: 'mt-4 border-border uppercase' })} to={routes.products}>
+              Khám phá bộ sưu tập
+            </Link>
+          </section>
         ) : null}
 
         {cart && cart.items.length > 0 ? (
-          <div className="grid items-start gap-3 md:gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-12">
-            <section aria-label="Sản phẩm trong giỏ hàng" className="min-w-0 lg:col-start-1 lg:row-start-1">
+          <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,2.16fr)_minmax(320px,1fr)] lg:gap-x-14 lg:gap-y-8">
+            <section aria-label="Sản phẩm trong giỏ hàng" className="min-w-0 space-y-3 lg:col-start-1 lg:row-start-1 lg:space-y-8">
               {cart.staleItemCount > 0 ? <StaleCartBanner count={cart.staleItemCount} /> : null}
-              <div className="mt-0 space-y-3 md:mt-6 md:space-y-8">
+              <div className="space-y-3 lg:space-y-8">
                 {cart.items.map((item) => (
                   <CartItemCard
                     item={item}
@@ -140,36 +153,25 @@ export const CartPage = () => {
               </div>
             </section>
 
-            <CartSummary
-              className="lg:col-start-2 lg:row-span-2 lg:row-start-1"
-              description="Phí vận chuyển và ưu đãi (nếu có) sẽ được tính ở bước thanh toán."
-              footer={
-                <div className="space-y-3">
-                  <Button
-                    disabled={cart.staleItemCount > 0 || mutationPending}
-                    fullWidth
-                    onClick={() => navigate(routes.checkoutAddress)}
-                    size="lg"
-                  >
-                    Tiếp tục thanh toán
-                  </Button>
-                  {cart.staleItemCount > 0 ? (
-                    <p className="text-sm leading-6 text-danger" role="status">Hãy cập nhật số lượng tồn kho trước khi thanh toán.</p>
-                  ) : null}
-                </div>
-              }
-              isTotalsUpdating={mutationPending}
-              title="Tóm tắt đơn hàng"
-              totals={cart}
-              variant="cart"
+            <CartVoucher {...voucher} disabled={mutationPending || cart.staleItemCount > 0} />
+            <ShoppingBagSummary
+              freeShipping={freeShipping}
+              hasStaleItems={cart.staleItemCount > 0}
+              isUpdating={mutationPending || voucher.checking}
+              onCheckout={() => navigate(routes.checkoutAddress, voucher.code
+                ? { state: { cartVoucherCode: voucher.preview?.isApplicable ? voucher.preview.code : null } }
+                : undefined)}
+              subtotal={cart.subTotal}
+              vatSummary={cart.vatSummary}
             />
-            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5 md:mt-0 md:pt-5 lg:col-start-1 lg:row-start-2">
-              <Link className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-text-primary underline decoration-border underline-offset-4 hover:decoration-text-primary" to={routes.products}>
-                <span aria-hidden="true">←</span>
-                Tiếp tục xem sản phẩm
+            <div className="flex flex-col items-center lg:col-start-1 lg:row-start-2 lg:flex-row lg:justify-between lg:gap-4 lg:border-t lg:border-border lg:pt-4">
+              <Link className="inline-flex min-h-11 items-center gap-2 text-xs font-semibold text-text-secondary transition-colors hover:text-text-primary lg:uppercase lg:tracking-wide lg:text-text-primary" to={routes.products}>
+                <ArrowLeft aria-hidden="true" className="size-4" />
+                <span className="lg:hidden">Tiếp tục mua sắm</span>
+                <span className="hidden lg:inline">Tiếp tục xem sản phẩm</span>
               </Link>
               <button
-                className="inline-flex min-h-11 items-center text-sm text-text-secondary underline decoration-border underline-offset-4 transition-colors hover:text-text-primary hover:decoration-text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-11 items-center text-xs text-text-secondary underline decoration-border underline-offset-4 transition-colors hover:text-text-primary hover:decoration-text-primary disabled:cursor-not-allowed disabled:opacity-50 lg:uppercase lg:tracking-wide"
                 disabled={mutationPending}
                 onClick={() => setConfirmOpen(true)}
                 type="button"

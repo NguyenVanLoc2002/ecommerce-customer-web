@@ -42,7 +42,26 @@ export interface CheckoutCarrierOption {
   description?: string | null;
 }
 
-export interface CommerceCart extends CartTotals {
+export interface FreeShippingProgress {
+  enabled: boolean;
+  threshold: number;
+  eligibleAmount: number;
+  remainingAmount: number;
+  qualified: boolean;
+  currency: 'VND';
+  policyRevision: number;
+}
+
+export type StorefrontVatSummary =
+  | { kind: 'INCLUDED_SINGLE_RATE'; rateFraction: number }
+  | { kind: 'INCLUDED_MULTIPLE_RATES' | 'NOT_TAXABLE' };
+
+export interface StorefrontPricing {
+  freeShipping?: FreeShippingProgress;
+  vatSummary?: StorefrontVatSummary;
+}
+
+export interface CommerceCart extends CartTotals, StorefrontPricing {
   id: string;
   items: CartItem[];
   updatedAt: string;
@@ -50,6 +69,7 @@ export interface CommerceCart extends CartTotals {
 }
 
 export interface VoucherPreview {
+  freeShipping?: FreeShippingProgress;
   code: string;
   isApplicable: boolean;
   message: string;
@@ -112,7 +132,7 @@ export interface CartItemResponse {
   createdAt: string;
 }
 
-export interface CartResponse {
+export interface CartResponse extends StorefrontPricing {
   id: string;
   items: CartItemResponse[];
   totalItems: number;
@@ -121,6 +141,7 @@ export interface CartResponse {
 }
 
 export interface ValidateVoucherResponse {
+  freeShipping?: FreeShippingProgress;
   voucherCode: string;
   promotionName: string | null;
   discountType: string | null;
@@ -169,7 +190,16 @@ export interface CheckoutCarrierOptionResponse {
   description: string | null;
 }
 
-export interface OrderPreviewResponse {
+export interface DeliveryEstimate {
+  serviceCode: string;
+  source: 'CONFIGURED_SLA';
+  basis: 'CARRIER_HANDOVER';
+  minBusinessDays: number;
+  maxBusinessDays: number;
+}
+
+export interface OrderPreviewResponse extends StorefrontPricing {
+  deliveryEstimate?: DeliveryEstimate;
   carrierId: string | null;
   carrierCode: string | null;
   carrierName: string | null;
@@ -184,7 +214,8 @@ export interface OrderPreviewResponse {
   customerNote: string | null;
 }
 
-export interface OrderPreview {
+export interface OrderPreview extends StorefrontPricing {
+  deliveryEstimate?: DeliveryEstimate;
   carrierId?: string | null;
   carrierCode?: string | null;
   carrierName?: string | null;

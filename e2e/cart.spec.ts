@@ -21,6 +21,11 @@ type CartItemFixture = {
 };
 
 type CartFixture = {
+  freeShipping?: {
+    enabled: boolean; threshold: number; eligibleAmount: number; remainingAmount: number;
+    qualified: boolean; currency: string; policyRevision: number;
+  };
+  vatSummary?: { kind: string; rateFraction?: number };
   id: string;
   items: CartItemFixture[];
   totalItems: number;
@@ -42,7 +47,7 @@ const fixtureItems: CartItemFixture[] = [
     unitPrice: 1_490_000,
     salePrice: 1_290_000,
     quantity: 1,
-    availableStock: 5,
+    availableStock: 2,
     lineTotal: 1_290_000,
     createdAt: '2026-11-22T00:00:00Z',
   },
@@ -74,11 +79,13 @@ const fulfillJson = (route: Route, body: unknown, status = 200) =>
 
 const installCartApi = async (
   page: Page,
-  options: { stockConflict?: boolean } = {},
+  options: { summary?: boolean; stockConflict?: boolean; outOfStock?: boolean; cartLoadFails?: boolean; initialCartGate?: Promise<void> } = {},
 ) => {
   let items = cloneCart({ id: 'cart-1', items: fixtureItems, totalItems: 2, subTotal: 2_280_000, updatedAt: '2026-11-22T00:00:00Z' }).items;
-  if (options.stockConflict) {
-    items = items.map((item, index) => index === 0 ? { ...item, quantity: 2, lineTotal: 2_580_000 } : item);
+  if (options.stockConflict || options.outOfStock) {
+    items = items.map((item, index) => index === 0
+      ? { ...item, availableStock: options.outOfStock ? 0 : 6, quantity: 5, lineTotal: 6_450_000 }
+      : item);
   }
   let cart: CartFixture = {
     id: 'cart-1',
@@ -87,7 +94,15 @@ const installCartApi = async (
     subTotal: items.reduce((sum, item) => sum + item.lineTotal, 0),
     updatedAt: '2026-11-22T00:00:00Z',
   };
+  if (options.summary) {
+    cart.freeShipping = {
+      enabled: true, threshold: 1_000_000, eligibleAmount: cart.subTotal, remainingAmount: 0,
+      qualified: true, currency: 'VND', policyRevision: 1,
+    };
+    cart.vatSummary = { kind: 'INCLUDED_SINGLE_RATE', rateFraction: 0.08 };
+  }
   let conflictReturned = false;
+  let cartLoadFails = Boolean(options.cartLoadFails);
 
   await page.route('**/api/v1/auth/refresh-token', (route) => fulfillJson(route, { success: false, code: 'UNAUTHORIZED', message: 'No session.' }, 401));
   await page.route('**/api/v1/auth/login', (route) =>
@@ -114,6 +129,11 @@ const installCartApi = async (
   );
   await page.route('**/api/v1/cart', async (route) => {
     if (route.request().method() === 'GET') {
+      await options.initialCartGate;
+      if (cartLoadFails) {
+        await fulfillJson(route, { success: false, code: 'CART_UNAVAILABLE', message: 'Unavailable' }, 400);
+        return;
+      }
       await fulfillJson(route, wrap(cart));
       return;
     }
@@ -128,6 +148,8 @@ const installCartApi = async (
     const url = new URL(route.request().url());
     const itemId = url.pathname.split('/').at(-1);
     if (route.request().method() === 'PATCH' && itemId) {
+      const payload = route.request().postDataJSON() as { quantity: number };
+      if (options.stockConflict && conflictReturned) expect(payload.quantity).toBe(1);
       if (options.stockConflict && !conflictReturned) {
         conflictReturned = true;
         cart = {
@@ -137,7 +159,6 @@ const installCartApi = async (
         await fulfillJson(route, { success: false, code: 'INVENTORY_NOT_ENOUGH', message: 'Stock changed. Review the updated cart.' }, 409);
         return;
       }
-      const payload = route.request().postDataJSON() as { quantity: number };
       cart = {
         ...cart,
         items: cart.items.map((item) => item.id === itemId ? { ...item, quantity: payload.quantity, lineTotal: (item.salePrice ?? item.unitPrice) * payload.quantity } : item),
@@ -162,34 +183,46 @@ const installCartApi = async (
     }
     await route.continue();
   });
+  return { recoverCart: () => { cartLoadFails = false; } };
 };
 
-const signInAndOpenCart = async (page: Page) => {
-  await page.goto('/cart');
+const signIn = async (page: Page) => {
+  await page.goto('/cart', { waitUntil: 'domcontentloaded' });
   await page.getByLabel('Địa chỉ email').fill('customer@example.test');
   await page.getByLabel('Mật khẩu', { exact: true }).fill('FixturePassword123');
   await page.getByRole('button', { name: 'Đăng nhập' }).click();
-  await expect(page.getByRole('heading', { name: 'Túi đồ của bạn' })).toBeVisible();
+  await page.waitForURL('**/cart');
+  await expect(page.getByRole('heading', { name: 'Túi đồ của bạn', exact: true })).toBeVisible({ timeout: 15_000 });
+};
+
+const signInAndOpenCart = async (page: Page) => {
+  await signIn(page);
   await expect(page.getByRole('heading', { name: 'Áo blazer dáng suông' })).toBeVisible();
 };
 
 test.describe('Customer cart', () => {
   test('keeps cart interactions usable on desktop and updates quantities and removal', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 1872 });
-    await installCartApi(page);
+    await installCartApi(page, { summary: true });
     await signInAndOpenCart(page);
 
     await expect(page.getByText('Màu: Xám đá / Cỡ: M')).toBeVisible();
-    await expect(page.getByText('2.280.000')).toBeVisible();
-    await expect(page.getByText('Phí vận chuyển và ưu đãi (nếu có) sẽ được tính ở bước thanh toán.')).toBeVisible();
+    await expect(page.getByText('2.280.000')).toHaveCount(2);
+    await expect(page.getByText('Được tính ở bước giao hàng')).toBeVisible();
+    await expect(page.getByText('Đã bao gồm 8% VAT')).toBeVisible();
+    await expect(page.getByRole('progressbar', { name: 'Tiến độ miễn phí giao hàng' })).toBeVisible();
+    const summary = page.getByRole('complementary', { name: 'Tóm tắt đơn hàng' });
+    await expect(summary.getByRole('link', { name: 'Chính sách giao hàng' })).toHaveAttribute('href', '/policies/shipping');
+    await expect(page.getByText('Kho chỉ còn 2 sản phẩm có sẵn')).toBeVisible();
+    await expect(page.getByText('Tình trạng: Còn hàng')).toBeVisible();
     await expect(page.getByText('Included')).toHaveCount(0);
     await expect(page.getByText('$0')).toHaveCount(0);
 
-    await page.screenshot({ path: 'artifacts/issue-34/cart-desktop.png' });
+    await page.screenshot({ path: test.info().outputPath('cart-desktop.png'), animations: 'disabled' });
 
     await page.getByRole('button', { name: 'Increase quantity for Áo blazer dáng suông' }).click();
     await expect(page.getByText('Đã cập nhật số lượng')).toBeVisible();
-    await expect(page.getByText('2.580.000')).toBeVisible();
+    await expect(page.getByText('Thành tiền: 2.580.000 ₫')).toBeVisible();
 
     await page.getByRole('button', { name: 'Xóa Quần dài xếp ly khỏi giỏ hàng' }).click();
     await expect(page.getByRole('heading', { name: 'Quần dài xếp ly' })).toHaveCount(0);
@@ -197,7 +230,7 @@ test.describe('Customer cart', () => {
 
   test('fits the narrow mobile viewport without horizontal overflow', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 1580 });
-    await installCartApi(page);
+    await installCartApi(page, { summary: true });
     await signInAndOpenCart(page);
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
@@ -205,8 +238,9 @@ test.describe('Customer cart', () => {
     await page.evaluate(() => window.scrollTo(0, 0));
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
     await expect(page.getByText('FASHION SHOP').first()).toBeInViewport();
-    await expect(page.locator('nav.fixed')).toBeInViewport();
-    await page.screenshot({ path: 'artifacts/issue-34/cart-mobile.png' });
+    await expect(page.getByRole('navigation', { name: 'Điều hướng nhanh' })).toBeInViewport();
+    await expect(page.getByRole('link', { name: 'Quay lại danh sách sản phẩm' })).toHaveAttribute('href', '/products');
+    await page.screenshot({ path: test.info().outputPath('cart-mobile.png'), animations: 'disabled' });
 
     const removeButton = page.getByRole('button', { name: 'Xóa Áo blazer dáng suông khỏi giỏ hàng' });
     const removeBounds = await removeButton.boundingBox();
@@ -218,6 +252,38 @@ test.describe('Customer cart', () => {
     await removeButton.click();
     await expect(page.getByRole('heading', { name: 'Áo blazer dáng suông' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Tóm tắt đơn hàng' })).toBeVisible();
+    await page.getByRole('button', { name: 'Tiến hành đặt hàng' }).click();
+    await expect(page).toHaveURL(/\/checkout\/address$/);
+  });
+
+  test('recovers from a cart load error and renders the empty state after clearing', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 1580 });
+    let releaseCart = () => {};
+    const initialCartGate = new Promise<void>((resolve) => { releaseCart = resolve; });
+    const { recoverCart } = await installCartApi(page, { cartLoadFails: true, initialCartGate });
+    await signIn(page);
+    try {
+      await expect(page.getByRole('status').filter({ hasText: 'Đang tải giỏ hàng…' })).toBeAttached();
+      await expect(page.getByRole('button', { name: 'Tiến hành đặt hàng' })).toHaveCount(0);
+    } finally {
+      releaseCart();
+    }
+    await expect(page.getByRole('heading', { name: 'Tải giỏ hàng không thành công' })).toBeVisible();
+
+    recoverCart();
+    await page.getByRole('button', { name: 'Thử tải lại' }).click();
+    await expect(page.getByRole('heading', { name: 'Áo blazer dáng suông' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Xóa toàn bộ túi đồ' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('button', { name: 'Giữ lại' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByRole('heading', { name: 'Áo blazer dáng suông' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Xóa toàn bộ túi đồ' }).click();
+    await dialog.getByRole('button', { name: 'Xóa giỏ hàng' }).click();
+    await expect(page.getByRole('heading', { name: 'Túi đồ của bạn đang trống' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Khám phá bộ sưu tập' })).toHaveAttribute('href', '/products');
   });
 
   test('refreshes cart stock after a server conflict', async ({ page }) => {
@@ -228,6 +294,50 @@ test.describe('Customer cart', () => {
     await page.getByRole('button', { name: 'Increase quantity for Áo blazer dáng suông' }).click();
     await expect(page.getByRole('alert').filter({ hasText: 'Cần cập nhật số lượng' })).toBeVisible();
     await expect(page.getByText('Còn 1 sản phẩm. Hãy giảm số lượng để tiếp tục.')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Tiếp tục thanh toán' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Tiến hành đặt hàng' })).toBeDisabled();
+    await page.getByRole('button', { name: 'Giảm còn 1', exact: true }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Cần cập nhật số lượng' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Tiến hành đặt hàng' })).toBeEnabled();
+  });
+
+  test('lets the customer replace or remove a variant with zero stock', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 1580 });
+    await installCartApi(page, { outOfStock: true });
+    await signInAndOpenCart(page);
+    await expect(page.getByText('Sản phẩm đã hết hàng.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Increase quantity for Áo blazer dáng suông' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Tiến hành đặt hàng' })).toBeDisabled();
+    await expect(page.getByRole('link', { name: 'Chọn biến thể khác' })).toHaveAttribute('href', '/products/ao-blazer-dang-suong');
+    await page.getByRole('button', { name: 'Xóa Áo blazer dáng suông khỏi giỏ hàng' }).click();
+    await expect(page.getByRole('button', { name: 'Tiến hành đặt hàng' })).toBeEnabled();
+  });
+
+  test('previews a submitted voucher and revalidates it after the cart changes', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 1580 });
+    await installCartApi(page);
+    const quotedAmounts: number[] = [];
+    await page.route('**/api/v1/vouchers/SAVE/validate', (route) => {
+      const { orderAmount } = route.request().postDataJSON() as { orderAmount: number };
+      quotedAmounts.push(orderAmount);
+      return fulfillJson(route, wrap({ voucherCode: 'SAVE', discountAmount: 50000, orderAmount, finalAmount: orderAmount - 50000 }));
+    });
+    await signInAndOpenCart(page);
+    await page.getByRole('textbox', { name: 'Mã ưu đãi' }).fill('save');
+    expect(quotedAmounts).toEqual([]);
+    await page.getByRole('button', { name: 'Áp dụng' }).click();
+    await expect(page.getByText(/Giảm dự kiến 50\.000/)).toBeVisible();
+    await expect.poll(() => quotedAmounts).toEqual([2_280_000]);
+    await page.getByRole('button', { name: 'Xóa Quần dài xếp ly khỏi giỏ hàng' }).click();
+    await expect.poll(() => quotedAmounts).toEqual([2_280_000, 1_290_000]);
+    await expect(page.getByText('1.240.000')).toHaveCount(0);
+    await expect(page.getByRole('progressbar')).toHaveCount(0);
+    await expect(page.getByText('Thuế GTGT (VAT)')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Tiến hành đặt hàng' }).click();
+    await expect(page).toHaveURL(/\/checkout\/address$/);
+    await expect(page.getByRole('heading', { name: /Địa chỉ (nhận|giao) hàng/ })).toBeVisible();
+    await expect.poll(() => page.evaluate(() => {
+      const saved = localStorage.getItem('fashion-shop.checkout-draft');
+      return saved ? JSON.parse(saved).state.voucherCode : null;
+    })).toBe('SAVE');
   });
 });

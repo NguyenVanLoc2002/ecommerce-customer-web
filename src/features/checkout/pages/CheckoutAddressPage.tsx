@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { MapPin, Pencil, Plus } from 'lucide-react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
 import { useCart } from '@/features/cart/hooks/useCart';
@@ -16,9 +16,10 @@ import { Container } from '@/shared/components/layout/Container';
 import { PageSEO } from '@/shared/components/seo/PageSEO';
 import { Button } from '@/shared/components/ui/Button';
 import { buttonStyles } from '@/shared/components/ui/buttonStyles';
+import { formatVatSummary } from '@/shared/utils/formatVatSummary';
 import { formatAddress } from '@/shared/utils/formatAddress';
 
-export const CheckoutAddressPage = () => {
+const CheckoutAddressContent = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const cartQuery = useCart();
@@ -37,6 +38,7 @@ export const CheckoutAddressPage = () => {
     summaryTotals,
   } = useCheckoutPricing(cart);
   const orderPreview = useCheckoutStore((state) => state.orderPreview);
+  const vatLabel = formatVatSummary(previewQuery.isSuccess && !previewLoading ? previewQuery.data?.vatSummary : undefined);
   const selectedAddressId = useCheckoutStore((state) => state.shippingAddressId);
   const selectedCarrierId = useCheckoutStore((state) => state.selectedCarrierId);
   const setCarrierSelectionError = useCheckoutStore((state) => state.setCarrierSelectionError);
@@ -169,6 +171,7 @@ export const CheckoutAddressPage = () => {
                 previewLoading={previewLoading}
                 selectedCarrierId={selectedCarrierId}
                 selectionError={carrierSelectionError}
+                deliveryEstimate={previewQuery.isSuccess && !previewLoading ? previewQuery.data?.deliveryEstimate : undefined}
                 shippingServiceName={orderPreview?.shippingServiceName ?? null}
               />
             ) : null}
@@ -204,6 +207,7 @@ export const CheckoutAddressPage = () => {
               isTotalsUpdating={previewLoading}
               supplementary={
                 <div className="space-y-3 text-sm leading-7 text-text-secondary">
+                  {vatLabel ? <p>Tiền hàng · {vatLabel}</p> : null}
                   <p>Your selected address is stored only for this customer checkout draft.</p>
                   <p>
                     {selectedCarrier
@@ -224,6 +228,22 @@ export const CheckoutAddressPage = () => {
       </Container>
     </>
   );
+};
+
+export const CheckoutAddressPage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const state: unknown = location.state;
+  const cartState = state && typeof state === 'object' && 'cartVoucherCode' in state ? state : null;
+
+  useEffect(() => {
+    if (!cartState) return;
+    const code = typeof cartState.cartVoucherCode === 'string' ? cartState.cartVoucherCode : '';
+    useCheckoutStore.setState({ voucherCode: code, voucherPreview: null, orderPreview: null });
+    navigate({ pathname: location.pathname, search: location.search }, { replace: true, state: null });
+  }, [cartState, location.pathname, location.search, navigate]);
+
+  return cartState ? null : <CheckoutAddressContent />;
 };
 
 export default CheckoutAddressPage;

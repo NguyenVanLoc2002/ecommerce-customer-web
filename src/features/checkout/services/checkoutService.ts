@@ -1,5 +1,6 @@
 import { apiClient } from '@/shared/lib/axios';
-import { toAddress, toCheckoutCarrierOption, toCommerceOrder, toOrderPreview, toVoucherPreview } from '@/shared/lib/apiMappers';
+import { toAddress, toCheckoutCarrierOption, toCommerceOrder, toOrderPreview } from '@/shared/lib/apiMappers';
+import { validateCartVoucher } from '@/shared/lib/validateCartVoucher';
 import type { AddressResponse } from '@/shared/types/address.types';
 import type { ApiResponse } from '@/shared/types/api.types';
 import type {
@@ -8,7 +9,6 @@ import type {
   OrderPreviewResponse,
   OrderResponse,
   PlaceOrderInput,
-  ValidateVoucherResponse,
 } from '@/shared/types/commerce.types';
 
 export const checkoutService = {
@@ -26,15 +26,7 @@ export const checkoutService = {
     const response = await apiClient.post<ApiResponse<OrderPreviewResponse>, OrderPreviewResponse>('/orders/preview', payload);
     return toOrderPreview(response);
   },
-  async validateVoucher(code: string, orderAmount: number) {
-    const response = await apiClient.post<ApiResponse<ValidateVoucherResponse>, ValidateVoucherResponse>(
-      `/vouchers/${code}/validate`,
-      {
-        orderAmount,
-      },
-    );
-    return toVoucherPreview(code, response);
-  },
+  validateVoucher: validateCartVoucher,
   async placeOrder(payload: PlaceOrderInput, idempotencyKey: string) {
     const response = await apiClient.post<ApiResponse<OrderResponse>, OrderResponse>('/orders', payload, {
       headers: {

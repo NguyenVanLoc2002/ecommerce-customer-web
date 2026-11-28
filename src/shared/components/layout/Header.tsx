@@ -1,6 +1,6 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { Bell, Menu, Search, ShoppingBag, User2 } from 'lucide-react';
+import { ArrowLeft, Bell, Menu, Search, ShoppingBag, User2 } from 'lucide-react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
@@ -39,6 +39,7 @@ export const Header = () => {
   const unreadNotificationCount = unreadNotificationCountQuery.data ?? 0;
   const cartItemCount = cartItemCountQuery.data ?? 0;
   const isHome = pathname === routes.home;
+  const isCart = pathname === routes.cart;
   const isProductList = pathname === routes.products;
   const isCatalog = pathname === routes.products || pathname.startsWith(`${routes.products}/`);
   const category = isCatalog ? searchParams.get('category') : null;
@@ -109,29 +110,35 @@ export const Header = () => {
   };
 
   const accountIcon = (
-    <span className={cn('grid size-8 shrink-0 place-items-center rounded-full text-surface', isHome || isProductList ? 'bg-[rgb(var(--discovery-control))]' : 'bg-brand-primary', isHome && 'lg:hidden')}>
+    <span className={cn('grid size-8 shrink-0 place-items-center rounded-full text-surface', isHome || isProductList || isCart ? 'bg-[rgb(var(--discovery-control))]' : 'bg-brand-primary', isHome && 'lg:hidden')}>
       <User2 aria-hidden="true" className="size-[18px]" strokeWidth={1.7} />
     </span>
   );
 
   return (
-    <header className={cn('fixed inset-x-0 top-0 z-50 print:hidden', isHome ? 'bg-canvas lg:border-b lg:border-border' : 'bg-canvas/90 shadow-subtle backdrop-blur-md')}>
+    <header className={cn('fixed inset-x-0 top-0 z-50 print:hidden', isHome || isCart ? 'bg-canvas lg:border-b lg:border-border' : 'bg-canvas/90 shadow-subtle backdrop-blur-md')}>
       <div className={cn(
         'mx-auto flex items-center justify-between gap-0.5 px-4 lg:gap-4 lg:px-12',
-        isHome ? 'h-16 max-w-[1440px] px-4 lg:h-20 lg:px-8' : isCatalog ? 'h-14 max-w-layout lg:h-16' : 'h-[72px] max-w-layout lg:h-20',
+        isHome ? 'h-16 max-w-[1440px] px-4 lg:h-20 lg:px-8' : isCatalog || isCart ? 'h-14 max-w-layout lg:h-16' : 'h-[72px] max-w-layout lg:h-20',
       )}>
-        <div className={cn('flex min-w-0 items-center gap-1 sm:gap-3 lg:gap-10', (isHome || isProductList) && 'min-[360px]:gap-3', isHome && 'lg:gap-12')}>
-          <button
-            aria-expanded={isMobileNavOpen}
-            aria-label="Mở danh mục"
-            className="-ml-2 inline-flex size-11 shrink-0 items-center justify-center text-text-primary transition-colors hover:text-brand-primary lg:hidden"
-            onClick={openMobileNav}
-            type="button"
-          >
-            <Menu aria-hidden="true" className="size-[22px]" strokeWidth={1.6} />
-          </button>
+        <div className={cn('flex min-w-0 items-center gap-1 sm:gap-3 lg:gap-10', (isHome || isProductList || isCart) && 'min-[360px]:gap-3', isHome && 'lg:gap-12')}>
+          {isCart ? (
+            <Link aria-label="Quay lại danh sách sản phẩm" className={cn(headerIconButtonClassName, '-ml-2 lg:hidden')} to={routes.products}>
+              <ArrowLeft aria-hidden="true" className="size-5" />
+            </Link>
+          ) : (
+            <button
+              aria-expanded={isMobileNavOpen}
+              aria-label="Mở danh mục"
+              className="-ml-2 inline-flex size-11 shrink-0 items-center justify-center text-text-primary transition-colors hover:text-brand-primary lg:hidden"
+              onClick={openMobileNav}
+              type="button"
+            >
+              <Menu aria-hidden="true" className="size-[22px]" strokeWidth={1.6} />
+            </button>
+          )}
           <Link
-            className={cn('inline-flex min-h-11 items-center whitespace-nowrap text-xs font-semibold tracking-tight transition-colors hover:text-brand-primary min-[360px]:text-base', isHome && 'lg:text-lg lg:font-bold lg:tracking-widest')}
+            className={cn('inline-flex min-h-11 items-center whitespace-nowrap text-xs font-semibold tracking-tight transition-colors hover:text-brand-primary min-[360px]:text-base', (isHome || isCart) && 'lg:text-lg lg:font-bold lg:tracking-widest')}
             to={routes.home}
           >
             FASHION SHOP
@@ -152,10 +159,10 @@ export const Header = () => {
         <div className={cn('flex shrink-0 items-center gap-0.5 min-[360px]:gap-1', isHome ? 'lg:gap-2' : 'lg:gap-4')}>
           <Link aria-label="Tìm kiếm sản phẩm" className={cn(headerIconButtonClassName, 'lg:px-2')} to={routePaths.productSearch()}>
             <Search aria-hidden="true" className="size-5" strokeWidth={1.7} />
-            <span className="hidden lg:inline">Tìm kiếm</span>
+            {!isCart ? <span className="hidden lg:inline">Tìm kiếm</span> : null}
           </Link>
           {user ? (
-            <div className="relative">
+            <div className={cn('relative', isCart && 'order-2 lg:order-none')}>
               <button
                 aria-controls={isAccountMenuOpen ? accountMenuId : undefined}
                 aria-expanded={isAccountMenuOpen}
@@ -234,19 +241,20 @@ export const Header = () => {
           )}
           <Link
             aria-label={cartAriaLabel}
-            className={cn(headerIconButtonClassName, 'gap-1 px-2 lg:gap-1.5')}
+            className={cn(headerIconButtonClassName, 'gap-1 px-2 lg:gap-1.5', isCart && 'lg:uppercase')}
             to={cartTarget}
           >
-            <ShoppingBag aria-hidden="true" className={cn('size-5', isHome && 'lg:hidden')} strokeWidth={1.7} />
-            <span className="text-xs font-medium lg:text-sm lg:font-normal">
+            <ShoppingBag aria-hidden="true" className={cn('size-5', (isHome || isCart) && 'lg:hidden')} strokeWidth={1.7} />
+            <span className={cn('text-xs font-medium lg:text-sm lg:font-normal', isCart && 'lg:inline-flex lg:items-center lg:gap-1 lg:text-xs lg:tracking-wide')}>
               <span className="hidden lg:inline">Giỏ hàng </span>
               <motion.span
                 animate={reducedMotion ? undefined : { opacity: 1 }}
                 initial={reducedMotion ? false : { opacity: 0.6 }}
+                className={isCart ? 'absolute right-1 top-0.5 grid size-4 place-items-center rounded-full bg-[rgb(var(--discovery-control))] text-[10px] font-semibold text-surface lg:static' : undefined}
                 key={cartBadgeText}
                 transition={{ duration: 0.2 }}
               >
-                ({cartBadgeText})
+                {isCart ? cartBadgeText : `(${cartBadgeText})`}
               </motion.span>
             </span>
           </Link>

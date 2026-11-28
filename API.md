@@ -887,8 +887,14 @@ Customer cancellation is limited to `PENDING`/`AWAITING_PAYMENT` by the current 
 - Each column uses `{ key, label, unit }` with unit `CM`, `IN` or `KG`. Each row uses `{ size, values }`, keyed by column key. A cell `{ min, max? }` is either a fixed value or an inclusive range. Absence of `sizeGuide` hides the action. This information is advisory. Cart and inventory continue using catalog variant IDs.
 - The server resolves active guides in order Product → Category + Brand → Brand → Category → Shop default. Within a category scope the lower configured assignment priority wins, followed by category sort order and slug.
 - Product detail may contain `badges` with up to two `{ code, label }` entries. Product list items may contain a single `badge` of the same shape. These are explicitly assigned and active. Price and inventory states come from their own contract. `featured` continues to control product discovery.
-- The product detail shipping note describes when the existing quote is calculated. `CheckoutCarrierQuoteResponse` exposes `shippingFee` and no ETA field. `estimatedDeliveryDate` belongs to shipment tracking. VAT applicability is not available in the catalog, order or invoice contract, so PDP omits an inclusive-VAT label.
+- The product detail shipping note describes when the existing quote is calculated. `CheckoutCarrierQuoteResponse` exposes `shippingFee` and no ETA field. `estimatedDeliveryDate` belongs to shipment tracking. PDP omits an inclusive-VAT label because the catalog does not provide VAT applicability. The Cart and Order Preview contract below describes the optional storefront VAT summary.
 
+
+## Cart free shipping and VAT (#34)
+
+`GET /cart` may return `freeShipping` (`enabled`, `threshold`, `eligibleAmount`, `remainingAmount`, `qualified`, `currency`, `policyRevision`). Values are VND, based on merchandise before any checkout voucher. A disabled policy is omitted. `POST /vouchers/{code}/validate` may return the same object based on the validated merchandise amount after the submitted voucher. The Cart UI displays any voucher discount as an estimate and keeps the original server cart subtotal. `POST /orders/preview` returns the optional object for the checkout context and the authoritative quoted customer fee. Cart never requests a carrier quote or ETA.
+
+The Cart and Order Preview may also return `vatSummary` for merchandise as `INCLUDED_SINGLE_RATE` with `rateFraction` (including zero), `INCLUDED_MULTIPLE_RATES` or `NOT_TAXABLE`. If absent, hide the VAT label. Neither field changes the request schema. Order creation revalidates shipping and vouchers.
 
 ## Shipping policy (#88)
 

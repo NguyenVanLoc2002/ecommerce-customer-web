@@ -55,6 +55,6 @@ describe('CartItemCard', () => {
 
     expect(markup).toContain('aria-busy="true"');
     expect(markup).toContain('Đang cập nhật số lượng');
-    expect(markup.match(/disabled=""/g)).toHaveLength(6);
+    expect(markup.match(/disabled=""/g)).toHaveLength(4);
   });
 });

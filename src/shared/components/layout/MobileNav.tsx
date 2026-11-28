@@ -16,14 +16,15 @@ export const MobileNav = () => {
   const isMobileNavOpen = useUiStore((state) => state.isMobileNavOpen);
   const openMobileNav = useUiStore((state) => state.openMobileNav);
   const isHome = pathname === routes.home;
-  const isDiscovery = isHome || pathname === routes.products || pathname.startsWith(`${routes.products}/`);
+  const isCart = pathname === routes.cart;
+  const isDiscovery = isHome || isCart || pathname === routes.products || pathname.startsWith(`${routes.products}/`);
   const { data: cartItemCount = 0 } = useCartItemCount(false);
 
   if (isDiscovery) {
     const cartCount = user ? cartItemCount : 0;
     const items = [
       { icon: Search, label: 'Tìm kiếm', to: routePaths.productSearch() },
-      { icon: ShoppingBag, label: `Túi đồ (${cartCount > 99 ? '99+' : cartCount})`, to: user ? routes.cart : routePaths.loginRedirect(routes.cart) },
+      { icon: ShoppingBag, label: isCart ? 'Túi đồ' : `Túi đồ (${cartCount > 99 ? '99+' : cartCount})`, to: user ? routes.cart : routePaths.loginRedirect(routes.cart) },
       { icon: User2, label: 'Tài khoản', to: user ? routes.profile : routes.login },
     ];
 
@@ -44,8 +45,15 @@ export const MobileNav = () => {
           </li>
           {items.map((item) => (
             <li key={item.label}>
-              <Link className={discoveryLink} to={item.to}>
-                <item.icon aria-hidden="true" className="size-5" strokeWidth={1.7} />
+              <Link aria-current={isCart && item.to === routes.cart ? 'page' : undefined} className={cn(discoveryLink, isCart && item.to === routes.cart && 'font-bold text-text-primary')} to={item.to}>
+                <span className="relative">
+                  <item.icon aria-hidden="true" className="size-5" strokeWidth={1.7} />
+                  {isCart && item.to === routes.cart && cartCount > 0 ? (
+                    <span className="absolute -right-2 -top-1 grid size-4 place-items-center rounded-full bg-[rgb(var(--discovery-control))] text-[10px] font-semibold text-surface">
+                      {cartCount > 99 ? '99+' : cartCount}
+                    </span>
+                  ) : null}
+                </span>
                 <span>{item.label}</span>
               </Link>
             </li>
