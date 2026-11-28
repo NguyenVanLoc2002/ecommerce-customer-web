@@ -1,6 +1,6 @@
 import { Truck } from 'lucide-react';
 
-import type { CheckoutCarrierOption } from '@/shared/types/commerce.types';
+import type { CheckoutCarrierOption, DeliveryEstimate } from '@/shared/types/commerce.types';
 import { Button } from '@/shared/components/ui/Button';
 
 type CheckoutCarrierSelectorProps = {
@@ -12,6 +12,7 @@ type CheckoutCarrierSelectorProps = {
   errorMessage?: string | null;
   selectionError?: string | null;
   shippingServiceName?: string | null;
+  deliveryEstimate?: DeliveryEstimate;
   previewError?: string | null;
   carrierLoading?: boolean;
   previewLoading?: boolean;
@@ -19,6 +20,7 @@ type CheckoutCarrierSelectorProps = {
 
 export const CheckoutCarrierSelector = ({
   carrierLoading = false,
+  deliveryEstimate,
   errorMessage,
   onChange,
   onRetry,
@@ -79,6 +81,13 @@ export const CheckoutCarrierSelector = ({
       <p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">
         Phí giao hàng được tính theo địa chỉ và đơn vị vận chuyển đã chọn.
       </p>
+      {selectedCarrierId && deliveryEstimate?.basis === 'CARRIER_HANDOVER' ? (
+        <p className="mt-2 text-sm font-medium text-text-primary">
+          Dự kiến {deliveryEstimate.minBusinessDays === deliveryEstimate.maxBusinessDays
+            ? deliveryEstimate.minBusinessDays
+            : `${deliveryEstimate.minBusinessDays}–${deliveryEstimate.maxBusinessDays}`} ngày làm việc sau khi bàn giao cho đơn vị vận chuyển.
+        </p>
+      ) : null}
       <fieldset aria-describedby="shipping-carrier-hint" className="mt-3 md:mt-5">
         <legend className="sr-only">Shipping carrier</legend>
         <p className="sr-only" id="shipping-carrier-hint">

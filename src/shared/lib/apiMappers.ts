@@ -173,6 +173,7 @@ export const toProductDetail = (product: ProductDetailResponse): ProductDetail =
 
 export const toVoucherPreview = (code: string, response: ValidateVoucherResponse): VoucherPreview => ({
   code: response.voucherCode || code,
+  freeShipping: response.freeShipping,
   isApplicable: response.discountAmount > 0,
   message:
     response.discountAmount > 0
@@ -195,6 +196,9 @@ export const toCheckoutCarrierOption = (carrier: CheckoutCarrierOptionResponse):
 });
 
 export const toOrderPreview = (preview: OrderPreviewResponse): OrderPreview => ({
+  freeShipping: preview.freeShipping,
+  vatSummary: preview.vatSummary,
+  deliveryEstimate: preview.deliveryEstimate,
   carrierId: preview.carrierId,
   carrierCode: preview.carrierCode,
   carrierName: preview.carrierName,
@@ -250,6 +254,8 @@ export const toCommerceCart = (
 
   return {
     id: cart.id,
+    freeShipping: cart.freeShipping,
+    vatSummary: cart.vatSummary,
     items,
     totalItems: cart.totalItems,
     subTotal: cart.subTotal,
