@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { routePaths, routes } from '@/constants/routes';
@@ -19,6 +19,7 @@ import { buttonStyles } from '@/shared/components/ui/buttonStyles';
 import { getPaymentMethodLabel, getPaymentMethodNote, getPaymentProviderLabel } from '@/shared/lib/commerceLabels';
 import { isAuthenticationError } from '@/shared/lib/authErrors';
 import {
+  getServiceErrorCode,
   isMutationProcessingError,
   isUncertainMutationFailure,
   shouldReuseIdempotencyKey,
@@ -27,6 +28,7 @@ import { useUiStore } from '@/shared/stores/uiStore';
 import { createIdempotencyKey } from '@/shared/utils/createIdempotencyKey';
 import { formatAddress } from '@/shared/utils/formatAddress';
 import { formatVnd } from '@/shared/utils/formatVnd';
+import type { PlaceOrderInput } from '@/shared/types/commerce.types';
 import { PAYMENT_METHODS } from '@/shared/types/enums';
 import { PAYMENT_PROVIDERS } from '@/shared/types/payment.types';
 
@@ -37,7 +39,8 @@ const ORDER_STATUS_UNKNOWN_MESSAGE =
 
 type PendingCheckoutAttempt = {
   idempotencyKey: string;
-  payloadSignature: string;
+  paypal: boolean;
+  payload: PlaceOrderInput;
 };
 
 export const CheckoutReviewPage = () => {
@@ -55,7 +58,6 @@ export const CheckoutReviewPage = () => {
     checkoutPayload,
     previewError,
     previewLoading,
-    previewRequestSignature,
     previewQuery,
     previewValueOverrides,
     selectedCarrier,
@@ -75,8 +77,15 @@ export const CheckoutReviewPage = () => {
   const setSelectedCarrierId = useCheckoutStore((state) => state.setSelectedCarrierId);
   const shippingAddressId = useCheckoutStore((state) => state.shippingAddressId);
   const voucherCode = useCheckoutStore((state) => state.voucherCode);
+  const setVoucherCode = useCheckoutStore((state) => state.setVoucherCode);
+  const [priceChanged, setPriceChanged] = useState(false);
   const [pendingAttempt, setPendingAttempt] = useState<PendingCheckoutAttempt | null>(null);
   const [submitStage, setSubmitStage] = useState<'placing-order' | null>(null);
+  const previewErrorCode = getServiceErrorCode(previewQuery.error);
+  const rejectedVoucher = Boolean(voucherCode && previewErrorCode?.startsWith('VOUCHER_'));
+  const voucherErrorMessage = previewErrorCode === 'VOUCHER_EXPIRED'
+    ? 'Mã ưu đãi đã hết hạn. Bỏ mã để tính lại tổng tiền.'
+    : 'Mã ưu đãi không còn áp dụng được. Bỏ mã để tính lại tổng tiền.';
 
   const address = useMemo(
     () => addressesQuery.data?.find((item) => item.id === shippingAddressId) ?? null,
@@ -93,38 +102,29 @@ export const CheckoutReviewPage = () => {
     carriersQuery.isLoading ||
     carriersQuery.isError ||
     (carrierSelectionRequired && !selectedCarrierId) ||
-    previewLoading ||
+    previewLoading || previewQuery.isFetching ||
     Boolean(previewError) ||
     previewBlocked;
 
-  useEffect(() => {
-    if (!pendingAttempt || placeOrder.isPending || pendingAttempt.payloadSignature === previewRequestSignature) {
-      return;
-    }
-
-    setPendingAttempt(null);
-  }, [pendingAttempt, placeOrder.isPending, previewRequestSignature]);
-
   const handlePlaceOrder = () => {
-    if (placeOrderDisabled || !cart) {
+    if (placeOrder.isPending || (!pendingAttempt && placeOrderDisabled)) {
       return;
     }
 
-    const idempotencyKey =
-      pendingAttempt?.payloadSignature === previewRequestSignature
-        ? pendingAttempt.idempotencyKey
-        : createIdempotencyKey('checkout');
+    const attempt = pendingAttempt ?? {
+      idempotencyKey: createIdempotencyKey('checkout'),
+      paypal: isPaypalCheckout,
+      payload: { ...checkoutPayload, confirmationToken: orderPreview?.confirmationToken },
+    };
 
     setSubmitStage('placing-order');
-    setPendingAttempt({
-      idempotencyKey,
-      payloadSignature: previewRequestSignature,
-    });
+    setPendingAttempt(attempt);
+    setPriceChanged(false);
 
     placeOrder.mutate(
       {
-        payload: checkoutPayload,
-        idempotencyKey,
+        payload: attempt.payload,
+        idempotencyKey: attempt.idempotencyKey,
       },
       {
         onSuccess: (order) => {
@@ -133,7 +133,7 @@ export const CheckoutReviewPage = () => {
           setSelectedCarrierId(order.carrierId ?? '');
           setOrderPreview(buildOrderPreviewFromOrder(order));
           setConfirmationOrder(order);
-          if (isPaypalCheckout) {
+          if (attempt.paypal) {
             setSubmitStage(null);
             navigate(routePaths.paymentResult(order.id, PAYMENT_PROVIDERS.PAYPAL));
             return;
@@ -149,8 +149,19 @@ export const CheckoutReviewPage = () => {
         },
         onError: (error) => {
           setSubmitStage(null);
-          if (!shouldReuseIdempotencyKey(error)) {
+          const errorCode = getServiceErrorCode(error);
+          const processing = isMutationProcessingError(error);
+          const uncertain = isUncertainMutationFailure(error) || !errorCode;
+          if (!shouldReuseIdempotencyKey(error) || (!processing && !uncertain)) {
             setPendingAttempt(null);
+          }
+
+          if (errorCode === 'CHECKOUT_PRICE_CHANGED') {
+            setPriceChanged(true);
+            setOrderPreview(null);
+            void cartQuery.refetch();
+            void previewQuery.refetch();
+            return;
           }
 
           if (isAuthenticationError(error)) {
@@ -163,7 +174,7 @@ export const CheckoutReviewPage = () => {
             return;
           }
 
-          if (isMutationProcessingError(error)) {
+          if (processing) {
             addToast({
               tone: 'info',
               title: 'Order is still processing',
@@ -172,7 +183,7 @@ export const CheckoutReviewPage = () => {
             return;
           }
 
-          if (isUncertainMutationFailure(error)) {
+          if (uncertain) {
             addToast({
               tone: 'info',
               title: 'Check the order status again',
@@ -191,7 +202,19 @@ export const CheckoutReviewPage = () => {
     );
   };
 
-  if (cart?.items.length === 0) {
+  if (pendingAttempt && !placeOrder.isPending) {
+    return (
+      <Container className="py-10">
+        <section className="space-y-4 rounded-card border border-border bg-surface p-6">
+          <h1 className="text-xl font-semibold">Kiểm tra trạng thái đặt hàng</h1>
+          <p>Yêu cầu trước có thể đang xử lý. Kiểm tra lại yêu cầu đó để lấy kết quả.</p>
+          <Button onClick={handlePlaceOrder}>Kiểm tra lại</Button>
+        </section>
+      </Container>
+    );
+  }
+
+  if (cart?.items.length === 0 && !pendingAttempt) {
     return (
       <>
         <PageSEO description="Review address, payment, voucher preview, and order total before placing the order." noIndex path={routes.checkoutReview} title="Checkout Review" />
@@ -224,6 +247,17 @@ export const CheckoutReviewPage = () => {
                 Kiểm tra thông tin trước khi gửi yêu cầu tạo đơn. Hệ thống sẽ xác minh lại giá, ưu đãi và phí vận chuyển.
               </p>
             </div>
+            {priceChanged ? (
+              <div role="alert" className="space-y-2 rounded-card border border-border bg-surface px-4 py-3 text-sm">
+                <p className="font-semibold">Thông tin giá hoặc ưu đãi đã thay đổi</p>
+                <p className="text-text-secondary">
+                  {rejectedVoucher ? voucherErrorMessage : 'Kiểm tra bảng tính giá mới và bấm đặt hàng lại để xác nhận.'}
+                </p>
+                {rejectedVoucher ? (
+                  <Button size="sm" variant="secondary" onClick={() => setVoucherCode('')}>Bỏ mã và cập nhật giá</Button>
+                ) : null}
+              </div>
+            ) : null}
             {cartQuery.isLoading || addressesQuery.isLoading ? (
               <LoadingOverlay className="min-h-[320px] border-border bg-surface" inline label="Preparing order review..." />
             ) : null}
@@ -262,7 +296,7 @@ export const CheckoutReviewPage = () => {
                   onRetry={() => void carriersQuery.refetch()}
                   onRetryPreview={() => void previewQuery.refetch()}
                   options={carrierOptions}
-                  previewError={previewError}
+                  previewError={rejectedVoucher ? null : previewError}
                   previewLoading={previewLoading}
                   selectedCarrierId={selectedCarrierId}
                   selectionError={carrierSelectionError}
@@ -365,8 +399,10 @@ export const CheckoutReviewPage = () => {
                     ? carrierSelectionError
                     : carrierSelectionRequired && !selectedCarrierId
                     ? 'Select one carrier to refresh the live shipping quote and final total.'
-                    : previewError
-                      ? 'The shipping quote preview failed. Refresh the carrier selection before placing the order.'
+                    : rejectedVoucher
+                      ? voucherErrorMessage
+                      : previewError
+                      ? 'Chưa tính được tổng tiền. Hãy tải lại thông tin đơn hàng.'
                       : orderPreview
                         ? 'Tổng tiền lấy từ POST /orders/preview và sẽ được máy chủ xác minh lại khi tạo đơn.'
                         : 'Đang chờ báo giá từ hệ thống.'
@@ -389,7 +425,9 @@ export const CheckoutReviewPage = () => {
                 </div>
               }
               totals={summaryTotals}
-              valueOverrides={previewValueOverrides}
+              valueOverrides={rejectedVoucher
+                ? { shippingFee: 'Chờ tính lại', discountTotal: 'Mã không còn áp dụng', grandTotal: 'Chờ tính lại' }
+                : previewValueOverrides}
             />
           ) : null}
         </div>

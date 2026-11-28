@@ -12,6 +12,7 @@ vi.mock('@/shared/lib/axios', () => ({ apiClient: apiClientMock }));
 import { checkoutService } from './checkoutService';
 
 const previewResponse: OrderPreviewResponse = {
+  confirmationToken: 'server-confirmation-token',
   carrierId: 'carrier-1',
   carrierCode: 'EXPRESS',
   carrierName: 'Express',
@@ -79,17 +80,22 @@ describe('checkoutService', () => {
     };
     apiClientMock.post.mockResolvedValue(previewResponse);
 
-    await expect(checkoutService.previewOrder(payload)).resolves.toMatchObject({ totalAmount: 330000, shippingFee: 30000 });
+    await expect(checkoutService.previewOrder(payload)).resolves.toMatchObject({
+      totalAmount: 330000,
+      shippingFee: 30000,
+      confirmationToken: 'server-confirmation-token',
+    });
     expect(apiClientMock.post).toHaveBeenCalledWith('/orders/preview', payload);
   });
 
-  it('places an order with its action-specific idempotency key', async () => {
+  it('places an order with its action-specific key and confirmed server token', async () => {
     const payload = {
       shippingAddressId: 'address-1',
       carrierId: 'carrier-1',
       paymentMethod: 'ONLINE' as const,
       customerNote: '',
       voucherCode: '',
+      confirmationToken: 'server-confirmation-token',
     };
     apiClientMock.post.mockResolvedValue(orderResponse);
 

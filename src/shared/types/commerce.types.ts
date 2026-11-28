@@ -170,6 +170,7 @@ export interface CheckoutCarrierOptionResponse {
 }
 
 export interface OrderPreviewResponse {
+  confirmationToken?: string;
   carrierId: string | null;
   carrierCode: string | null;
   carrierName: string | null;
@@ -185,6 +186,7 @@ export interface OrderPreviewResponse {
 }
 
 export interface OrderPreview {
+  confirmationToken?: string;
   carrierId?: string | null;
   carrierCode?: string | null;
   carrierName?: string | null;
@@ -239,6 +241,7 @@ export interface CheckoutDraft {
 }
 
 export interface CheckoutOrderInput {
+  confirmationToken?: string;
   shippingAddressId: string;
   carrierId?: string;
   paymentMethod: PaymentMethod;

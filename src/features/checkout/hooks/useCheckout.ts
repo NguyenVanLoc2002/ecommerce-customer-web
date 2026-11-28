@@ -86,7 +86,7 @@ export const useCheckoutPreview = (payload: OrderPreviewInput | null, enabled = 
 
     setPreviewError(null);
     setOrderPreview(previewQuery.data);
-  }, [payloadSignature, previewQuery.data, setOrderPreview, setPreviewError]);
+  }, [payloadSignature, previewQuery.data, previewQuery.dataUpdatedAt, setOrderPreview, setPreviewError]);
 
   return previewQuery;
 };

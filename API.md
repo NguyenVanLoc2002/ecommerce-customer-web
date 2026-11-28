@@ -474,6 +474,10 @@ Order item fields:
 - Fields: `id`, `code`, `name`, `providerType`, `logoUrl`, `description`
 - Lists active eligible carriers with registered providers and required configuration enabled. Does not expose secrets or quote fees.
 
+### Checkout confirmation
+
+Pass the opaque optional `confirmationToken` from the current `POST /orders/preview` in `POST /orders`. Backend recomputes the financial terms from current data. On `409 CHECKOUT_PRICE_CHANGED`, fetch Cart and Preview again and show the new breakdown or voucher error. Submit with a new `Idempotency-Key` only after the customer confirms again. Retry an uncertain submission with the exact original payload, token, and key. Preview does not reserve inventory, price, or voucher usage.
+
 ### `POST /orders/preview`
 - Access: authenticated customer
 - Request: the create-order fields above; uses the current customer's active cart and validates address ownership.
